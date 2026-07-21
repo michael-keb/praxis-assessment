@@ -108,25 +108,39 @@ export function createEngine(caseId) {
     const options = {
       video: { frameRate: 1, displaySurface: "monitor" },
       audio: false,
+      preferCurrentTab: false,
       selfBrowserSurface: "exclude",
-      surfaceSwitching: "exclude"
+      surfaceSwitching: "exclude",
+      monitorTypeSurfaces: "include"
     };
-    // Keep the browser from focus-jumping to a captured tab/window: without
-    // this, picking a tab yanks the candidate off the assessment page before
-    // they can see the rejection. Chrome/Edge 109+; harmless elsewhere.
+    // Chrome/Edge 109+: Conditional Focus. Setting no-focus-change before the
+    // picker AND again synchronously when the promise resolves (required —
+    // Chrome finalizes focus in that microtask) keeps the assessment tab
+    // focused when the candidate wrongly picks a tab/window, so they see the
+    // rejection instead of being yanked away.
+    let controller = null;
     if (typeof window.CaptureController === "function") {
       try {
-        const controller = new CaptureController();
+        controller = new CaptureController();
         controller.setFocusBehavior("no-focus-change");
         options.controller = controller;
-      } catch { /* older browser — picker behaves as before */ }
+      } catch {
+        controller = null;
+      }
     }
     return navigator.mediaDevices.getDisplayMedia(options).then((stream) => {
-      // The picker still offers tab/window; enforce entire-screen after the fact.
       const track = stream.getVideoTracks()[0];
       const surface = track.getSettings ? track.getSettings().displaySurface : null;
+
+      // Must run in this same turn — before yielding — or Chrome steals focus.
+      if (controller && (surface === "browser" || surface === "window")) {
+        try { controller.setFocusBehavior("no-focus-change"); } catch { /* already finalized / monitor */ }
+      }
+
+      // Picker still offers tab/window; reject anything that isn't the whole screen.
       if (surface && surface !== "monitor") {
         stream.getTracks().forEach((tr) => tr.stop());
+        try { window.focus(); } catch { /* ignore */ }
         const what = surface === "browser" ? "a browser tab" : "a window";
         return { ok: false, reason: "wrong_surface_" + surface,
           message: `You shared ${what} — this assessment requires your entire screen. Try again and choose “Entire Screen”.` };
