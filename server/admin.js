@@ -6,6 +6,7 @@ import { db, getCode, newCodes, SUBMISSIONS_DIR } from "./db.js";
 import { requireAdmin } from "./auth.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
+const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -14,9 +15,12 @@ adminRouter.get("/codes", (req, res) => {
   const rows = db.prepare("SELECT * FROM codes ORDER BY created_at DESC").all();
   const withFrames = rows.map((row) => {
     const framesDir = path.join(SUBMISSIONS_DIR, row.code, "frames");
+    const audioDir = path.join(SUBMISSIONS_DIR, row.code, "audio");
     let frames = 0;
+    let audio = 0;
     try { frames = fs.readdirSync(framesDir).length; } catch {}
-    return { ...row, frames };
+    try { audio = fs.readdirSync(audioDir).length; } catch {}
+    return { ...row, frames, audio };
   });
   res.json({ codes: withFrames });
 });
@@ -49,10 +53,16 @@ adminRouter.get("/sessions/:code", (req, res) => {
       .filter((n) => FRAME_RE.test(n))
       .sort((a, b) => (parseInt(a.match(/f_(\d+)/)?.[1] || 0, 10)) - (parseInt(b.match(/f_(\d+)/)?.[1] || 0, 10)));
   } catch {}
+  let audio = [];
+  try {
+    audio = fs.readdirSync(path.join(SUBMISSIONS_DIR, row.code, "audio"))
+      .filter((n) => AUDIO_RE.test(n))
+      .sort();
+  } catch {}
   const candidate = row.candidate_name
     ? { name: row.candidate_name, email: row.candidate_email, upwork: row.candidate_upwork }
     : null;
-  res.json({ code: row, candidate, payload, frames });
+  res.json({ code: row, candidate, payload, frames, audio });
 });
 
 adminRouter.get("/sessions/:code/frames/:name", (req, res) => {
@@ -60,6 +70,15 @@ adminRouter.get("/sessions/:code/frames/:name", (req, res) => {
   const name = path.basename(req.params.name || "");
   if (!row || !FRAME_RE.test(name)) return res.status(404).end();
   res.sendFile(path.join(SUBMISSIONS_DIR, row.code, "frames", name), (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
+
+adminRouter.get("/sessions/:code/audio/:name", (req, res) => {
+  const row = getCode(String(req.params.code || "").toUpperCase());
+  const name = path.basename(req.params.name || "");
+  if (!row || !AUDIO_RE.test(name)) return res.status(404).end();
+  res.sendFile(path.join(SUBMISSIONS_DIR, row.code, "audio", name), (err) => {
     if (err && !res.headersSent) res.status(404).end();
   });
 });

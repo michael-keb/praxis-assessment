@@ -30,7 +30,7 @@ export default function AuthPage({ onAuthed }) {
   return (
     <div className="screen">
       <div className="card-col narrow">
-        <div className="gate-mark">Prax<span>is</span></div>
+        <div className="gate-mark">praxis</div>
         <h1>Admin log in</h1>
         <p className="lede">
           Taking an assessment? You don't need an account — open the link you

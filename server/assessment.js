@@ -5,9 +5,11 @@ import multer from "multer";
 import { db, getCode, nowIso, caseDir } from "./db.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
+const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UPWORK_RE = /^https?:\/\/(www\.)?upwork\.com\/.+/i;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 120 } });
+const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024, files: 8 } });
 
 /* No candidate accounts: identity is the details captured at the gate,
    bound to the single-use code. Admin routes stay behind auth. */
@@ -83,6 +85,24 @@ assessmentRouter.post("/frames", upload.array("frames"), (req, res) => {
     const name = path.basename(file.originalname);
     if (FRAME_RE.test(name) && file.buffer?.length) {
       fs.writeFileSync(path.join(framesDir, name), file.buffer);
+      saved++;
+    }
+  }
+  res.json({ ok: true, saved });
+});
+
+/* Voice-over chunks (thinking aloud). */
+assessmentRouter.post("/audio", audioUpload.array("audio"), (req, res) => {
+  const row = getCode(String(req.body?.caseId || "").trim().toUpperCase());
+  if (!row || row.status === "void" || row.status === "unused") {
+    return res.status(403).json({ error: "unknown or inactive code" });
+  }
+  const audioDir = caseDir(row.code, "audio");
+  let saved = 0;
+  for (const file of req.files || []) {
+    const name = path.basename(file.originalname);
+    if (AUDIO_RE.test(name) && file.buffer?.length) {
+      fs.writeFileSync(path.join(audioDir, name), file.buffer);
       saved++;
     }
   }

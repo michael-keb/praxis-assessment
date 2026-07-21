@@ -39,6 +39,10 @@ export function createEngine(caseId) {
   let lastReground = 0;
   let anyZoneTouched = false;
   let captureStream = null;
+  let micStream = null;
+  let mediaRecorder = null;
+  let audioChunkSeq = 0;
+  let micLive = false;
   let frameQueue = [];
   const timers = [];
   const listeners = new Set();
@@ -46,6 +50,23 @@ export function createEngine(caseId) {
   const captureVideo = document.createElement("video");
   captureVideo.muted = true;
   const captureCanvas = document.createElement("canvas");
+
+  function pickAudioMime() {
+    const candidates = [
+      "audio/webm;codecs=opus",
+      "audio/webm",
+      "audio/ogg;codecs=opus",
+      "audio/mp4"
+    ];
+    if (typeof MediaRecorder === "undefined") return "";
+    return candidates.find((t) => MediaRecorder.isTypeSupported(t)) || "";
+  }
+
+  function audioExt(mime) {
+    if (mime.includes("ogg")) return "ogg";
+    if (mime.includes("mp4")) return "m4a";
+    return "webm";
+  }
 
   /* ---------------- time ---------------- */
   const now = () => Date.now();
@@ -86,7 +107,8 @@ export function createEngine(caseId) {
       pauseBudgetLeft: PAUSE_LIMIT - Math.floor(pausedMsTotal() / 1000),
       zones: { ...state.zones },
       confidence: state.confidence,
-      doneReason: state.doneReason
+      doneReason: state.doneReason,
+      micLive
     };
   }
   let cachedSnapshot = buildSnapshot();
@@ -164,6 +186,70 @@ export function createEngine(caseId) {
     captureStream = null;
   }
 
+  /* ---------------- mic (voice-over thinking aloud) ---------------- */
+  function uploadAudioChunk(blob, ext) {
+    if (!blob?.size) return;
+    const seq = String(++audioChunkSeq).padStart(4, "0");
+    const t = tSec();
+    const fd = new FormData();
+    fd.append("caseId", caseId);
+    fd.append("audio", blob, `a_${t}_${seq}.${ext}`);
+    fetch(ENDPOINT + "/audio", { method: "POST", body: fd }).catch(() => {});
+  }
+
+  function stopMic() {
+    try {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    } catch { /* ignore */ }
+    mediaRecorder = null;
+    micStream?.getTracks().forEach((tr) => tr.stop());
+    micStream = null;
+    if (micLive) { micLive = false; emit(); }
+  }
+
+  function startMic() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return Promise.resolve({ ok: false, reason: "unsupported_mic",
+        message: "This browser cannot access the microphone. Use a current version of Chrome, Edge, or Firefox." });
+    }
+    if (typeof MediaRecorder === "undefined") {
+      return Promise.resolve({ ok: false, reason: "unsupported_recorder",
+        message: "This browser cannot record audio. Use a current version of Chrome, Edge, or Firefox." });
+    }
+    return navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true },
+      video: false
+    }).then((stream) => {
+      micStream = stream;
+      const mime = pickAudioMime();
+      const ext = audioExt(mime);
+      try {
+        mediaRecorder = mime
+          ? new MediaRecorder(stream, { mimeType: mime })
+          : new MediaRecorder(stream);
+      } catch {
+        stream.getTracks().forEach((tr) => tr.stop());
+        micStream = null;
+        return { ok: false, reason: "recorder_failed",
+          message: "Could not start microphone recording. Try another browser." };
+      }
+      mediaRecorder.addEventListener("dataavailable", (ev) => {
+        if (ev.data?.size) uploadAudioChunk(ev.data, audioExt(mediaRecorder.mimeType || mime || "audio/webm"));
+      });
+      stream.getAudioTracks()[0]?.addEventListener("ended", () => {
+        micLive = false;
+        emit();
+        if (running && !finalized) logEvent({ type: "mic_ended" });
+      });
+      mediaRecorder.start(10000); // 10s chunks
+      micLive = true;
+      emit();
+      logEvent({ type: "mic_started" });
+      return { ok: true };
+    }).catch(() => ({ ok: false, reason: "mic_denied",
+      message: "Microphone access was declined. The assessment needs you to talk through your thinking." }));
+  }
+
   /* ---------------- block / pause ---------------- */
   function block(title) {
     if (phase === "blocked" || !running || finalized) return;
@@ -215,10 +301,16 @@ export function createEngine(caseId) {
   }
 
   async function begin(details) {
-    // Capture first: the code must only bind once sharing is actually live,
+    // Screen + mic first: the code must only bind once capture is actually live,
     // otherwise a declined share would burn the code with no session.
-    const result = await startCapture();
-    if (!result.ok) return result;
+    const screen = await startCapture();
+    if (!screen.ok) return screen;
+    const mic = await startMic();
+    if (!mic.ok) {
+      stopSharing();
+      stopMic();
+      return mic;
+    }
     try {
       const res = await fetch(ENDPOINT + "/start", {
         method: "POST",
@@ -228,6 +320,7 @@ export function createEngine(caseId) {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         stopSharing();
+        stopMic();
         return { ok: false, reason: "rejected", message: body?.error || "The code was rejected by the server." };
       }
     } catch {
@@ -243,7 +336,17 @@ export function createEngine(caseId) {
 
   async function reshare() {
     const result = await startCapture();
-    if (result.ok) { unblock(); return result; }
+    if (result.ok) {
+      if (!micLive) {
+        const mic = await startMic();
+        if (!mic.ok) {
+          stopSharing();
+          return mic;
+        }
+      }
+      unblock();
+      return result;
+    }
     logEvent({ type: "capture_declined", reason: result.reason });
     return result;
   }
@@ -256,7 +359,9 @@ export function createEngine(caseId) {
       state.pausedTotal += now() - state.pauseStartedAt;
       state.pauseStartedAt = null;
     }
+    stopMic();
     stopSharing();
+    flushFrames();
     state.log.push({ t: Math.min(tSec(), DURATION), type: "end", reason });
     state.done = true;
     state.doneReason = reason;
@@ -265,8 +370,6 @@ export function createEngine(caseId) {
     const payload = JSON.stringify({
       caseId,
       startedAt: state.startedAt,
-      zones: state.zones,
-      confidence: state.confidence,
       pausedTotal: state.pausedTotal,
       log: state.log
     });
@@ -443,6 +546,7 @@ export function createEngine(caseId) {
     timers.length = 0;
     detachGlobal();
     observer?.disconnect();
+    stopMic();
     stopSharing();
   }
 

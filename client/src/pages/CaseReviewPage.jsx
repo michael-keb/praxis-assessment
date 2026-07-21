@@ -13,7 +13,7 @@ export default function CaseReviewPage() {
 
   if (error) return <main className="page"><div className="error-box">{error}</div></main>;
   if (!data) return null;
-  const { payload, candidate, frames } = data;
+  const { payload, candidate, frames, audio = [] } = data;
 
   return (
     <main className="page wide review">
@@ -31,16 +31,9 @@ export default function CaseReviewPage() {
       {payload ? (
         <>
           <p>
-            <b>Confidence:</b> {String(payload.confidence)}<br />
             <b>Received:</b> {payload._receivedAt}<br />
             <b>Paused total:</b> {Math.round((payload.pausedTotal || 0) / 1000)}s
           </p>
-          {["1", "2", "3", "4"].map((z) => (
-            <div key={z}>
-              <h3>Zone {z}</h3>
-              <pre>{payload.zones?.[z] || "(empty)"}</pre>
-            </div>
-          ))}
           <h3>Event log ({(payload.log || []).length})</h3>
           <table className="log-table">
             <thead><tr><th>t</th><th>type</th><th>detail</th></tr></thead>
@@ -60,6 +53,16 @@ export default function CaseReviewPage() {
       ) : (
         <p><i>No payload yet (in progress, or lost before submit).</i></p>
       )}
+      <h3>Voice ({audio.length})</h3>
+      <div className="audio-list">
+        {audio.length === 0 && <p><i>No audio chunks yet.</i></p>}
+        {audio.map((name) => (
+          <div key={name} className="audio-row">
+            <span>{name}</span>
+            <audio controls preload="none" src={`/api/admin/sessions/${code}/audio/${name}`} />
+          </div>
+        ))}
+      </div>
       <h3>Frames ({frames.length})</h3>
       <div className="filmstrip">
         {frames.map((name) => (

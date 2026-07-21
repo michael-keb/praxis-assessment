@@ -30,7 +30,7 @@ export default function AdminPage({ user, onLogout }) {
     <>
       <header className="appbar">
         <div className="bar wide">
-          <div className="wordmark">Prax<span>is</span></div>
+          <div className="wordmark">praxis</div>
           <div className="case-chip">admin</div>
           <div className="spacer" />
           <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>{user.email}</span>
@@ -53,11 +53,11 @@ export default function AdminPage({ user, onLogout }) {
           <thead>
             <tr>
               <th>Code</th><th>Candidate link</th><th>Status</th><th>Candidate</th>
-              <th>Started</th><th>Submitted</th><th>End</th><th>Frames</th><th>Actions</th>
+              <th>Started</th><th>Submitted</th><th>End</th><th>Frames</th><th>Audio</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {codes.length === 0 && <tr><td colSpan={9}>none yet</td></tr>}
+            {codes.length === 0 && <tr><td colSpan={10}>none yet</td></tr>}
             {codes.map((c) => (
               <tr key={c.code}>
                 <td style={{ fontFamily: "var(--mono)" }}>{c.code}</td>
@@ -68,15 +68,16 @@ export default function AdminPage({ user, onLogout }) {
                 <td style={{ fontSize: 12.5 }}>{c.submitted_at || "—"}</td>
                 <td>{c.end_reason || "—"}</td>
                 <td>{c.frames}</td>
+                <td>{c.audio || 0}</td>
                 <td style={{ whiteSpace: "nowrap" }}>
-                  {(c.status === "submitted" || c.frames > 0) && (
+                  {(c.status === "submitted" || c.frames > 0 || (c.audio || 0) > 0) && (
                     <>
                       <Link to={`/admin/case/${c.code}`}>review</Link>{" · "}
                       <a href={`/api/admin/sessions/${c.code}/zip`}>zip</a>
                     </>
                   )}
                   {c.status !== "void" && c.status !== "submitted" && (
-                    <>{(c.status === "submitted" || c.frames > 0) && " · "}
+                    <>{(c.status === "submitted" || c.frames > 0 || (c.audio || 0) > 0) && " · "}
                       <a href="#" onClick={(e) => { e.preventDefault(); voidCode(c.code); }}>void</a></>
                   )}
                 </td>
