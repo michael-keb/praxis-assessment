@@ -1,0 +1,33 @@
+# Praxis Assessment — full stack with automatic HTTPS.
+#
+#   DOMAIN=assess.example.com ADMIN_TOKEN=change-me docker compose up -d
+#
+# DNS for $DOMAIN must point at this machine; Caddy fetches certificates
+# automatically. HTTPS is mandatory for candidates — browsers refuse
+# screen sharing (getDisplayMedia) on insecure origins.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      - ADMIN_TOKEN=${ADMIN_TOKEN:?set ADMIN_TOKEN}
+      - DATA_DIR=/data
+    volumes:
+      - assessment-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMAIN:?set DOMAIN} --to app:8080
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  assessment-data:
+  caddy-data:
+  caddy-config:

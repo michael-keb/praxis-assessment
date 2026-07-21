@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Praxis — Reasoning Assessment</title>
+<style>
+  :root {
+    --ink: #16181d;
+    --ink-soft: #4b5058;
+    --ink-faint: #8a8f98;
+    --paper: #fafaf8;
+    --card: #ffffff;
+    --line: #e4e2dc;
+    --accent: #2b4bd7;
+    --accent-soft: #eef1fd;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    --ok: #15803d;
+    --mono: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 16px;
+  }
+  a { color: var(--accent); }
+
+  /* ---------- header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(250,250,248,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    max-width: 780px; margin: 0 auto; padding: 12px 20px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .wordmark {
+    font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    font-size: 14px;
+  }
+  .wordmark span { color: var(--accent); }
+  .case-chip {
+    font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 5px; padding: 2px 8px;
+  }
+  .spacer { flex: 1; }
+  #timer {
+    font-family: var(--mono); font-size: 20px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 10px; border-radius: 6px;
+  }
+  #timer.warn { color: var(--warn); }
+  #timer.critical { color: #fff; background: var(--danger); }
+  #timer.paused { color: var(--ink-faint); background: var(--line); }
+
+  /* ---------- layout ---------- */
+  main { max-width: 780px; margin: 0 auto; padding: 28px 20px 80px; }
+  .rules {
+    font-size: 13.5px; color: var(--ink-soft);
+    display: flex; flex-wrap: wrap; gap: 6px 18px;
+    padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 26px;
+  }
+  .rules b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- brief ---------- */
+  #brief h1 { font-size: 21px; margin-bottom: 14px; letter-spacing: -.01em; }
+  #brief p { margin-bottom: 12px; }
+  #brief ul { margin: 0 0 12px 22px; }
+  #brief li { margin-bottom: 7px; }
+  .figures {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin: 16px 0;
+    font-size: 15px;
+  }
+  .figures table { width: 100%; border-collapse: collapse; }
+  .figures th, .figures td {
+    text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  .figures tr:last-child td { border-bottom: none; }
+  .figures th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); font-weight: 600; }
+  .quote {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0;
+    font-style: italic; color: #23305e;
+  }
+  .ask { font-weight: 600; margin-top: 16px; }
+
+  /* ---------- zones ---------- */
+  #work { margin-top: 34px; }
+  .zone { margin-bottom: 26px; }
+  .zone-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .zone-num {
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 5px; padding: 2px 7px; letter-spacing: .04em;
+  }
+  .zone-title { font-weight: 600; font-size: 15.5px; }
+  .zone-hint { font-size: 13px; color: var(--ink-faint); margin-bottom: 8px; }
+  textarea {
+    width: 100%; min-height: 120px; resize: vertical;
+    font: inherit; font-size: 15px; line-height: 1.55;
+    color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 14px; outline: none;
+  }
+  textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43,75,215,.12); }
+  .zone-meta { text-align: right; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-top: 3px; }
+
+  /* ---------- confidence + submit ---------- */
+  fieldset { border: none; margin: 30px 0 24px; }
+  legend { font-weight: 600; font-size: 15.5px; margin-bottom: 10px; }
+  .conf-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .conf-row label {
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 16px; font-size: 14.5px; user-select: none;
+  }
+  .conf-row label:has(input:checked) {
+    border-color: var(--accent); background: var(--accent-soft); font-weight: 600;
+  }
+  #submitBtn {
+    font: inherit; font-size: 16px; font-weight: 600;
+    background: var(--ink); color: #fff;
+    border: none; border-radius: 9px; padding: 13px 30px; cursor: pointer;
+  }
+  #submitBtn:hover:not(:disabled) { background: #000; }
+  #submitBtn:disabled { opacity: .45; cursor: not-allowed; }
+  #submitBtn.confirming { background: var(--danger); }
+  #submitNote { font-size: 13px; color: var(--ink-faint); margin-top: 10px; }
+
+  /* ---------- gate overlay ---------- */
+  #gate {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--paper);
+    overflow-y: auto;
+  }
+  .gate-card { max-width: 560px; margin: 7vh auto 40px; padding: 0 20px; }
+  .gate-mark { font-weight: 700; letter-spacing: .16em; text-transform: uppercase; font-size: 15px; margin-bottom: 30px; }
+  .gate-mark span { color: var(--accent); }
+  #gate h1 { font-size: 26px; letter-spacing: -.015em; margin-bottom: 12px; }
+  #gate .lede { color: var(--ink-soft); margin-bottom: 24px; }
+  .gate-facts {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin-bottom: 24px; font-size: 14.5px;
+  }
+  .gate-facts div { display: flex; justify-content: space-between; padding: 5px 0; }
+  .gate-facts div + div { border-top: 1px solid var(--line); }
+  .gate-facts dt { color: var(--ink-faint); }
+  .gate-facts dd { font-weight: 600; font-family: var(--mono); font-size: 13.5px; }
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-weight: 600; font-size: 14.5px; margin-bottom: 6px; }
+  .field input[type=url] {
+    width: 100%; font: inherit; font-size: 15px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px;
+    background: var(--card); outline: none;
+  }
+  .field input[type=url]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43,75,215,.12); }
+  .field .err { display: none; color: var(--danger); font-size: 13px; margin-top: 5px; }
+  .field.invalid input { border-color: var(--danger); }
+  .field.invalid .err { display: block; }
+  .consent {
+    display: flex; gap: 11px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; margin: 22px 0; font-size: 14px; color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .consent input { margin-top: 3px; width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+  #beginBtn {
+    font: inherit; font-size: 16px; font-weight: 600;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 9px; padding: 14px 32px; cursor: pointer;
+    width: 100%;
+  }
+  #beginBtn:disabled { opacity: .4; cursor: not-allowed; }
+  #gateError {
+    display: none; color: var(--danger); background: #fdf0f0;
+    border: 1px solid #f2d4d4; border-radius: 8px;
+    padding: 11px 14px; font-size: 14px; margin-top: 14px;
+  }
+  .gate-fine { font-size: 12.5px; color: var(--ink-faint); margin-top: 16px; }
+
+  /* ---------- blocked overlay ---------- */
+  #blocked {
+    display: none; position: fixed; inset: 0; z-index: 90;
+    background: rgba(22,24,29,.96); color: #fff; text-align: center;
+  }
+  #blocked .inner { max-width: 480px; margin: 22vh auto 0; padding: 0 20px; }
+  #blocked .mark { font-size: 40px; margin-bottom: 18px; }
+  #blocked h1 { font-size: 23px; margin-bottom: 10px; }
+  #blocked p { color: #b9bdc7; margin-bottom: 8px; }
+  #pauseBudget { font-family: var(--mono); font-size: 14px; color: #e8b84d; margin-bottom: 22px; }
+  #reshareBtn {
+    font: inherit; font-size: 16px; font-weight: 600;
+    background: #fff; color: var(--ink);
+    border: none; border-radius: 9px; padding: 13px 30px; cursor: pointer;
+  }
+  #blockedErr { display: none; color: #f2a1a1; font-size: 14px; margin-top: 14px; }
+
+  /* ---------- done / fatal overlays ---------- */
+  #done, #fatal {
+    display: none; position: fixed; inset: 0; z-index: 110;
+    background: var(--paper); text-align: center;
+  }
+  #done .inner, #fatal .inner { max-width: 480px; margin: 18vh auto 0; padding: 0 20px; }
+  #done .mark, #fatal .mark { font-size: 40px; margin-bottom: 18px; }
+  #done h1, #fatal h1 { font-size: 24px; margin-bottom: 10px; }
+  #done p, #fatal p { color: var(--ink-soft); }
+
+  footer {
+    max-width: 780px; margin: 0 auto; padding: 0 20px 40px;
+    font-size: 12px; color: var(--ink-faint);
+  }
+  @media (max-width: 560px) {
+    #timer { font-size: 17px; }
+    .bar { padding: 10px 14px; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= GATE ======================= -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-mark">Prax<span>is</span></div>
+    <h1>Reasoning Assessment</h1>
+    <p class="lede">One problem. Fifteen minutes on a hard timer, starting the moment sharing begins. You may use any tools you like — including AI assistants. We are assessing how you reason, not what you can look up.</p>
+
+    <div class="gate-facts">
+      <div><dt>Case ID</dt><dd id="gateCaseId">——</dd></div>
+      <div><dt>Duration</dt><dd id="gateDuration">15:00</dd></div>
+      <div><dt>Format</dt><dd>4 written responses</dd></div>
+      <div><dt>Tools</dt><dd>Anything, incl. AI</dd></div>
+    </div>
+
+    <div class="field" id="upworkField">
+      <label for="upworkInput">Your Upwork profile URL <span style="color:var(--danger)">*</span></label>
+      <input type="url" id="upworkInput" placeholder="https://www.upwork.com/freelancers/~01…" autocomplete="url" spellcheck="false">
+      <div class="err">Enter a valid Upwork profile URL (must be on upwork.com).</div>
+    </div>
+
+    <label class="consent">
+      <input type="checkbox" id="consentBox">
+      <span>I consent to my <b>entire screen being recorded</b> and my interaction with this page (typing, pasting, focus changes, and timing) being <b>logged</b> for the sole purpose of evaluating this assessment. Recordings are reviewed by Praxis assessors and retained no longer than the hiring process requires.</span>
+    </label>
+
+    <button id="beginBtn" disabled>Begin — share your entire screen</button>
+    <div id="gateError"></div>
+    <p class="gate-fine">Your browser will ask you to share your screen — choose <b>Entire Screen</b>. A single tab or window is not accepted. The assessment only runs while sharing is active: if sharing stops, the page locks and the timer pauses. Total pause time is limited; when the limit is reached your work submits as-is. If your session is interrupted, reopening this link resumes it.</p>
+  </div>
+</div>
+
+<!-- ======================= BLOCKED ======================= -->
+<div id="blocked">
+  <div class="inner">
+    <div class="mark">&#9632;</div>
+    <h1 id="blockedTitle">Screen sharing stopped</h1>
+    <p>The assessment is locked and the timer is paused until you share your <b>entire screen</b> again.</p>
+    <p id="pauseBudget"></p>
+    <button id="reshareBtn" type="button">Share entire screen</button>
+    <div id="blockedErr"></div>
+  </div>
+</div>
+
+<!-- ======================= DONE / FATAL ======================= -->
+<div id="done">
+  <div class="inner">
+    <div class="mark" id="doneMark">&#10003;</div>
+    <h1 id="doneTitle">Response submitted</h1>
+    <p id="doneText">Thank you. Your response and session trace have been recorded. You may close this tab.</p>
+  </div>
+</div>
+<div id="fatal">
+  <div class="inner">
+    <div class="mark">&#9888;</div>
+    <h1 id="fatalTitle">This link is not valid</h1>
+    <p id="fatalText"></p>
+  </div>
+</div>
+
+<!-- ======================= ASSESSMENT ======================= -->
+<header>
+  <div class="bar">
+    <div class="wordmark">Prax<span>is</span></div>
+    <div class="case-chip" id="headCaseId">——</div>
+    <div class="spacer"></div>
+    <div id="timer">15:00</div>
+  </div>
+</header>
+
+<main>
+  <div class="rules">
+    <div><b>Hard stop</b> at 0:00 — whatever is written is submitted.</div>
+    <div><b>Any tools permitted</b>, including AI.</div>
+    <div><b>Sharing required</b> — timer pauses if sharing stops.</div>
+  </div>
+
+  <section id="brief">
+    <h1>Sign-off request: raising the urgency threshold</h1>
+
+    <p>You are the engineer on rotation for <b>Meridian</b>, an incident-triage system your team owns. Every alert produced by the monitoring stack is scored by a classifier and routed to one of two tiers:</p>
+    <ul>
+      <li><b>Urgent</b> — pages the on-call engineer. A human confirms or dismisses the alert, typically within <b>5 minutes</b> of it firing.</li>
+      <li><b>Routine</b> — enters a queue reviewed in the next business day's sweep, typically <b>~24 hours</b> after the alert fired.</li>
+    </ul>
+    <p>Whatever the reviewer concludes becomes the alert's outcome label. The classifier is <b>retrained monthly on these outcome labels</b>. It has been in production for six months, retrained each month since launch.</p>
+
+    <div class="figures">
+      <table>
+        <tr><th>Last month</th><th>Volume</th><th>Confirmed real</th><th>Rate</th></tr>
+        <tr><td>Routed urgent</td><td>3,200</td><td>1,280</td><td>40%</td></tr>
+        <tr><td>Routed routine</td><td>36,800</td><td>736</td><td>2%</td></tr>
+      </table>
+      <p style="margin-top:10px; font-size:13.5px; color:var(--ink-soft);">Since launch, urgent-tier precision has climbed from 31% to 40%. The routine tier's rate has held steady at ~2% throughout.</p>
+    </div>
+
+    <p>On-call load is a real problem — pages are up, and the team is tired. Leadership proposes <b>raising the urgency threshold</b> so roughly 40% fewer alerts route urgent. Their case:</p>
+
+    <div class="quote">"The routine tier's miss rate is only 2%, and it's been flat for six months. Precision on urgent keeps improving. Even if some borderline alerts move down a tier, the data says they'll be fine — and the next retrain will pick up any slack."</div>
+
+    <p class="ask">The change ships before the next monthly retrain unless you object. You are asked to sign off. Do you? Work through it in the four zones below.</p>
+  </section>
+
+  <section id="work">
+    <div class="zone">
+      <div class="zone-head"><span class="zone-num">ZONE 1</span><span class="zone-title">Read of the numbers</span></div>
+      <div class="zone-hint">What do these figures actually say? Show any arithmetic that matters.</div>
+      <textarea id="z1" data-zone="1" placeholder="Write here…"></textarea>
+      <div class="zone-meta" id="m1">0 chars</div>
+    </div>
+
+    <div class="zone">
+      <div class="zone-head"><span class="zone-num">ZONE 2</span><span class="zone-title">What the evidence can and can't support</span></div>
+      <div class="zone-hint">Where do these numbers come from, and what would you want to know before trusting them?</div>
+      <textarea id="z2" data-zone="2" placeholder="Write here…"></textarea>
+      <div class="zone-meta" id="m2">0 chars</div>
+    </div>
+
+    <div class="zone">
+      <div class="zone-head"><span class="zone-num">ZONE 3</span><span class="zone-title">Your call</span></div>
+      <div class="zone-hint">Sign off or not — commit to a position and justify it.</div>
+      <textarea id="z3" data-zone="3" placeholder="Write here…"></textarea>
+      <div class="zone-meta" id="m3">0 chars</div>
+    </div>
+
+    <div class="zone">
+      <div class="zone-head"><span class="zone-num">ZONE 4</span><span class="zone-title">What you'd do next</span></div>
+      <div class="zone-hint">Whatever your call — what would you change about this system, and how would you find out if you were wrong?</div>
+      <textarea id="z4" data-zone="4" placeholder="Write here…"></textarea>
+      <div class="zone-meta" id="m4">0 chars</div>
+    </div>
+
+    <fieldset>
+      <legend>How confident are you in your call?</legend>
+      <div class="conf-row">
+        <label><input type="radio" name="confidence" value="low"> Low</label>
+        <label><input type="radio" name="confidence" value="moderate"> Moderate</label>
+        <label><input type="radio" name="confidence" value="high"> High</label>
+      </div>
+    </fieldset>
+
+    <button id="submitBtn" disabled>Submit response</button>
+    <p id="submitNote">Select a confidence level to submit. At 0:00 your response submits automatically.</p>
+  </section>
+</main>
+
+<footer>Praxis · Reasoning Assessment · <span id="footCaseId">——</span></footer>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Praxis Reasoning Assessment — single-file client.
+   Serve via server.py; candidates open /assess?case=XXXXXX with
+   a server-issued code. The page refuses to run without one.
+   The session runs ONLY while the entire screen is shared:
+   sharing stops -> page locks, timer pauses. Total pause time
+   is capped at PAUSE_LIMIT; hitting the cap submits as-is.
+   ============================================================ */
+var DURATION = 15 * 60;            // seconds of assessment time
+var ENDPOINT = "/api/assessment";  // collector base
+var PAUSE_LIMIT = 5 * 60;          // max cumulative paused seconds
+
+/* ---------------- case code (server-issued, required) ---------------- */
+var caseId = (new URLSearchParams(location.search).get("case") || "").trim().toUpperCase();
+var STORE_KEY = "praxis_assess_" + caseId;
+
+document.getElementById("gateCaseId").textContent = caseId || "——";
+document.getElementById("headCaseId").textContent = caseId || "——";
+document.getElementById("footCaseId").textContent = caseId || "——";
+document.getElementById("gateDuration").textContent = fmt(DURATION);
+
+/* ---------------- state ---------------- */
+var state = {
+  startedAt: null,        // epoch ms of unlock; never resets
+  pausedTotal: 0,         // accumulated paused ms (finished pauses only)
+  pauseStartedAt: null,   // epoch ms if currently paused
+  lastSavedAt: null,      // heartbeat for folding away-time into pause
+  upwork: "",
+  zones: { "1": "", "2": "", "3": "", "4": "" },
+  confidence: null,
+  log: [],
+  done: false,
+  doneReason: null
+};
+var running = false;      // session unlocked and not finalized
+var blocked = false;      // capture inactive -> overlay up, timer paused
+var currentZone = null;
+var tabAway = false;
+var lastActivity = Date.now();
+var idleSince = null;
+var briefWasHidden = false;
+var lastReground = 0;
+var anyZoneTouched = false;
+var confirming = false;
+var finalized = false;
+var captureStream = null;
+var frameQueue = [];
+
+/* ---------------- helpers ---------------- */
+function now() { return Date.now(); }
+function effectiveMs() {
+  if (!state.startedAt) return 0;
+  var mark = state.pauseStartedAt || now();
+  return Math.max(0, mark - state.startedAt - state.pausedTotal);
+}
+function tSec() { return Math.floor(effectiveMs() / 1000); }
+function remaining() { return DURATION - Math.floor(effectiveMs() / 1000); }
+function pausedMsTotal() {
+  return state.pausedTotal + (state.pauseStartedAt ? now() - state.pauseStartedAt : 0);
+}
+function fmt(s) {
+  s = Math.max(0, s);
+  return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2);
+}
+function logEvent(ev) {
+  if (ev.t === undefined) ev.t = tSec();
+  state.log.push(ev);
+  save();
+}
+function save() {
+  state.lastSavedAt = now();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "null"); }
+  catch (e) { return null; }
+}
+function fatal(title, text) {
+  document.getElementById("fatalTitle").textContent = title;
+  document.getElementById("fatalText").textContent = text;
+  document.getElementById("fatal").style.display = "block";
+}
+
+/* ---------------- gate ---------------- */
+var upworkInput = document.getElementById("upworkInput");
+var upworkField = document.getElementById("upworkField");
+var consentBox = document.getElementById("consentBox");
+var beginBtn = document.getElementById("beginBtn");
+var gateError = document.getElementById("gateError");
+
+function upworkValid(v) {
+  v = (v || "").trim();
+  return /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(v);
+}
+function refreshGate() {
+  beginBtn.disabled = !(upworkValid(upworkInput.value) && consentBox.checked);
+  if (upworkInput.value.trim() && !upworkValid(upworkInput.value)) upworkField.classList.add("invalid");
+  else upworkField.classList.remove("invalid");
+}
+upworkInput.addEventListener("input", refreshGate);
+consentBox.addEventListener("change", refreshGate);
+
+function showGateError(msg) {
+  gateError.textContent = msg;
+  gateError.style.display = "block";
+}
+
+beginBtn.addEventListener("click", function () {
+  if (beginBtn.disabled) return;
+  gateError.style.display = "none";
+  beginBtn.disabled = true;
+  beginBtn.textContent = "Waiting for screen share…";
+  startCapture().then(function (result) {
+    if (!result.ok) {
+      beginBtn.disabled = false;
+      beginBtn.textContent = "Begin — share your entire screen";
+      showGateError(result.message);
+      refreshGate();
+      return;
+    }
+    state.upwork = upworkInput.value.trim();
+    state.startedAt = now();
+    logEvent({ t: 0, type: "unlock" });
+    registerStart();
+    unlock(false);
+  });
+});
+
+function registerStart() {
+  fetch(ENDPOINT + "/start", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ caseId: caseId })
+  }).then(function (res) {
+    if (res.status === 403) {
+      res.json().then(function (body) {
+        stopSharing();
+        fatal("This code cannot be used", (body && body.error) || "The code was rejected by the server.");
+      }).catch(function () {});
+    }
+  }).catch(function () { /* offline tolerance; server re-validates on submit */ });
+}
+
+/* ---------------- unlock / resume ---------------- */
+function unlock(isResume) {
+  document.getElementById("gate").style.display = "none";
+  running = true;
+  lastActivity = now();
+  if (isResume) logEvent({ type: "resume" });
+  restoreZones();
+  tick();
+  setInterval(tick, 500);
+  setInterval(idleCheck, 1000);
+  setInterval(save, 4000);
+  save();
+}
+function restoreZones() {
+  for (var z = 1; z <= 4; z++) {
+    var ta = document.getElementById("z" + z);
+    ta.value = state.zones[String(z)] || "";
+    updateMeta(z);
+  }
+  if (state.confidence) {
+    var r = document.querySelector('input[name=confidence][value="' + state.confidence + '"]');
+    if (r) r.checked = true;
+    refreshSubmit();
+  }
+}
+
+/* ---------------- timer ---------------- */
+var timerEl = document.getElementById("timer");
+function tick() {
+  if (finalized) return;
+  var r = remaining();
+  if (blocked) {
+    timerEl.textContent = "PAUSED";
+    timerEl.className = "paused";
+    var budgetLeft = PAUSE_LIMIT - Math.floor(pausedMsTotal() / 1000);
+    document.getElementById("pauseBudget").textContent =
+      "Pause budget remaining: " + fmt(budgetLeft);
+    if (budgetLeft <= 0) { finalize("pause_limit"); }
+    return;
+  }
+  timerEl.textContent = fmt(r);
+  timerEl.className = r <= 60 ? "critical" : (r <= 300 ? "warn" : "");
+  if (r <= 0) finalize("expired");
+}
+
+/* ---------------- blocking: no share, no assessment ---------------- */
+function blockSession(title) {
+  if (blocked || !running || finalized) return;
+  blocked = true;
+  state.pauseStartedAt = now();
+  logEvent({ type: "capture_blocked" });
+  document.getElementById("blockedTitle").textContent = title || "Screen sharing stopped";
+  document.getElementById("blockedErr").style.display = "none";
+  document.getElementById("blocked").style.display = "block";
+  tick();
+}
+function unblockSession() {
+  if (!blocked) return;
+  blocked = false;
+  if (state.pauseStartedAt) {
+    state.pausedTotal += now() - state.pauseStartedAt;
+    state.pauseStartedAt = null;
+  }
+  logEvent({ type: "capture_restored", pausedTotal: Math.round(state.pausedTotal / 1000) });
+  document.getElementById("blocked").style.display = "none";
+  lastActivity = now();
+  tick();
+}
+document.getElementById("reshareBtn").addEventListener("click", function () {
+  var err = document.getElementById("blockedErr");
+  err.style.display = "none";
+  startCapture().then(function (result) {
+    if (result.ok) { unblockSession(); return; }
+    logEvent({ type: "capture_declined", reason: result.reason });
+    err.textContent = result.message;
+    err.style.display = "block";
+  });
+});
+
+/* ---------------- screen capture (entire screen required) ---------------- */
+var captureVideo = document.createElement("video");
+captureVideo.muted = true;
+var captureCanvas = document.createElement("canvas");
+
+function startCapture() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    return Promise.resolve({ ok: false, reason: "unsupported",
+      message: "This browser does not support screen sharing. Please use a current version of Chrome, Edge, or Firefox." });
+  }
+  return navigator.mediaDevices.getDisplayMedia({
+    video: { frameRate: 1, displaySurface: "monitor" },
+    audio: false,
+    selfBrowserSurface: "exclude",   // hide "this tab" from the picker
+    surfaceSwitching: "exclude"      // no "share a tab instead" button mid-session
+  }).then(function (stream) {
+    // The picker still offers tab/window; enforce entire-screen after the fact.
+    var track = stream.getVideoTracks()[0];
+    var surface = track.getSettings ? track.getSettings().displaySurface : null;
+    if (surface && surface !== "monitor") {
+      stream.getTracks().forEach(function (tr) { tr.stop(); });
+      var what = surface === "browser" ? "a browser tab" : "a window";
+      return { ok: false, reason: "wrong_surface_" + surface,
+               message: "You shared " + what + " — this assessment requires your entire screen. Try again and choose “Entire Screen”." };
+    }
+    captureStream = stream;
+    captureVideo.srcObject = stream;
+    captureVideo.play().catch(function () {});
+    track.addEventListener("ended", function () {
+      captureStream = null;
+      if (running && !finalized) {
+        logEvent({ type: "capture_declined", reason: "stopped" });
+        blockSession("Screen sharing stopped");
+      }
+    });
+    return { ok: true };
+  }).catch(function () {
+    return { ok: false, reason: "denied",
+             message: "Screen sharing was declined. The assessment cannot run without it." };
+  });
+}
+function stopSharing() {
+  if (captureStream) {
+    captureStream.getTracks().forEach(function (tr) { tr.stop(); });
+    captureStream = null;
+  }
+}
+
+setInterval(function grabFrame() {
+  if (!running || blocked || finalized || !captureStream || !captureVideo.videoWidth) return;
+  var scale = Math.min(1, 1280 / captureVideo.videoWidth);
+  captureCanvas.width = Math.round(captureVideo.videoWidth * scale);
+  captureCanvas.height = Math.round(captureVideo.videoHeight * scale);
+  captureCanvas.getContext("2d").drawImage(captureVideo, 0, 0, captureCanvas.width, captureCanvas.height);
+  var t = tSec();
+  captureCanvas.toBlob(function (blob) {
+    if (blob) frameQueue.push({ t: t, blob: blob });
+  }, "image/jpeg", 0.55);
+}, 1000);
+
+setInterval(function flushFrames() {
+  if (!frameQueue.length) return;
+  var batch = frameQueue.splice(0, frameQueue.length);
+  var fd = new FormData();
+  fd.append("caseId", caseId);
+  batch.forEach(function (f) { fd.append("frames", f.blob, "f_" + f.t + ".jpg"); });
+  fetch(ENDPOINT + "/frames", { method: "POST", body: fd }).catch(function () {});
+}, 15000);
+
+/* ---------------- zones: focus / paste / cut / counters ---------------- */
+[1, 2, 3, 4].forEach(function (z) {
+  var ta = document.getElementById("z" + z);
+  var zs = String(z);
+  ta.addEventListener("focus", function () {
+    currentZone = zs;
+    anyZoneTouched = true;
+    logEvent({ type: "focus", zone: zs });
+  });
+  ta.addEventListener("blur", function () {
+    if (currentZone === zs) currentZone = null;
+    logEvent({ type: "blur", zone: zs });
+  });
+  ta.addEventListener("paste", function (e) {
+    var text = (e.clipboardData && e.clipboardData.getData("text")) || "";
+    logEvent({ type: "paste", zone: zs, chars: text.length });
+  });
+  ta.addEventListener("cut", function () {
+    logEvent({ type: "cut", zone: zs, chars: (ta.selectionEnd || 0) - (ta.selectionStart || 0) });
+  });
+  ta.addEventListener("input", function () {
+    state.zones[zs] = ta.value;
+    updateMeta(z);
+  });
+});
+function updateMeta(z) {
+  document.getElementById("m" + z).textContent =
+    document.getElementById("z" + z).value.length + " chars";
+}
+
+/* ---------------- confidence ---------------- */
+document.querySelectorAll('input[name=confidence]').forEach(function (r) {
+  r.addEventListener("change", function () {
+    state.confidence = r.value;
+    logEvent({ type: "confidence", value: r.value });
+    refreshSubmit();
+  });
+});
+function refreshSubmit() {
+  document.getElementById("submitBtn").disabled = !state.confidence;
+  document.getElementById("submitNote").textContent = state.confidence
+    ? "At 0:00 your response submits automatically."
+    : "Select a confidence level to submit. At 0:00 your response submits automatically.";
+}
+
+/* ---------------- tab switching ---------------- */
+function goAway() {
+  if (!running || tabAway) return;
+  tabAway = true;
+  idleSince = null;
+  logEvent({ type: "blur_tab" });
+}
+function comeBack() {
+  if (!running || !tabAway) return;
+  tabAway = false;
+  lastActivity = now();
+  logEvent({ type: "return_tab" });
+}
+document.addEventListener("visibilitychange", function () {
+  if (document.hidden) goAway(); else comeBack();
+});
+window.addEventListener("blur", goAway);
+window.addEventListener("focus", comeBack);
+
+/* ---------------- idle detection (gaps >=8s, visible + unblocked) ---------------- */
+function activity() {
+  if (!running) return;
+  if (idleSince) {
+    logEvent({
+      t: Math.max(0, Math.floor((idleSince - state.startedAt - state.pausedTotal) / 1000)),
+      type: "idle",
+      dur: Math.round((now() - idleSince) / 1000),
+      zone: currentZone
+    });
+    idleSince = null;
+  }
+  lastActivity = now();
+}
+["keydown", "mousedown", "input", "scroll", "touchstart"].forEach(function (evt) {
+  window.addEventListener(evt, activity, { passive: true, capture: true });
+});
+var mmThrottle = 0;
+window.addEventListener("mousemove", function () {
+  var n = now();
+  if (n - mmThrottle > 400) { mmThrottle = n; activity(); }
+}, { passive: true });
+function idleCheck() {
+  if (!running || tabAway || blocked || idleSince) return;
+  if (now() - lastActivity >= 8000) idleSince = lastActivity;
+}
+
+/* ---------------- reground (scrolled back to brief) ---------------- */
+if ("IntersectionObserver" in window) {
+  new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!running) return;
+      if (!en.isIntersecting) { briefWasHidden = true; return; }
+      if (briefWasHidden && anyZoneTouched && now() - lastReground > 5000) {
+        lastReground = now();
+        logEvent({ type: "reground" });
+      }
+    });
+  }, { threshold: 0.15 }).observe(document.getElementById("brief"));
+}
+
+/* ---------------- submit / expiry / pause-limit ---------------- */
+var submitBtn = document.getElementById("submitBtn");
+submitBtn.addEventListener("click", function () {
+  if (submitBtn.disabled) return;
+  if (!confirming) {
+    confirming = true;
+    submitBtn.classList.add("confirming");
+    submitBtn.textContent = "Click again to confirm — " + fmt(remaining()) + " remains";
+    setTimeout(function () {
+      confirming = false;
+      submitBtn.classList.remove("confirming");
+      submitBtn.textContent = "Submit response";
+    }, 4000);
+    return;
+  }
+  finalize("submitted");
+});
+
+function finalize(reason) {
+  if (finalized) return;
+  finalized = true;
+  running = false;
+  if (state.pauseStartedAt) {
+    state.pausedTotal += now() - state.pauseStartedAt;
+    state.pauseStartedAt = null;
+  }
+  stopSharing();
+  document.getElementById("blocked").style.display = "none";
+  document.querySelectorAll("textarea, input, button").forEach(function (el) { el.disabled = true; });
+
+  state.log.push({ t: Math.min(tSec(), DURATION), type: "end", reason: reason });
+  state.done = true;
+  state.doneReason = reason;
+  save();
+
+  var payload = JSON.stringify({
+    caseId: caseId,
+    startedAt: state.startedAt,
+    upworkProfile: state.upwork,
+    zones: state.zones,
+    confidence: state.confidence,
+    pausedTotal: state.pausedTotal,
+    log: state.log
+  });
+
+  fetch(ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true
+  }).catch(function () {
+    try { navigator.sendBeacon(ENDPOINT, new Blob([payload], { type: "application/json" })); } catch (e) {}
+  });
+
+  showDone(reason);
+}
+function showDone(reason) {
+  if (reason === "expired") {
+    document.getElementById("doneMark").innerHTML = "&#9201;";
+    document.getElementById("doneTitle").textContent = "Time expired";
+    document.getElementById("doneText").textContent =
+      "The timer reached zero. Whatever you had written was submitted automatically, along with your session trace. You may close this tab.";
+  } else if (reason === "pause_limit") {
+    document.getElementById("doneMark").innerHTML = "&#9201;";
+    document.getElementById("doneTitle").textContent = "Pause limit reached";
+    document.getElementById("doneText").textContent =
+      "Screen sharing was paused for longer than the allowed limit, so your work was submitted as-is along with your session trace. You may close this tab.";
+  }
+  document.getElementById("done").style.display = "block";
+}
+
+/* ---------------- guard accidental close while running ---------------- */
+window.addEventListener("beforeunload", function (e) {
+  if (running && !finalized) { e.preventDefault(); e.returnValue = ""; }
+});
+
+/* ---------------- boot: validate code, then resume / done / gate ----------------
+   Runs last so every declaration above is initialized. */
+(function boot() {
+  if (!caseId || !/^[A-Z0-9]{4,12}$/.test(caseId)) {
+    fatal("This link is not valid",
+      "The link is missing its access code. Please use the exact link you were sent.");
+    return;
+  }
+
+  function proceedLocally() {
+    var saved = load();
+    if (!saved || !saved.startedAt) return;           // fresh -> gate stays up
+    state = saved;
+    if (state.done) { showDone(state.doneReason || "submitted"); return; }
+    // Fold time-while-closed into pause (closed tab == not sharing).
+    var awaySince = state.pauseStartedAt || state.lastSavedAt || now();
+    state.pausedTotal += Math.max(0, now() - awaySince);
+    state.pauseStartedAt = null;
+    if (Math.floor(state.pausedTotal / 1000) >= PAUSE_LIMIT) {
+      running = true;
+      restoreZones();
+      document.getElementById("gate").style.display = "none";
+      finalize("pause_limit");
+      return;
+    }
+    if (remaining() <= 0) {
+      running = true;
+      restoreZones();
+      document.getElementById("gate").style.display = "none";
+      finalize("expired");
+      return;
+    }
+    unlock(true);
+    blockSession("Resume: share your entire screen");  // capture needs a fresh gesture
+  }
+
+  fetch(ENDPOINT + "/session?case=" + encodeURIComponent(caseId))
+    .then(function (res) { return res.json(); })
+    .then(function (info) {
+      if (info.status === "unknown") {
+        fatal("This link is not valid",
+          "The access code was not recognised. Please use the exact link you were sent, or contact the person who invited you.");
+        return;
+      }
+      if (info.status === "void") {
+        fatal("This link has been disabled",
+          "This assessment code is no longer active. Contact the person who invited you for a new link.");
+        return;
+      }
+      if (info.status === "submitted") {
+        var saved = load();
+        if (saved && saved.done) { state = saved; }
+        showDone((saved && saved.doneReason) || "submitted");
+        return;
+      }
+      if (info.status === "active" && !load()) {
+        fatal("This assessment is already in progress",
+          "This code was started on another device or browser. An assessment can only run where it was started. Contact the person who invited you if this is unexpected.");
+        return;
+      }
+      proceedLocally();
+    })
+    .catch(function () {
+      // Server unreachable: fall back to local state; POSTs re-validate later.
+      proceedLocally();
+    });
+})();
+</script>
+</body>
+</html>

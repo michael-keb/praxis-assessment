@@ -1,0 +1,34 @@
+# Render Blueprint — Praxis Assessment
+#
+# Deploy: push this repo to GitHub, then in Render:
+#   New → Blueprint → pick the repo → apply.
+# Set ADMIN_EMAIL / ADMIN_PASSWORD when prompted (marked sync:false).
+#
+# The disk is REQUIRED: Render's filesystem is wiped on every deploy and
+# restart, so the SQLite database and captured frames must live on it.
+# A service with a disk cannot run more than one instance — correct here,
+# since sessions are served from local disk.
+
+services:
+  - type: web
+    name: praxis-assessment
+    runtime: docker
+    plan: starter            # cheapest plan that supports a persistent disk
+    region: singapore        # closest Render region to AU; also: oregon, frankfurt
+    healthCheckPath: /healthz
+    autoDeployTrigger: commit
+    disk:
+      name: assessment-data
+      mountPath: /data       # matches DATA_DIR
+      sizeGB: 10             # ~60 sessions of 1fps frames; raise as needed
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /data
+      - key: JWT_SECRET      # generated once by Render, then kept stable
+        generateValue: true
+      - key: ADMIN_EMAIL     # set in the Render dashboard
+        sync: false
+      - key: ADMIN_PASSWORD  # set in the Render dashboard
+        sync: false
