@@ -43,12 +43,11 @@ function Landing({ user, ready }) {
   return (
     <div className="screen">
       <div className="card-col narrow">
-        <div className="gate-mark">Prax<span>is</span></div>
-        <h1>Praxis Assessment</h1>
+        <div className="gate-mark">praxis</div>
+        <h1>Assessment</h1>
         <p className="lede">
           Enter the unique assessment code you were sent. You'll fill in your
-          details (name, email, Upwork profile) on the next screen — no account
-          needed.
+          details on the next screen — no account needed.
         </p>
         <form onSubmit={go}>
           <div className="field">
