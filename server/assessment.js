@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
-import { db, getCode, nowIso, caseDir } from "./db.js";
+import { db, getCode, nowIso, caseDir, getAssessment } from "./db.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
@@ -19,11 +19,15 @@ export const assessmentRouter = Router();
 assessmentRouter.get("/session", (req, res) => {
   const row = getCode(String(req.query.case || "").trim().toUpperCase());
   if (!row) return res.json({ status: "unknown" });
+  const assessment = row.assessment_id ? getAssessment(row.assessment_id) : null;
   res.json({
     status: row.status,
     startedAt: row.started_at,
     endReason: row.end_reason,
-    candidateName: row.candidate_name || null
+    candidateName: row.candidate_name || null,
+    assessment: assessment
+      ? { title: assessment.title, brief: assessment.brief, durationSeconds: assessment.duration_minutes * 60 }
+      : null
   });
 });
 

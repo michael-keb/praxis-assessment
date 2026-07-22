@@ -15,7 +15,12 @@ export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   adminCodes: () => request("/api/admin/codes"),
-  adminIssue: (count) => request("/api/admin/codes", { method: "POST", body: { count } }),
+  adminIssue: (count, assessmentId) =>
+    request("/api/admin/codes", { method: "POST", body: { count, assessmentId } }),
   adminVoid: (code) => request(`/api/admin/codes/${code}/void`, { method: "POST" }),
-  adminSession: (code) => request(`/api/admin/sessions/${code}`)
+  adminSession: (code) => request(`/api/admin/sessions/${code}`),
+  adminAssessments: () => request("/api/admin/assessments"),
+  adminCreateAssessment: (body) => request("/api/admin/assessments", { method: "POST", body }),
+  adminUpdateAssessment: (id, body) => request(`/api/admin/assessments/${id}`, { method: "PUT", body }),
+  adminDeleteAssessment: (id) => request(`/api/admin/assessments/${id}`, { method: "DELETE" })
 };

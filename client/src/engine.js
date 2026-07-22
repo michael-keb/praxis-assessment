@@ -6,12 +6,13 @@
  * React renders from snapshots via subscribe().
  */
 
-export const DURATION = 15 * 60;          // seconds of assessment time
+export const DEFAULT_DURATION = 15 * 60;  // seconds; used until the code's assessment duration is known
 export const PAUSE_LIMIT = 5 * 60;        // max cumulative paused seconds
 const ENDPOINT = "/api/assessment";
 
 export function createEngine(caseId) {
   const STORE_KEY = "praxis_assess_" + caseId;
+  let duration = DEFAULT_DURATION;        // overridden from the assessment's duration once /session resolves
 
   let state = {
     startedAt: null,
@@ -44,6 +45,7 @@ export function createEngine(caseId) {
   let audioChunkSeq = 0;
   let micLive = false;
   let frameQueue = [];
+  let assessmentMeta = null;   // {title, brief} from the code's assigned assessment, if any
   const timers = [];
   const listeners = new Set();
 
@@ -76,7 +78,7 @@ export function createEngine(caseId) {
     return Math.max(0, mark - state.startedAt - state.pausedTotal);
   }
   const tSec = () => Math.floor(effectiveMs() / 1000);
-  const remaining = () => DURATION - Math.floor(effectiveMs() / 1000);
+  const remaining = () => duration - Math.floor(effectiveMs() / 1000);
   const pausedMsTotal = () =>
     state.pausedTotal + (state.pauseStartedAt ? now() - state.pauseStartedAt : 0);
 
@@ -108,7 +110,9 @@ export function createEngine(caseId) {
       zones: { ...state.zones },
       confidence: state.confidence,
       doneReason: state.doneReason,
-      micLive
+      micLive,
+      assessment: assessmentMeta,
+      duration
     };
   }
   let cachedSnapshot = buildSnapshot();
@@ -362,7 +366,7 @@ export function createEngine(caseId) {
     stopMic();
     stopSharing();
     flushFrames();
-    state.log.push({ t: Math.min(tSec(), DURATION), type: "end", reason });
+    state.log.push({ t: Math.min(tSec(), duration), type: "end", reason });
     state.done = true;
     state.doneReason = reason;
     save();
@@ -520,6 +524,8 @@ export function createEngine(caseId) {
     fetch(ENDPOINT + "/session?case=" + encodeURIComponent(caseId))
       .then((res) => res.json())
       .then((info) => {
+        assessmentMeta = info.assessment || null;
+        duration = assessmentMeta?.durationSeconds || DEFAULT_DURATION;
         if (info.status === "unknown") {
           fatal("This link is not valid",
             "The access code was not recognised. Please use the exact link you were sent, or contact the person who invited you.");

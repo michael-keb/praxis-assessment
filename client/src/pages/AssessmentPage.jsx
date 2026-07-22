@@ -1,8 +1,22 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
-import { createEngine, DURATION } from "../engine.js";
+import { createEngine } from "../engine.js";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
+
+const DEFAULT_TITLE = "Assessment";
+const DEFAULT_BRIEF =
+  "Create something from nothing. Use this time however you need — " +
+  "build, research, draft, prototype. Speak out loud as you go so we can follow how you think.";
+
+function Brief({ text, className }) {
+  const paras = (text || DEFAULT_BRIEF).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  return paras.map((p, i) => (
+    <p className={className} key={i}>
+      {p.split("\n").flatMap((line, j) => (j === 0 ? [line] : [<br key={j} />, line]))}
+    </p>
+  ));
+}
 
 export default function AssessmentPage() {
   const [params] = useSearchParams();
@@ -74,15 +88,11 @@ function Gate({ engine, snap }) {
     <div className="screen">
       <div className="card-col">
         <div className="gate-mark">praxis</div>
-        <h1>Assessment</h1>
-        <p className="lede">
-          Fifteen minutes on a hard timer. Create something from nothing — any tools
-          you like, including AI. Talk through what you are doing so we can hear how
-          you think. Screen and microphone stay on for the whole session.
-        </p>
+        <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
+        <Brief className="lede" text={snap.assessment?.brief} />
         <div className="gate-facts">
           <div><dt>Case ID</dt><dd>{snap.caseId}</dd></div>
-          <div><dt>Duration</dt><dd>{fmt(DURATION)}</dd></div>
+          <div><dt>Duration</dt><dd>{fmt(snap.duration)}</dd></div>
           <div><dt>Format</dt><dd>Open create + voice</dd></div>
           <div><dt>Tools</dt><dd>Anything, incl. AI</dd></div>
         </div>
@@ -174,12 +184,8 @@ function Task({ engine, snap }) {
         </div>
 
         <section className="brief open-brief">
-          <h1>Assessment</h1>
-          <p className="open-prompt">
-            Create something from nothing. Use this time however you need —
-            build, research, draft, prototype. Speak out loud as you go so we
-            can follow how you think.
-          </p>
+          <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
+          <Brief className="open-prompt" text={snap.assessment?.brief} />
         </section>
 
         <section className="work open-work">

@@ -33,26 +33,39 @@ db.exec(`
     submitted_at TEXT,
     end_reason   TEXT
   );
+  CREATE TABLE IF NOT EXISTS assessments (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    brief           TEXT NOT NULL DEFAULT '',
+    duration_minutes INTEGER NOT NULL DEFAULT 15,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+  );
 `);
 
 /* Candidate details live on the code itself — no candidate accounts. */
 for (const col of ["candidate_name", "candidate_email", "candidate_upwork"]) {
   try { db.exec(`ALTER TABLE codes ADD COLUMN ${col} TEXT`); } catch { /* exists */ }
 }
+/* Codes are issued under an assessment; nullable so pre-existing codes keep working. */
+try { db.exec(`ALTER TABLE codes ADD COLUMN assessment_id INTEGER REFERENCES assessments(id)`); } catch { /* exists */ }
+try { db.exec(`ALTER TABLE assessments ADD COLUMN duration_minutes INTEGER NOT NULL DEFAULT 15`); } catch { /* exists */ }
+
+export const DEFAULT_DURATION_MINUTES = 15;
 
 export const nowIso = () => new Date().toISOString().slice(0, 19) + "Z";
 
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
 export const CODE_RE = /^[A-Z0-9]{6}$/;
 
-export function newCodes(count) {
-  const insert = db.prepare("INSERT INTO codes (code, created_at) VALUES (?, ?)");
+export function newCodes(count, assessmentId = null) {
+  const insert = db.prepare("INSERT INTO codes (code, created_at, assessment_id) VALUES (?, ?, ?)");
   const issued = [];
   while (issued.length < count) {
     let code = "";
     for (let i = 0; i < 6; i++) code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
     try {
-      insert.run(code, nowIso());
+      insert.run(code, nowIso(), assessmentId);
       issued.push(code);
     } catch { /* collision — retry */ }
   }
@@ -62,6 +75,36 @@ export function newCodes(count) {
 export function getCode(code) {
   if (!code || !CODE_RE.test(code)) return null;
   return db.prepare("SELECT * FROM codes WHERE code = ?").get(code) || null;
+}
+
+/* ---------------- assessments (document-style briefs, issued to codes) ---------------- */
+export function listAssessments() {
+  return db.prepare(`
+    SELECT a.*, (SELECT COUNT(*) FROM codes c WHERE c.assessment_id = a.id) AS code_count
+    FROM assessments a ORDER BY a.updated_at DESC
+  `).all();
+}
+
+export function getAssessment(id) {
+  return db.prepare("SELECT * FROM assessments WHERE id = ?").get(id) || null;
+}
+
+export function createAssessment({ title, brief, durationMinutes }) {
+  const ts = nowIso();
+  const info = db.prepare(
+    "INSERT INTO assessments (title, brief, duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+  ).run(title, brief || "", durationMinutes || DEFAULT_DURATION_MINUTES, ts, ts);
+  return getAssessment(info.lastInsertRowid);
+}
+
+export function updateAssessment(id, { title, brief, durationMinutes }) {
+  db.prepare("UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?, updated_at = ? WHERE id = ?")
+    .run(title, brief || "", durationMinutes || DEFAULT_DURATION_MINUTES, nowIso(), id);
+  return getAssessment(id);
+}
+
+export function deleteAssessment(id) {
+  db.prepare("DELETE FROM assessments WHERE id = ?").run(id);
 }
 
 export function caseDir(code, ...sub) {
