@@ -62,13 +62,13 @@ function Gate({ engine, snap }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", email: "", upwork: "" });
+  const [form, setForm] = useState({ name: "", linkedin: "", upwork: "" });
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   const detailsComplete =
     form.name.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) &&
+    /^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(form.linkedin.trim()) &&
     /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(form.upwork.trim());
 
   async function begin() {
@@ -76,7 +76,7 @@ function Gate({ engine, snap }) {
     setError("");
     const result = await engine.begin({
       name: form.name.trim(),
-      email: form.email.trim(),
+      linkedin: form.linkedin.trim(),
       upwork: form.upwork.trim()
     });
     if (!result.ok) {
@@ -151,8 +151,9 @@ function Gate({ engine, snap }) {
           <input id="g-name" value={form.name} onChange={set("name")} autoComplete="name" />
         </div>
         <div className="field">
-          <label htmlFor="g-email">Email</label>
-          <input id="g-email" type="email" value={form.email} onChange={set("email")} autoComplete="email" />
+          <label htmlFor="g-linkedin">LinkedIn profile URL</label>
+          <input id="g-linkedin" type="url" value={form.linkedin} onChange={set("linkedin")}
+            placeholder="https://www.linkedin.com/in/…" spellCheck="false" />
         </div>
         <div className="field">
           <label htmlFor="g-upwork">Upwork profile URL</label>

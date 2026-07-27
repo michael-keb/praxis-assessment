@@ -24,7 +24,10 @@ export default function CaseReviewPage() {
       <h1 style={{ fontSize: 22, margin: "10px 0" }}>Case {code}</h1>
       {candidate && (
         <p>
-          <b>Candidate:</b> {candidate.name} &lt;{candidate.email}&gt;<br />
+          <b>Candidate:</b> {candidate.name}{candidate.email ? <> &lt;{candidate.email}&gt;</> : null}<br />
+          {candidate.linkedin && (
+            <><b>LinkedIn:</b> <a href={candidate.linkedin} target="_blank" rel="noreferrer">{candidate.linkedin}</a><br /></>
+          )}
           <b>Upwork:</b> <a href={candidate.upwork} target="_blank" rel="noreferrer">{candidate.upwork}</a>
         </p>
       )}

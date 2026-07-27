@@ -44,7 +44,7 @@ db.exec(`
 `);
 
 /* Candidate details live on the code itself — no candidate accounts. */
-for (const col of ["candidate_name", "candidate_email", "candidate_upwork"]) {
+for (const col of ["candidate_name", "candidate_email", "candidate_upwork", "candidate_linkedin"]) {
   try { db.exec(`ALTER TABLE codes ADD COLUMN ${col} TEXT`); } catch { /* exists */ }
 }
 /* Codes are issued under an assessment; nullable so pre-existing codes keep working. */

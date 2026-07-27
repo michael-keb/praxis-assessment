@@ -15,7 +15,7 @@ integrationsRouter.get("/ping", (req, res) => {
 });
 
 /* Issue one code, optionally under a specific assessment. The candidate's
-   name/email/Upwork URL are NOT collected here — the platform captures
+   name/LinkedIn/Upwork URL are NOT collected here — the platform captures
    those itself when the candidate opens the link and starts the session
    (see assessment.js `/start`), so callers only need a code to send. */
 integrationsRouter.post("/codes", (req, res) => {

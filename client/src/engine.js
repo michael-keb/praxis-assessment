@@ -16,7 +16,7 @@ export function createEngine(caseId) {
 
   let state = {
     startedAt: null,
-    candidate: null,        // {name, email, upwork} captured at the gate
+    candidate: null,        // {name, linkedin, upwork} captured at the gate
     pausedTotal: 0,
     pauseStartedAt: null,
     lastSavedAt: null,

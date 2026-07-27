@@ -69,7 +69,13 @@ export default function AdminPage({ user, onLogout }) {
                 <td>{c.assessment_title || "—"}</td>
                 <td><input readOnly value={link(c.code)} onClick={(e) => e.target.select()} /></td>
                 <td><span className={`status-pill status-${c.status}`}>{c.status}</span></td>
-                <td>{c.candidate_name ? `${c.candidate_name} <${c.candidate_email}>` : "—"}</td>
+                <td>
+                  {c.candidate_name
+                    ? c.candidate_linkedin
+                      ? <a href={c.candidate_linkedin} target="_blank" rel="noreferrer">{c.candidate_name}</a>
+                      : `${c.candidate_name} <${c.candidate_email || "?"}>`
+                    : "—"}
+                </td>
                 <td style={{ fontSize: 12.5 }}>{c.started_at || "—"}</td>
                 <td style={{ fontSize: 12.5 }}>{c.submitted_at || "—"}</td>
                 <td>{c.end_reason || "—"}</td>

@@ -6,7 +6,7 @@ import { db, getCode, nowIso, caseDir, getAssessment } from "./db.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LINKEDIN_RE = /^https?:\/\/(www\.)?linkedin\.com\/.+/i;
 const UPWORK_RE = /^https?:\/\/(www\.)?upwork\.com\/.+/i;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 120 } });
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024, files: 8 } });
@@ -49,17 +49,17 @@ assessmentRouter.post("/start", (req, res) => {
   }
 
   const name = String(req.body?.name || "").trim();
-  const email = String(req.body?.email || "").trim().toLowerCase();
+  const linkedin = String(req.body?.linkedin || "").trim();
   const upwork = String(req.body?.upwork || "").trim();
   if (!name || name.length > 120) return res.status(400).json({ error: "Enter your full name." });
-  if (!EMAIL_RE.test(email)) return res.status(400).json({ error: "Enter a valid email address." });
+  if (!LINKEDIN_RE.test(linkedin)) return res.status(400).json({ error: "Enter a valid LinkedIn profile URL (on linkedin.com)." });
   if (!UPWORK_RE.test(upwork)) return res.status(400).json({ error: "Enter a valid Upwork profile URL (on upwork.com)." });
 
   db.prepare(`UPDATE codes SET status='active', started_at=?,
-              candidate_name=?, candidate_email=?, candidate_upwork=?
+              candidate_name=?, candidate_linkedin=?, candidate_upwork=?
               WHERE code=? AND status='unused'`)
-    .run(nowIso(), name, email, upwork, row.code);
-  console.log(`session started: ${row.code} by ${name} <${email}>`);
+    .run(nowIso(), name, linkedin, upwork, row.code);
+  console.log(`session started: ${row.code} by ${name} (${linkedin})`);
   res.json({ ok: true, assessment: assessmentPayload(row, { withBrief: true }) });
 });
 
@@ -75,7 +75,8 @@ assessmentRouter.post("/", (req, res) => {
   payload._receivedAt = nowIso();
   payload.candidate = {
     name: row.candidate_name || null,
-    email: row.candidate_email || null,
+    linkedinProfile: row.candidate_linkedin || null,
+    email: row.candidate_email || null,   // legacy sessions captured email instead
     upworkProfile: row.candidate_upwork || null
   };
   const end = [...(payload.log || [])].reverse().find((e) => e.type === "end") || {};

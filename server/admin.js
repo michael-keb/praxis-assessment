@@ -119,7 +119,7 @@ adminRouter.get("/sessions/:code", (req, res) => {
       .sort();
   } catch {}
   const candidate = row.candidate_name
-    ? { name: row.candidate_name, email: row.candidate_email, upwork: row.candidate_upwork }
+    ? { name: row.candidate_name, linkedin: row.candidate_linkedin, email: row.candidate_email, upwork: row.candidate_upwork }
     : null;
   res.json({ code: row, candidate, payload, frames, audio });
 });

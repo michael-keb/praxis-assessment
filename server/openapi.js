@@ -101,7 +101,8 @@ export const openapiSpec = {
           submitted_at: { type: "string", nullable: true },
           end_reason: { type: "string", nullable: true },
           candidate_name: { type: "string", nullable: true },
-          candidate_email: { type: "string", nullable: true },
+          candidate_linkedin: { type: "string", nullable: true },
+          candidate_email: { type: "string", nullable: true, description: "Legacy — sessions captured before the gate switched to LinkedIn." },
           candidate_upwork: { type: "string", nullable: true },
           frames: { type: "integer", description: "Frame files captured on disk." },
           audio: { type: "integer", description: "Voice-over chunks captured on disk." }
@@ -266,11 +267,11 @@ export const openapiSpec = {
             "application/json": {
               schema: {
                 type: "object",
-                required: ["caseId", "name", "email", "upwork"],
+                required: ["caseId", "name", "linkedin", "upwork"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
                   name: { type: "string", maxLength: 120 },
-                  email: { type: "string", format: "email" },
+                  linkedin: { type: "string", description: "Must be a URL on linkedin.com.", example: "https://www.linkedin.com/in/someone" },
                   upwork: { type: "string", description: "Must be a URL on upwork.com.", example: "https://www.upwork.com/freelancers/~01abc" }
                 }
               }
@@ -505,7 +506,7 @@ export const openapiSpec = {
                     candidate: {
                       type: "object",
                       nullable: true,
-                      properties: { name: { type: "string" }, email: { type: "string" }, upwork: { type: "string" } }
+                      properties: { name: { type: "string" }, linkedin: { type: "string" }, email: { type: "string", description: "Legacy sessions only." }, upwork: { type: "string" } }
                     },
                     payload: { type: "object", nullable: true, additionalProperties: true },
                     frames: { type: "array", items: { type: "string" } },
@@ -582,7 +583,7 @@ export const openapiSpec = {
         tags: ["integrations"],
         summary: "Issue a single code and its candidate link",
         description:
-          "Candidate name/email/Upwork URL are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`).",
+          "Candidate name/LinkedIn/Upwork URL are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`).",
         security: [{ apiKey: [] }],
         requestBody: {
           content: {
