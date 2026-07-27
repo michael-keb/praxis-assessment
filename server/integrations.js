@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { newCodes, getCode, getAssessment } from "./db.js";
+import { newCodes, getCode, getAssessment, listAssessments } from "./db.js";
 import { requireApiKey } from "./auth.js";
 
 /* Machine-to-machine surface for external tools (currently: the Upwork
@@ -12,6 +12,21 @@ integrationsRouter.use(requireApiKey);
 
 integrationsRouter.get("/ping", (req, res) => {
   res.json({ ok: true });
+});
+
+/* The assessments a caller can issue codes against. Titles and ids only —
+   the BRIEF is deliberately withheld here: it is the task itself, and no
+   caller needs it to issue a code (see assessment.js, where the brief is only
+   released once a candidate actually starts). Exists so an integrating tool
+   can resolve an assessment id without an admin session. */
+integrationsRouter.get("/assessments", (req, res) => {
+  res.json({
+    assessments: listAssessments().map((a) => ({
+      id: a.id,
+      title: a.title,
+      durationMinutes: a.duration_minutes,
+    })),
+  });
 });
 
 /* Issue one code, optionally under a specific assessment. The candidate's
