@@ -162,6 +162,28 @@ textarea:focus { border-color: var(--cold); box-shadow: 4px 4px 0 var(--warm); }
 .gate-warning li { padding: 8px 0; }
 .gate-warning li + li { border-top: 1px solid var(--line); }
 .gate-warning b { color: var(--cold); }
+
+/* ---------- live transcript captions ---------- */
+.caption-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; align-items: baseline; gap: 14px;
+  background: rgba(10, 10, 10, .92); color: #f3f3f1;
+  padding: 12px 20px 14px; font-size: 14.5px; line-height: 1.45;
+  border-top: 3px solid var(--warm);
+}
+.caption-bar .cap-label {
+  flex: none; font-family: var(--mono); font-size: 11px; font-weight: 800;
+  letter-spacing: .08em; color: var(--warm); padding-top: 2px;
+}
+.caption-bar .cap-text {
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  min-height: 1.4em;
+}
+.caption-bar.silent { background: #7f1d1d; border-top-color: #fecaca; }
+.caption-bar.silent .cap-label { color: #fecaca; }
+.mic-chip.mic-warn { background: #dc2626; color: #fff; }
+/* keep page content clear of the fixed captions */
+.assess-open { padding-bottom: 96px; }
 .submit-note { font-size: 13px; color: var(--cold-faint); margin-top: 10px; font-weight: 500; }
 
 /* ---------- centered card screens ---------- */

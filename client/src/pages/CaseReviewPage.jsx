@@ -40,6 +40,23 @@ export default function CaseReviewPage() {
             <b>Received:</b> {payload._receivedAt}<br />
             <b>Paused total:</b> {Math.round((payload.pausedTotal || 0) / 1000)}s
           </p>
+          {(payload.log || []).some((ev) => ev.type === "voice") && (
+            <>
+              <h3>Spoken transcript</h3>
+              <div style={{ background: "var(--raised, #f6f6f4)", border: "1px solid var(--line, #ddd)", padding: "14px 16px", marginBottom: 18, lineHeight: 1.65 }}>
+                {(payload.log || [])
+                  .filter((ev) => ev.type === "voice")
+                  .map((ev, i) => (
+                    <span key={i}>
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--cold-faint, #888)" }}>
+                        {Math.floor(ev.t / 60)}:{String(ev.t % 60).padStart(2, "0")}{" "}
+                      </span>
+                      {ev.text}{" "}
+                    </span>
+                  ))}
+              </div>
+            </>
+          )}
           <h3>Event log ({(payload.log || []).length})</h3>
           <table className="log-table">
             <thead><tr><th>t</th><th>type</th><th>detail</th></tr></thead>

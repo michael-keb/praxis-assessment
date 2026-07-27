@@ -49,11 +49,11 @@ function CenterScreen({ mark, title, text }) {
 function DoneScreen({ reason }) {
   const copy = {
     expired: ["⏱", "Time expired",
-      "The timer reached zero. Your screen and voice recording were submitted. You may close this tab."],
+      "The timer reached zero. Your screen recording and voice transcript were submitted. You may close this tab."],
     pause_limit: ["⏱", "Pause limit reached",
       "Screen sharing was paused for longer than the allowed limit, so your session was submitted as-is. You may close this tab."]
   }[reason] || ["✓", "Session submitted",
-    "Thank you. Your screen and voice recording have been recorded. You may close this tab."];
+    "Thank you. Your screen recording and voice transcript have been submitted. You may close this tab."];
   return <CenterScreen mark={copy[0]} title={copy[1]} text={copy[2]} />;
 }
 
@@ -103,8 +103,9 @@ function Gate({ engine, snap }) {
                 with a hard stop at 0:00 — your session submits automatically, finished or not.</li>
               <li><b>This code is single-use.</b> Once started there is no restart and no
                 fresh timer. Only begin when you are ready to spend the full time now.</li>
-              <li><b>Your entire screen and microphone are recorded</b> for the whole
-                session. Think out loud the entire time.</li>
+              <li><b>Your entire screen is recorded and your voice is transcribed
+                live</b> for the whole session — the transcript appears on screen as
+                you speak. Think out loud the entire time.</li>
               <li><b>Stopping the share pauses and locks the page</b> — not the assessment.
                 Total pause time is limited; when the limit is reached your session
                 submits as-is. If interrupted, reopening this link resumes it.</li>
@@ -171,11 +172,12 @@ function Gate({ engine, snap }) {
         <label className="consent">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
           <span>
-            I consent to my <b>entire screen</b> and <b>microphone</b> being recorded,
-            and my interaction with this page (focus changes and timing) being{" "}
-            <b>logged</b> for the sole purpose of evaluating this assessment. Recordings
-            are reviewed by Praxis assessors and retained no longer than the hiring
-            process requires.
+            I consent to my <b>entire screen</b> being recorded, my voice being{" "}
+            <b>transcribed in real time</b> (the transcript is shown on screen and
+            stored; no audio recording is kept), and my interaction with this page
+            (focus changes and timing) being <b>logged</b> for the sole purpose of
+            evaluating this assessment. Records are reviewed by Praxis assessors and
+            retained no longer than the hiring process requires.
           </span>
         </label>
         <button className="btn-accent" disabled={!consent || !detailsComplete}
@@ -217,7 +219,8 @@ function Task({ engine, snap }) {
           <div className="wordmark">praxis</div>
           <div className="case-chip">{snap.caseId}</div>
           <div className="spacer" />
-          {snap.micLive && <div className="mic-chip" title="Microphone recording">● REC</div>}
+          {snap.micLive && !snap.micSilent && <div className="mic-chip" title="Live transcription running">● TRANSCRIBING</div>}
+          {snap.micLive && snap.micSilent && <div className="mic-chip mic-warn" title="Nothing heard recently">⚠ CAN'T HEAR YOU</div>}
           <div className={`timer ${timerClass}`}>
             {snap.phase === "blocked" ? "PAUSED" : fmt(snap.remaining)}
           </div>
@@ -230,7 +233,7 @@ function Task({ engine, snap }) {
         <div className="rules">
           <div><b>Hard stop</b> at 0:00 — session submits automatically.</div>
           <div><b>Any tools permitted</b>, including AI.</div>
-          <div><b>Screen + mic required</b> — talk through your thinking.</div>
+          <div><b>Talk through your thinking</b> — your words are transcribed live below.</div>
         </div>
 
         <section className="brief open-brief">
@@ -245,6 +248,17 @@ function Task({ engine, snap }) {
           <p className="submit-note">At 0:00 your session submits automatically.</p>
         </section>
       </main>
+
+      <div className={`caption-bar ${snap.micSilent ? "silent" : ""}`}>
+        <span className="cap-label">{snap.micSilent ? "⚠ CAN'T HEAR YOU" : "LIVE TRANSCRIPT"}</span>
+        <span className="cap-text">
+          {snap.micSilent
+            ? "Nothing heard for a while — check your microphone is the right one and keep talking through your thinking."
+            : [...(snap.transcript?.tail || []).slice(-2), snap.transcript?.interim].filter(Boolean).join(" ") ||
+              "Start talking — your words appear here as you speak."}
+        </span>
+      </div>
+
       <footer className="foot">praxis · assessment · {snap.caseId}</footer>
     </>
   );
