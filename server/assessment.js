@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
 import { db, getCode, nowIso, caseDir, getAssessment } from "./db.js";
+import { ASSEMBLYAI_API_KEY } from "./config.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
@@ -71,6 +72,30 @@ assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
     .run(nowIso(), name, cvName, upwork, row.code);
   console.log(`session started: ${row.code} by ${name} (cv: ${cvName})`);
   res.json({ ok: true, assessment: assessmentPayload(row, { withBrief: true }) });
+});
+
+/* Short-lived AssemblyAI streaming token. The API key never reaches the
+   browser — only this token does, minted per-connection for a known code.
+   404 when no key is configured, so the client silently falls back to the
+   browser's own speech recognition. */
+assessmentRouter.post("/transcribe-token", async (req, res) => {
+  if (!ASSEMBLYAI_API_KEY) return res.status(404).json({ error: "transcription service not configured" });
+  const row = getCode(String(req.body?.caseId || "").trim().toUpperCase());
+  if (!row || row.status === "void" || row.status === "submitted") {
+    return res.status(403).json({ error: "unknown or inactive code" });
+  }
+  try {
+    const r = await fetch("https://streaming.assemblyai.com/v3/token?expires_in_seconds=600", {
+      headers: { Authorization: ASSEMBLYAI_API_KEY },
+    });
+    if (!r.ok) throw new Error(`assemblyai responded ${r.status}`);
+    const out = await r.json();
+    if (!out.token) throw new Error("assemblyai returned no token");
+    res.json({ token: out.token });
+  } catch (err) {
+    console.error(`transcribe-token ${row.code}: ${err.message}`);
+    res.status(502).json({ error: "could not reach the transcription service" });
+  }
 });
 
 /* Final payload. Candidate identity comes from what the server stored at

@@ -40,9 +40,13 @@ export function createEngine(caseId) {
   let lastReground = 0;
   let anyZoneTouched = false;
   let captureStream = null;
-  let recognition = null;      // Web Speech API session — replaces audio recording
-  let transcribing = false;    // should the recognizer be running (drives auto-restart)
-  let micLive = false;         // recognizer actually live (UI indicator)
+  let recognition = null;      // Web Speech API session (fallback engine)
+  let ws = null;               // AssemblyAI streaming socket (primary engine)
+  let audioCtx = null;         // feeds PCM16 from the mic into the socket
+  let processor = null;
+  let micStream = null;        // the ONE mic stream this page holds (assembly mode)
+  let transcribing = false;    // should a transcription engine be running
+  let micLive = false;         // an engine is actually live (UI indicator)
   let interim = "";            // in-flight words, not yet finalized
   let transcriptTail = [];     // last few finalized lines, for the on-screen captions
   let frameQueue = [];
@@ -190,11 +194,148 @@ export function createEngine(caseId) {
     transcribing = false;
     try { recognition?.stop(); } catch { /* already stopped */ }
     recognition = null;
+    teardownAssembly();
     interim = "";
     if (micLive) { micLive = false; emit(); }
   }
 
-  function startTranscription() {
+  function teardownAssembly() {
+    try { processor?.disconnect(); } catch { /* not connected */ }
+    processor = null;
+    try { ws?.close(); } catch { /* already closed */ }
+    ws = null;
+    try { audioCtx?.close(); } catch { /* already closed */ }
+    audioCtx = null;
+    micStream?.getTracks().forEach((tr) => tr.stop());
+    micStream = null;
+  }
+
+  /* ---------------- primary engine: AssemblyAI Universal-Streaming ----------
+     One mic stream → PCM16 over a websocket → partial words for the captions,
+     formatted end-of-turn sentences into the log. The server mints short-lived
+     tokens (the API key never reaches this page). Any failure to start falls
+     back to the browser engine below; a mid-session drop reconnects, and if
+     that fails, falls back too — a session never dies over transcription. */
+  async function mintStreamToken() {
+    try {
+      const r = await fetch(ENDPOINT + "/transcribe-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId })
+      });
+      if (!r.ok) return null;
+      return (await r.json()).token || null;
+    } catch {
+      return null;
+    }
+  }
+
+  let reconnecting = false;
+  function scheduleAssemblyReconnect() {
+    if (!transcribing || finalized || reconnecting) return;
+    reconnecting = true;
+    micLive = false;
+    emit();
+    setTimeout(async () => {
+      reconnecting = false;
+      if (!transcribing || finalized) return;
+      teardownAssembly();
+      const again = await startAssemblyTranscription();
+      if (!again.ok && transcribing && !finalized) {
+        logEvent({ type: "transcript_error", error: "assembly reconnect failed — falling back to browser engine" });
+        const fallback = await startBrowserTranscription();
+        if (!fallback.ok) logEvent({ type: "transcript_error", error: "browser fallback also failed" });
+      }
+    }, 2500);
+  }
+
+  async function startAssemblyTranscription() {
+    const token = await mintStreamToken();
+    if (!token) return { ok: false, reason: "no_token" };
+
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+        video: false
+      });
+    } catch {
+      return { ok: false, reason: "mic_denied",
+        message: "Microphone access was declined. The assessment needs you to talk through your thinking." };
+    }
+
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC({ sampleRate: 16000 });
+    const rate = Math.round(audioCtx.sampleRate); // browser may not honour 16k — tell AAI what we actually have
+    const source = audioCtx.createMediaStreamSource(micStream);
+    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+    return new Promise((resolve) => {
+      let settled = false;
+      ws = new WebSocket(
+        `wss://streaming.assemblyai.com/v3/ws?sample_rate=${rate}&format_turns=true&token=${encodeURIComponent(token)}`
+      );
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        processor.onaudioprocess = (e) => {
+          if (!transcribing || !ws || ws.readyState !== 1) return;
+          const f32 = e.inputBuffer.getChannelData(0);
+          const i16 = new Int16Array(f32.length);
+          for (let i = 0; i < f32.length; i++) {
+            const s = Math.max(-1, Math.min(1, f32[i]));
+            i16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+          }
+          ws.send(i16.buffer);
+        };
+        source.connect(processor);
+        processor.connect(audioCtx.destination);
+        micLive = true;
+        lastHeardAt = now();
+        emit();
+        if (!settled) { settled = true; logEvent({ type: "transcript_started", engine: "assemblyai" }); resolve({ ok: true }); }
+      };
+
+      ws.onmessage = (evt) => {
+        let msg;
+        try { msg = JSON.parse(evt.data); } catch { return; }
+        if (msg.type !== "Turn") return;
+        const text = (msg.transcript || "").trim();
+        if (!text) return;
+        lastHeardAt = now();
+        if (msg.end_of_turn && msg.turn_is_formatted) {
+          logEvent({ type: "voice", text });
+          transcriptTail = [...transcriptTail, text].slice(-4);
+          interim = "";
+        } else if (!msg.end_of_turn) {
+          interim = text;
+        }
+        emit();
+      };
+
+      ws.onerror = () => {
+        if (!settled) { settled = true; resolve({ ok: false, reason: "ws_error" }); }
+      };
+      ws.onclose = () => {
+        if (!settled) { settled = true; resolve({ ok: false, reason: "ws_closed" }); return; }
+        if (transcribing && !finalized) scheduleAssemblyReconnect();
+        else { micLive = false; emit(); }
+      };
+    });
+  }
+
+  /* Orchestrator: AssemblyAI when the server offers tokens, else the
+     browser's own recognizer. A declined mic fails begin() either way. */
+  async function startTranscription() {
+    transcribing = true;
+    const primary = await startAssemblyTranscription();
+    if (primary.ok) return primary;
+    if (primary.reason === "mic_denied") { transcribing = false; return primary; }
+    teardownAssembly();
+    return startBrowserTranscription();
+  }
+
+  /* ---------------- fallback engine: Web Speech API ---------------- */
+  function startBrowserTranscription() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       return Promise.resolve({ ok: false, reason: "unsupported_sr",

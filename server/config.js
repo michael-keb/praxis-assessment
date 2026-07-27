@@ -12,3 +12,9 @@
    every deploy. Honour PORT there — ASSESSMENT_PORT still wins if set. */
 const hostPort = process.env.NODE_ENV === "production" ? Number(process.env.PORT) : 0;
 export const PORT = Number(process.env.ASSESSMENT_PORT) || hostPort || 8124;
+
+/* AssemblyAI Universal-Streaming — live transcription during sessions. The
+   key stays server-side; the browser only ever receives short-lived tokens
+   (see /api/assessment/transcribe-token). Absent key = the client falls back
+   to the browser's own speech recognition. */
+export const ASSEMBLYAI_API_KEY = process.env.ASSEMBLYAI_API_KEY || "";
