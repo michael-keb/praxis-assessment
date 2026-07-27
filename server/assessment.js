@@ -15,19 +15,26 @@ const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize
    bound to the single-use code. Admin routes stay behind auth. */
 export const assessmentRouter = Router();
 
+/* The brief is only released once the code is active — an unused code must
+   not leak the task to a candidate who hasn't started (and consented). */
+function assessmentPayload(row, { withBrief }) {
+  const assessment = row.assessment_id ? getAssessment(row.assessment_id) : null;
+  if (!assessment) return null;
+  const out = { title: assessment.title, durationSeconds: assessment.duration_minutes * 60 };
+  if (withBrief) out.brief = assessment.brief;
+  return out;
+}
+
 /* Code status — public; the gate validates before anything starts. */
 assessmentRouter.get("/session", (req, res) => {
   const row = getCode(String(req.query.case || "").trim().toUpperCase());
   if (!row) return res.json({ status: "unknown" });
-  const assessment = row.assessment_id ? getAssessment(row.assessment_id) : null;
   res.json({
     status: row.status,
     startedAt: row.started_at,
     endReason: row.end_reason,
     candidateName: row.candidate_name || null,
-    assessment: assessment
-      ? { title: assessment.title, brief: assessment.brief, durationSeconds: assessment.duration_minutes * 60 }
-      : null
+    assessment: assessmentPayload(row, { withBrief: row.status === "active" })
   });
 });
 
@@ -37,7 +44,9 @@ assessmentRouter.post("/start", (req, res) => {
   if (!row) return res.status(403).json({ error: "unknown code" });
   if (row.status === "void") return res.status(403).json({ error: "code voided" });
   if (row.status === "submitted") return res.status(403).json({ error: "already submitted" });
-  if (row.status === "active") return res.json({ ok: true });   // resume
+  if (row.status === "active") {
+    return res.json({ ok: true, assessment: assessmentPayload(row, { withBrief: true }) });   // resume
+  }
 
   const name = String(req.body?.name || "").trim();
   const email = String(req.body?.email || "").trim().toLowerCase();
@@ -51,7 +60,7 @@ assessmentRouter.post("/start", (req, res) => {
               WHERE code=? AND status='unused'`)
     .run(nowIso(), name, email, upwork, row.code);
   console.log(`session started: ${row.code} by ${name} <${email}>`);
-  res.json({ ok: true });
+  res.json({ ok: true, assessment: assessmentPayload(row, { withBrief: true }) });
 });
 
 /* Final payload. Candidate identity comes from what the server stored at

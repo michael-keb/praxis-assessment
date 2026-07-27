@@ -58,6 +58,7 @@ function DoneScreen({ reason }) {
 }
 
 function Gate({ engine, snap }) {
+  const [step, setStep] = useState("details");   // details | confirm
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -84,12 +85,56 @@ function Gate({ engine, snap }) {
     }
   }
 
+  if (step === "confirm") {
+    return (
+      <div className="screen">
+        <div className="card-col">
+          <div className="gate-mark">praxis</div>
+          <h1>Before you start</h1>
+          <p className="lede">
+            The assessment brief is revealed the moment your screen and microphone
+            are connected — and the clock starts with it.
+          </p>
+          <div className="gate-warning">
+            <ul>
+              <li><b>The timer starts immediately.</b> You will have {fmt(snap.duration)},
+                with a hard stop at 0:00 — your session submits automatically, finished or not.</li>
+              <li><b>This code is single-use.</b> Once started there is no restart and no
+                fresh timer. Only begin when you are ready to spend the full time now.</li>
+              <li><b>Your entire screen and microphone are recorded</b> for the whole
+                session. Think out loud the entire time.</li>
+              <li><b>Stopping the share pauses and locks the page</b> — not the assessment.
+                Total pause time is limited; when the limit is reached your session
+                submits as-is. If interrupted, reopening this link resumes it.</li>
+            </ul>
+          </div>
+          <button className="btn-accent" disabled={busy} onClick={begin}>
+            {busy ? "Waiting for screen & mic…" : "I'm ready — start and reveal the brief"}
+          </button>
+          {!busy && (
+            <button className="btn-ghost" onClick={() => { setError(""); setStep("details"); }}>
+              Go back
+            </button>
+          )}
+          {error && <div className="error-box">{error}</div>}
+          <p className="fine">
+            Your browser will ask to share your screen — choose <b>Entire Screen</b> —
+            then for microphone access. A single tab or window is not accepted.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="screen">
       <div className="card-col">
         <div className="gate-mark">praxis</div>
         <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
-        <Brief className="lede" text={snap.assessment?.brief} />
+        <p className="lede">
+          Fill in your details below to unlock the assessment. The brief stays
+          hidden until you start — the timer begins the moment it is revealed.
+        </p>
         <div className="gate-facts">
           <div><dt>Case ID</dt><dd>{snap.caseId}</dd></div>
           <div><dt>Duration</dt><dd>{fmt(snap.duration)}</dd></div>
@@ -125,16 +170,13 @@ function Gate({ engine, snap }) {
             process requires.
           </span>
         </label>
-        <button className="btn-accent" disabled={!consent || !detailsComplete || busy} onClick={begin}>
-          {busy ? "Waiting for screen & mic…" : "Begin — share screen and mic"}
+        <button className="btn-accent" disabled={!consent || !detailsComplete}
+          onClick={() => setStep("confirm")}>
+          Start
         </button>
-        {error && <div className="error-box">{error}</div>}
         <p className="fine">
-          Your browser will ask to share your screen — choose <b>Entire Screen</b> —
-          then for microphone access. A single tab or window is not accepted. The
-          assessment only runs while sharing is active: if sharing stops, the page
-          locks and the timer pauses. Total pause time is limited; when the limit is
-          reached your session submits as-is. If interrupted, reopening this link resumes it.
+          Next you will see exactly what happens when the session begins — nothing
+          starts and nothing is recorded until you confirm on the following step.
         </p>
       </div>
     </div>

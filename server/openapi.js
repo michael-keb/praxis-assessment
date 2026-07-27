@@ -226,7 +226,7 @@ export const openapiSpec = {
         ],
         responses: {
           200: {
-            description: "Code state and, if the code is bound to one, the assessment brief",
+            description: "Code state and assessment title/duration. The brief itself is only included once the code is `active` — an unused code never leaks the task.",
             content: {
               "application/json": {
                 schema: {
@@ -241,7 +241,7 @@ export const openapiSpec = {
                       nullable: true,
                       properties: {
                         title: { type: "string" },
-                        brief: { type: "string" },
+                        brief: { type: "string", description: "Only present while the code is active." },
                         durationSeconds: { type: "integer" }
                       }
                     }
@@ -258,7 +258,7 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Unlock a code and bind the candidate's details to it",
         description:
-          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten.",
+          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate.",
         security: [],
         requestBody: {
           required: true,

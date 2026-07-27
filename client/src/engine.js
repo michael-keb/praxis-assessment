@@ -327,6 +327,12 @@ export function createEngine(caseId) {
         stopMic();
         return { ok: false, reason: "rejected", message: body?.error || "The code was rejected by the server." };
       }
+      // The brief is withheld until start — it arrives with this response.
+      const body = await res.json().catch(() => null);
+      if (body?.assessment) {
+        assessmentMeta = body.assessment;
+        duration = assessmentMeta.durationSeconds || duration;
+      }
     } catch {
       /* offline tolerance; server re-validates on submit */
     }

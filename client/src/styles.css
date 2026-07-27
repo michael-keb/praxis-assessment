@@ -147,6 +147,21 @@ textarea:focus { border-color: var(--cold); box-shadow: 4px 4px 0 var(--warm); }
 }
 .btn-accent:hover:not(:disabled) { filter: brightness(.95); }
 .btn-accent:disabled { opacity: .4; cursor: not-allowed; }
+.btn-ghost {
+  font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+  background: none; color: var(--cold-dim);
+  border: 1px solid var(--line); border-radius: 0; padding: 12px 32px;
+  width: 100%; margin-top: 10px;
+}
+.btn-ghost:hover { border-color: var(--cold); color: var(--cold); }
+.gate-warning {
+  background: var(--warm-soft); border: 1px solid var(--line-strong); border-radius: 0;
+  padding: 18px 20px; margin-bottom: 24px; font-size: 14.5px; color: var(--cold-dim);
+}
+.gate-warning ul { list-style: none; margin: 0; padding: 0; }
+.gate-warning li { padding: 8px 0; }
+.gate-warning li + li { border-top: 1px solid var(--line); }
+.gate-warning b { color: var(--cold); }
 .submit-note { font-size: 13px; color: var(--cold-faint); margin-top: 10px; font-weight: 500; }
 
 /* ---------- centered card screens ---------- */
