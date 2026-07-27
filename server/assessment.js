@@ -6,10 +6,11 @@ import { db, getCode, nowIso, caseDir, getAssessment } from "./db.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
-const LINKEDIN_RE = /^https?:\/\/(www\.)?linkedin\.com\/.+/i;
 const UPWORK_RE = /^https?:\/\/(www\.)?upwork\.com\/.+/i;
+const CV_EXT_RE = /\.(pdf|doc|docx)$/i;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 120 } });
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024, files: 8 } });
+const cvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 } });
 
 /* No candidate accounts: identity is the details captured at the gate,
    bound to the single-use code. Admin routes stay behind auth. */
@@ -38,8 +39,11 @@ assessmentRouter.get("/session", (req, res) => {
   });
 });
 
-/* Unlock: bind the candidate's details to the code. */
-assessmentRouter.post("/start", (req, res) => {
+/* Unlock: bind the candidate's details to the code. Multipart — the CV is
+   collected HERE, at the gate, deliberately: candidates refuse to hand
+   personal details (LinkedIn etc.) over chat, and they're right to. The
+   portal is the trusted surface, so the portal collects the document. */
+assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
   const row = getCode(String(req.body?.caseId || "").trim().toUpperCase());
   if (!row) return res.status(403).json({ error: "unknown code" });
   if (row.status === "void") return res.status(403).json({ error: "code voided" });
@@ -49,17 +53,23 @@ assessmentRouter.post("/start", (req, res) => {
   }
 
   const name = String(req.body?.name || "").trim();
-  const linkedin = String(req.body?.linkedin || "").trim();
   const upwork = String(req.body?.upwork || "").trim();
+  const cv = req.file;
   if (!name || name.length > 120) return res.status(400).json({ error: "Enter your full name." });
-  if (!LINKEDIN_RE.test(linkedin)) return res.status(400).json({ error: "Enter a valid LinkedIn profile URL (on linkedin.com)." });
   if (!UPWORK_RE.test(upwork)) return res.status(400).json({ error: "Enter a valid Upwork profile URL (on upwork.com)." });
+  if (!cv || !cv.buffer?.length || !CV_EXT_RE.test(cv.originalname || "")) {
+    return res.status(400).json({ error: "Attach your CV as a PDF or Word document (.pdf, .doc, .docx)." });
+  }
+
+  const ext = cv.originalname.match(CV_EXT_RE)[0].toLowerCase();
+  fs.writeFileSync(path.join(caseDir(row.code), `cv${ext}`), cv.buffer);
+  const cvName = path.basename(cv.originalname).slice(0, 120);
 
   db.prepare(`UPDATE codes SET status='active', started_at=?,
-              candidate_name=?, candidate_linkedin=?, candidate_upwork=?
+              candidate_name=?, candidate_cv=?, candidate_upwork=?
               WHERE code=? AND status='unused'`)
-    .run(nowIso(), name, linkedin, upwork, row.code);
-  console.log(`session started: ${row.code} by ${name} (${linkedin})`);
+    .run(nowIso(), name, cvName, upwork, row.code);
+  console.log(`session started: ${row.code} by ${name} (cv: ${cvName})`);
   res.json({ ok: true, assessment: assessmentPayload(row, { withBrief: true }) });
 });
 

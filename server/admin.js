@@ -119,9 +119,20 @@ adminRouter.get("/sessions/:code", (req, res) => {
       .sort();
   } catch {}
   const candidate = row.candidate_name
-    ? { name: row.candidate_name, linkedin: row.candidate_linkedin, email: row.candidate_email, upwork: row.candidate_upwork }
+    ? { name: row.candidate_name, cv: row.candidate_cv, linkedin: row.candidate_linkedin, email: row.candidate_email, upwork: row.candidate_upwork }
     : null;
   res.json({ code: row, candidate, payload, frames, audio });
+});
+
+/* The CV uploaded at the gate. Stored as cv.<ext> in the case directory;
+   downloaded under the candidate's original filename. */
+adminRouter.get("/sessions/:code/cv", (req, res) => {
+  const row = getCode(String(req.params.code || "").toUpperCase());
+  if (!row) return res.status(404).end();
+  const dir = path.join(SUBMISSIONS_DIR, row.code);
+  const file = ["cv.pdf", "cv.doc", "cv.docx"].find((n) => fs.existsSync(path.join(dir, n)));
+  if (!file) return res.status(404).end();
+  res.download(path.join(dir, file), row.candidate_cv || file);
 });
 
 adminRouter.get("/sessions/:code/frames/:name", (req, res) => {

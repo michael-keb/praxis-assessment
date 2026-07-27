@@ -25,6 +25,9 @@ export default function CaseReviewPage() {
       {candidate && (
         <p>
           <b>Candidate:</b> {candidate.name}{candidate.email ? <> &lt;{candidate.email}&gt;</> : null}<br />
+          {candidate.cv && (
+            <><b>CV:</b> <a href={`/api/admin/sessions/${code}/cv`}>{candidate.cv}</a><br /></>
+          )}
           {candidate.linkedin && (
             <><b>LinkedIn:</b> <a href={candidate.linkedin} target="_blank" rel="noreferrer">{candidate.linkedin}</a><br /></>
           )}

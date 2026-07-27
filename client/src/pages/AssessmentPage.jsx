@@ -62,22 +62,24 @@ function Gate({ engine, snap }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", linkedin: "", upwork: "" });
+  const [form, setForm] = useState({ name: "", upwork: "" });
+  const [cvFile, setCvFile] = useState(null);
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
+  const cvOk = cvFile && /\.(pdf|doc|docx)$/i.test(cvFile.name) && cvFile.size <= 8 * 1024 * 1024;
   const detailsComplete =
     form.name.trim() &&
-    /^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(form.linkedin.trim()) &&
-    /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(form.upwork.trim());
+    /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(form.upwork.trim()) &&
+    cvOk;
 
   async function begin() {
     setBusy(true);
     setError("");
     const result = await engine.begin({
       name: form.name.trim(),
-      linkedin: form.linkedin.trim(),
-      upwork: form.upwork.trim()
+      upwork: form.upwork.trim(),
+      cvFile
     });
     if (!result.ok) {
       setError(result.message);
@@ -151,14 +153,19 @@ function Gate({ engine, snap }) {
           <input id="g-name" value={form.name} onChange={set("name")} autoComplete="name" />
         </div>
         <div className="field">
-          <label htmlFor="g-linkedin">LinkedIn profile URL</label>
-          <input id="g-linkedin" type="url" value={form.linkedin} onChange={set("linkedin")}
-            placeholder="https://www.linkedin.com/in/…" spellCheck="false" />
-        </div>
-        <div className="field">
           <label htmlFor="g-upwork">Upwork profile URL</label>
           <input id="g-upwork" type="url" value={form.upwork} onChange={set("upwork")}
             placeholder="https://www.upwork.com/freelancers/~01…" spellCheck="false" />
+        </div>
+        <div className="field">
+          <label htmlFor="g-cv">CV / Résumé (PDF or Word, max 8&nbsp;MB)</label>
+          <input id="g-cv" type="file" accept=".pdf,.doc,.docx"
+            onChange={(e) => setCvFile(e.target.files?.[0] || null)} />
+          {cvFile && !cvOk && (
+            <p style={{ fontSize: 12.5, color: "var(--danger)", marginTop: 6 }}>
+              Must be a .pdf, .doc, or .docx under 8 MB.
+            </p>
+          )}
         </div>
 
         <label className="consent">

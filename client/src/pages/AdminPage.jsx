@@ -73,7 +73,9 @@ export default function AdminPage({ user, onLogout }) {
                   {c.candidate_name
                     ? c.candidate_linkedin
                       ? <a href={c.candidate_linkedin} target="_blank" rel="noreferrer">{c.candidate_name}</a>
-                      : `${c.candidate_name} <${c.candidate_email || "?"}>`
+                      : c.candidate_email
+                        ? `${c.candidate_name} <${c.candidate_email}>`
+                        : c.candidate_name
                     : "—"}
                 </td>
                 <td style={{ fontSize: 12.5 }}>{c.started_at || "—"}</td>
