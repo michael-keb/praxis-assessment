@@ -2,7 +2,12 @@
 #
 # Deploy: push this repo to GitHub, then in Render:
 #   New → Blueprint → pick the repo → apply.
-# Set ADMIN_EMAIL / ADMIN_PASSWORD when prompted (marked sync:false).
+# Set ADMIN_EMAIL / ADMIN_PASSWORD / EXTENSION_API_KEY when prompted (marked sync:false).
+# EXTENSION_API_KEY authenticates the Upwork candidate-management Chrome
+# extension's server-to-server calls to /api/integrations/* (see server/auth.js
+# requireApiKey, server/integrations.js). Generate any long random string —
+# e.g. `openssl rand -hex 32` — and paste the same value into the extension's
+# Options page. Rotate by changing it here and in the extension together.
 #
 # The disk is REQUIRED: Render's filesystem is wiped on every deploy and
 # restart, so the SQLite database and captured frames must live on it.
@@ -22,6 +27,10 @@ services:
       mountPath: /data       # matches DATA_DIR
       sizeGB: 10             # ~60 sessions of 1fps frames; raise as needed
     envVars:
+      # No port is pinned here on purpose. Render injects its own PORT (10000)
+      # and health-checks that same port; hardcoding 8124 — the local registry
+      # port — would bind the wrong one and fail every deploy. server/config.js
+      # takes Render's PORT in production and 8124 everywhere else.
       - key: NODE_ENV
         value: production
       - key: DATA_DIR
@@ -31,4 +40,6 @@ services:
       - key: ADMIN_EMAIL     # set in the Render dashboard
         sync: false
       - key: ADMIN_PASSWORD  # set in the Render dashboard
+        sync: false
+      - key: EXTENSION_API_KEY  # set in the Render dashboard
         sync: false

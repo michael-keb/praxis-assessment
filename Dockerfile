@@ -10,7 +10,7 @@ RUN npm run build
 # ---------- runtime ----------
 FROM node:22-slim
 WORKDIR /app
-ENV NODE_ENV=production DATA_DIR=/data PORT=8080
+ENV NODE_ENV=production DATA_DIR=/data
 
 # better-sqlite3 normally installs a prebuilt binary; keep a toolchain
 # available so it can compile from source if no prebuild matches, then
@@ -26,5 +26,5 @@ RUN apt-get update \
 COPY server ./server
 COPY --from=build /app/dist ./dist
 
-EXPOSE 8080
+EXPOSE 8124
 CMD ["node", "server/index.js"]

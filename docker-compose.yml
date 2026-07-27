@@ -26,7 +26,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    command: caddy reverse-proxy --from ${DOMAIN:?set DOMAIN} --to app:8080
+    command: caddy reverse-proxy --from ${DOMAIN:?set DOMAIN} --to app:8124
     volumes:
       - caddy-data:/data
       - caddy-config:/config

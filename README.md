@@ -32,7 +32,7 @@ Local development:
 
 ```bash
 npm install
-ADMIN_EMAIL=admin@local ADMIN_PASSWORD=adminpass npm run dev:server   # API :8080
+ADMIN_EMAIL=admin@local ADMIN_PASSWORD=adminpass npm run dev:server   # API :8124
 npm run dev                                                            # Vite :5173 (proxies /api)
 # or production-style: npm run build && npm start
 ```
@@ -80,7 +80,58 @@ Event types: `unlock`, `end` (`submitted`|`expired`|`pause_limit`),
 ## Config
 
 - `client/src/engine.js` — `DURATION` (15 min), `PAUSE_LIMIT` (5 min).
-- Server env — `PORT`, `DATA_DIR`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
-  `JWT_SECRET` (optional; auto-generated and persisted if unset).
+- `server/config.js` — the listen port, **locked to 8124**.
+- Server env — `ASSESSMENT_PORT`, `DATA_DIR`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
+  `JWT_SECRET` (optional; auto-generated and persisted if unset),
+  `EXTENSION_API_KEY` (optional; enables `/api/integrations/*`, see below).
+
+### Port
+
+8124, assigned to this app by the universal port registry
+(`Clients/Ports/PORTS.md`) and registered in the Ports Manager on :1983. It was
+previously 8080 — the ReqOps frontend's reserved port, so the two knocked each
+other offline.
+
+Bare `PORT` is deliberately **not** read: the Claude preview/AI harness injects
+it. Override with `ASSESSMENT_PORT` if you must, and keep `Dockerfile`,
+`docker-compose.yml`, `render.yaml`, `vite.config.js` and the registry row in
+step.
+
+## API docs (Swagger)
+
+The whole HTTP surface is published as OpenAPI 3 from `server/openapi.js`:
+
+- **`/api/docs`** — Swagger UI, "Try it out" enabled against the running server.
+- **`/api/openapi.json`** — the raw spec, for codegen or import into Postman.
+
+Both are unauthenticated (the spec documents auth; it doesn't grant it). The
+three auth schemes are modelled separately, so the *Authorize* button gives you
+the admin session cookie (via `POST /api/auth/login`) and the integrations
+Bearer key independently. Add or change a route → update the spec in the same
+commit; it is hand-written, not generated from the routers.
+
+## External integrations
+
+`server/integrations.js`, mounted at `/api/integrations/*`, is a
+machine-to-machine surface separate from the cookie-auth admin UI — for
+external tools that need to issue/check codes without a browser session
+(currently: the Upwork candidate-management Chrome extension). Auth is a
+single shared secret, not a user session: send
+`Authorization: Bearer <EXTENSION_API_KEY>`. If the env var is unset, every
+request 401s — the surface is off by default.
+
+- `GET /api/integrations/ping` — auth check, `{ ok: true }`.
+- `POST /api/integrations/codes` — body `{ assessmentId? }` (omit for no
+  specific assessment), issues one code via the same `newCodes()` used by
+  the admin UI. Returns `{ code, url }` where `url` is the candidate-facing
+  gate link (`/assess?case=<code>`). Candidate name/email/Upwork profile are
+  **not** collected here — the gate captures those itself when the
+  candidate opens the link (see `assessment.js` `/start`).
+- `GET /api/integrations/codes/:code` — status only:
+  `{ code, status, candidateName, startedAt, submittedAt }`. `status` is
+  `unused | active | submitted | void`, matching the `codes` table.
+
+Rotate the key by changing `EXTENSION_API_KEY` on Render and in the
+extension's Options page together (see `render.yaml`).
 
 The previous zero-dependency Python implementation is kept in `legacy/`.

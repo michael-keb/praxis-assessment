@@ -7,10 +7,12 @@ import { seedAdmin, DATA_DIR } from "./db.js";
 import { authRouter } from "./auth.js";
 import { assessmentRouter } from "./assessment.js";
 import { adminRouter } from "./admin.js";
+import { integrationsRouter } from "./integrations.js";
+import { docsRouter } from "./openapi.js";
+import { PORT } from "./config.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
-const PORT = Number(process.env.PORT) || 8080;
 
 seedAdmin();
 
@@ -26,6 +28,11 @@ app.get("/healthz", (req, res) => res.json({ ok: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/assessment", assessmentRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/integrations", integrationsRouter);
+
+/* Swagger UI at /api/docs, raw spec at /api/openapi.json. Under /api/ so the
+   SPA fallback below leaves it alone. */
+app.use("/api", docsRouter);
 
 /* Built React app + SPA fallback. */
 if (fs.existsSync(DIST)) {
@@ -43,4 +50,5 @@ if (fs.existsSync(DIST)) {
 app.listen(PORT, () => {
   console.log(`Praxis assessment server on http://0.0.0.0:${PORT}`);
   console.log(`  data: ${DATA_DIR}`);
+  console.log(`  docs: http://0.0.0.0:${PORT}/api/docs`);
 });
