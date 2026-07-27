@@ -48,6 +48,7 @@ export function createEngine(caseId) {
   let transcribing = false;    // should a transcription engine be running
   let micLive = false;         // an engine is actually live (UI indicator)
   let interim = "";            // in-flight words, not yet finalized
+  let silentLogged = false;    // mic heard nothing for a while (banner + log event)
   let transcriptTail = [];     // last few finalized lines, for the on-screen captions
   let frameQueue = [];
   let assessmentMeta = null;   // {title, brief} from the code's assigned assessment, if any
@@ -99,7 +100,7 @@ export function createEngine(caseId) {
       confidence: state.confidence,
       doneReason: state.doneReason,
       micLive,
-      micSilent: micSilent(),
+      micSilent: silentLogged,
       transcript: { tail: [...transcriptTail], interim },
       assessment: assessmentMeta,
       duration
@@ -412,7 +413,6 @@ export function createEngine(caseId) {
      Make it THEIR screen's problem (banner via snapshot) and the assessor's
      record (log event) — never silently produce an empty transcript. */
   const MIC_SILENT_AFTER_MS = 45_000;
-  let silentLogged = false;
   function micSilenceCheck() {
     if (!running || finalized || phase !== "running" || !micLive) return;
     const quiet = now() - lastHeardAt > MIC_SILENT_AFTER_MS;
@@ -425,7 +425,6 @@ export function createEngine(caseId) {
       emit();
     }
   }
-  const micSilent = () => silentLogged;
 
   /* ---------------- block / pause ---------------- */
   function block(title) {
