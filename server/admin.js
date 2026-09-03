@@ -21,7 +21,7 @@ adminRouter.get("/assessments", (req, res) => {
 
 function parseDuration(body) {
   const n = Number(body?.durationMinutes);
-  if (!Number.isInteger(n) || n < 1 || n > 180) return { error: "Duration must be 1-180 minutes." };
+  if (!Number.isInteger(n) || n < 1) return { error: "Duration must be at least 1 minute." };
   return { value: n };
 }
 

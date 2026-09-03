@@ -74,7 +74,7 @@ export const openapiSpec = {
           id: { type: "integer" },
           title: { type: "string" },
           brief: { type: "string", description: "Markdown-ish brief shown to the candidate." },
-          duration_minutes: { type: "integer", minimum: 1, maximum: 180 },
+          duration_minutes: { type: "integer", minimum: 1 },
           created_at: { type: "string" },
           updated_at: { type: "string" },
           code_count: { type: "integer", description: "Codes issued under this assessment (list endpoint only)." }
@@ -86,7 +86,7 @@ export const openapiSpec = {
         properties: {
           title: { type: "string" },
           brief: { type: "string" },
-          durationMinutes: { type: "integer", minimum: 1, maximum: 180 }
+          durationMinutes: { type: "integer", minimum: 1 }
         }
       },
       CodeRecord: {

@@ -117,8 +117,8 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
   async function save() {
     if (!editing.title.trim()) { setError("Give the assessment a title."); return; }
     const duration = Number(editing.durationMinutes);
-    if (!Number.isInteger(duration) || duration < 1 || duration > 180) {
-      setError("Duration must be 1-180 minutes.");
+    if (!Number.isInteger(duration) || duration < 1) {
+      setError("Duration must be at least 1 minute.");
       return;
     }
     setBusy(true);
@@ -178,7 +178,6 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
               id="a-duration"
               type="number"
               min="1"
-              max="180"
               value={editing.durationMinutes}
               onChange={(e) => setEditing({ ...editing, durationMinutes: e.target.value })}
             />
