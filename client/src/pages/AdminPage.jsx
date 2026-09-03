@@ -104,14 +104,65 @@ export default function AdminPage({ user, onLogout }) {
   );
 }
 
+const DEFAULT_GATE = { requireLinkedin: true, requireUpwork: false, requireCv: false };
+
+function gateSummary(a) {
+  const parts = ["Name"];
+  if (a.require_linkedin) parts.push("LinkedIn");
+  if (a.require_upwork) parts.push("Upwork");
+  if (a.require_cv) parts.push("CV");
+  return parts.join(" · ");
+}
+
+function GateFieldsEditor({ value, onChange }) {
+  const row = (key, label) => (
+    <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+      <span style={{ minWidth: 170 }}>{label}</span>
+      <select
+        value={value[key] ? "yes" : "no"}
+        onChange={(e) => onChange({ ...value, [key]: e.target.value === "yes" })}
+        style={{ padding: "6px 10px" }}
+      >
+        <option value="yes">Yes</option>
+        <option value="no">No</option>
+      </select>
+    </label>
+  );
+  return (
+    <div className="field">
+      <label>Candidate details to collect</label>
+      <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+        {row("requireLinkedin", "LinkedIn profile URL")}
+        {row("requireUpwork", "Upwork profile URL")}
+        {row("requireCv", "CV / résumé upload")}
+      </div>
+      <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+        Full name is always required. Turn fields off when you only need a name.
+      </p>
+    </div>
+  );
+}
+
 function AssessmentsPanel({ assessments, setError, refresh }) {
   const [editing, setEditing] = useState(null); // {id, title, brief} or null; id=null means "new"
   const [issuing, setIssuing] = useState(null);  // assessment id currently showing an issue-count input
   const [count, setCount] = useState(5);
   const [busy, setBusy] = useState(false);
 
-  function startNew() { setEditing({ id: null, title: "", brief: "", durationMinutes: 15 }); }
-  function startEdit(a) { setEditing({ id: a.id, title: a.title, brief: a.brief, durationMinutes: a.duration_minutes }); }
+  function startNew() {
+    setEditing({ id: null, title: "", brief: "", durationMinutes: 15, ...DEFAULT_GATE });
+  }
+  function startEdit(a) {
+    setEditing({
+      id: a.id,
+      title: a.title,
+      brief: a.brief,
+      durationMinutes: a.duration_minutes,
+      requireLinkedin: !!a.require_linkedin,
+      requireUpwork: !!a.require_upwork,
+      requireCv: !!a.require_cv,
+    });
+  }
   function cancelEdit() { setEditing(null); }
 
   async function save() {
@@ -123,7 +174,14 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
     }
     setBusy(true);
     setError("");
-    const body = { title: editing.title, brief: editing.brief, durationMinutes: duration };
+    const body = {
+      title: editing.title,
+      brief: editing.brief,
+      durationMinutes: duration,
+      requireLinkedin: editing.requireLinkedin,
+      requireUpwork: editing.requireUpwork,
+      requireCv: editing.requireCv,
+    };
     try {
       if (editing.id) await api.adminUpdateAssessment(editing.id, body);
       else await api.adminCreateAssessment(body);
@@ -182,6 +240,14 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
               onChange={(e) => setEditing({ ...editing, durationMinutes: e.target.value })}
             />
           </div>
+          <GateFieldsEditor
+            value={{
+              requireLinkedin: editing.requireLinkedin,
+              requireUpwork: editing.requireUpwork,
+              requireCv: editing.requireCv,
+            }}
+            onChange={(gate) => setEditing({ ...editing, ...gate })}
+          />
           <div className="field">
             <label htmlFor="a-brief">Brief (shown to the candidate — separate paragraphs with a blank line)</label>
             <textarea
@@ -210,7 +276,7 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <b style={{ fontSize: 15.5 }}>{a.title}</b>
             <span style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
-              {a.duration_minutes} min · {a.code_count} code{a.code_count === 1 ? "" : "s"} issued
+              {a.duration_minutes} min · {gateSummary(a)} · {a.code_count} code{a.code_count === 1 ? "" : "s"} issued
               · updated {a.updated_at?.slice(0, 10)}
             </span>
             <div className="spacer" />

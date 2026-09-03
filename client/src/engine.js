@@ -489,11 +489,27 @@ export function createEngine(caseId) {
       return mic;
     }
     try {
-      const res = await fetch(ENDPOINT + "/start", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ caseId, ...details })
-      });
+      let res;
+      if (details.cvFile) {
+        const fd = new FormData();
+        fd.append("caseId", caseId);
+        fd.append("name", details.name);
+        if (details.linkedin) fd.append("linkedin", details.linkedin);
+        if (details.upwork) fd.append("upwork", details.upwork);
+        fd.append("cv", details.cvFile, details.cvFile.name);
+        res = await fetch(ENDPOINT + "/start", { method: "POST", body: fd });
+      } else {
+        res = await fetch(ENDPOINT + "/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            caseId,
+            name: details.name,
+            linkedin: details.linkedin,
+            upwork: details.upwork,
+          }),
+        });
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         stopSharing();
@@ -510,7 +526,12 @@ export function createEngine(caseId) {
       /* offline tolerance; server re-validates on submit */
     }
     // Persist only what serializes — the File object stays out of localStorage.
-    state.candidate = { name: details.name, linkedin: details.linkedin };
+    state.candidate = {
+      name: details.name,
+      linkedin: details.linkedin || null,
+      upwork: details.upwork || null,
+      cv: details.cvFile?.name || null,
+    };
     state.startedAt = now();
     logEvent({ t: 0, type: "unlock" });
     unlockSession(false);

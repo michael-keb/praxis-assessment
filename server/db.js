@@ -50,8 +50,25 @@ for (const col of ["candidate_name", "candidate_email", "candidate_upwork", "can
 /* Codes are issued under an assessment; nullable so pre-existing codes keep working. */
 try { db.exec(`ALTER TABLE codes ADD COLUMN assessment_id INTEGER REFERENCES assessments(id)`); } catch { /* exists */ }
 try { db.exec(`ALTER TABLE assessments ADD COLUMN duration_minutes INTEGER NOT NULL DEFAULT 15`); } catch { /* exists */ }
+for (const [col, def] of [
+  ["require_linkedin", 1],
+  ["require_upwork", 0],
+  ["require_cv", 0],
+]) {
+  try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} INTEGER NOT NULL DEFAULT ${def}`); } catch { /* exists */ }
+}
 
 export const DEFAULT_DURATION_MINUTES = 15;
+export const DEFAULT_GATE_FIELDS = { requireLinkedin: true, requireUpwork: false, requireCv: false };
+
+export function gateFieldsFromAssessment(assessment) {
+  if (!assessment) return { linkedin: true, upwork: false, cv: false };
+  return {
+    linkedin: !!assessment.require_linkedin,
+    upwork: !!assessment.require_upwork,
+    cv: !!assessment.require_cv,
+  };
+}
 
 export const nowIso = () => new Date().toISOString().slice(0, 19) + "Z";
 
@@ -89,17 +106,39 @@ export function getAssessment(id) {
   return db.prepare("SELECT * FROM assessments WHERE id = ?").get(id) || null;
 }
 
-export function createAssessment({ title, brief, durationMinutes }) {
+export function createAssessment({ title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
   const ts = nowIso();
   const info = db.prepare(
-    "INSERT INTO assessments (title, brief, duration_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
-  ).run(title, brief || "", durationMinutes || DEFAULT_DURATION_MINUTES, ts, ts);
+    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    title,
+    brief || "",
+    durationMinutes || DEFAULT_DURATION_MINUTES,
+    gateFields.requireLinkedin ? 1 : 0,
+    gateFields.requireUpwork ? 1 : 0,
+    gateFields.requireCv ? 1 : 0,
+    ts,
+    ts
+  );
   return getAssessment(info.lastInsertRowid);
 }
 
-export function updateAssessment(id, { title, brief, durationMinutes }) {
-  db.prepare("UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?, updated_at = ? WHERE id = ?")
-    .run(title, brief || "", durationMinutes || DEFAULT_DURATION_MINUTES, nowIso(), id);
+export function updateAssessment(id, { title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
+  db.prepare(
+    `UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?,
+     require_linkedin = ?, require_upwork = ?, require_cv = ?, updated_at = ?
+     WHERE id = ?`
+  ).run(
+    title,
+    brief || "",
+    durationMinutes || DEFAULT_DURATION_MINUTES,
+    gateFields.requireLinkedin ? 1 : 0,
+    gateFields.requireUpwork ? 1 : 0,
+    gateFields.requireCv ? 1 : 0,
+    nowIso(),
+    id
+  );
   return getAssessment(id);
 }
 

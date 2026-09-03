@@ -25,13 +25,33 @@ function parseDuration(body) {
   return { value: n };
 }
 
+function parseGateFields(body) {
+  const bool = (v, fallback) => {
+    if (v === true || v === 1 || v === "yes" || v === "true") return true;
+    if (v === false || v === 0 || v === "no" || v === "false") return false;
+    return fallback;
+  };
+  return {
+    requireLinkedin: bool(body?.requireLinkedin, true),
+    requireUpwork: bool(body?.requireUpwork, false),
+    requireCv: bool(body?.requireCv, false),
+  };
+}
+
 adminRouter.post("/assessments", (req, res) => {
   const title = String(req.body?.title || "").trim();
   const brief = String(req.body?.brief || "");
   if (!title) return res.status(400).json({ error: "Title is required." });
   const duration = parseDuration(req.body);
   if (duration.error) return res.status(400).json({ error: duration.error });
-  res.json({ assessment: createAssessment({ title, brief, durationMinutes: duration.value }) });
+  res.json({
+    assessment: createAssessment({
+      title,
+      brief,
+      durationMinutes: duration.value,
+      gateFields: parseGateFields(req.body),
+    })
+  });
 });
 
 adminRouter.get("/assessments/:id", (req, res) => {
@@ -48,7 +68,14 @@ adminRouter.put("/assessments/:id", (req, res) => {
   if (!title) return res.status(400).json({ error: "Title is required." });
   const duration = parseDuration(req.body);
   if (duration.error) return res.status(400).json({ error: duration.error });
-  res.json({ assessment: updateAssessment(id, { title, brief, durationMinutes: duration.value }) });
+  res.json({
+    assessment: updateAssessment(id, {
+      title,
+      brief,
+      durationMinutes: duration.value,
+      gateFields: parseGateFields(req.body),
+    })
+  });
 });
 
 adminRouter.delete("/assessments/:id", (req, res) => {
