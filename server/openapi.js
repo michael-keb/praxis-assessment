@@ -259,20 +259,19 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Unlock a code and bind the candidate's details to it",
         description:
-          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate. Multipart: the candidate's CV is uploaded here, at the gate — the one surface where candidates will hand over a document.",
+          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate.",
         security: [],
         requestBody: {
           required: true,
           content: {
-            "multipart/form-data": {
+            "application/json": {
               schema: {
                 type: "object",
-                required: ["caseId", "name", "upwork", "cv"],
+                required: ["caseId", "name", "linkedin"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
                   name: { type: "string", maxLength: 120 },
-                  upwork: { type: "string", description: "Must be a URL on upwork.com.", example: "https://www.upwork.com/freelancers/~01abc" },
-                  cv: { type: "string", format: "binary", description: "PDF or Word (.pdf/.doc/.docx), max 8 MB. Stored as cv.<ext> in the case directory." }
+                  linkedin: { type: "string", description: "Must be a URL on linkedin.com.", example: "https://www.linkedin.com/in/jane-doe" }
                 }
               }
             }
@@ -583,7 +582,7 @@ export const openapiSpec = {
         tags: ["integrations"],
         summary: "Issue a single code and its candidate link",
         description:
-          "Candidate name/LinkedIn/Upwork URL are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`).",
+          "Candidate name/LinkedIn are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`).",
         security: [{ apiKey: [] }],
         requestBody: {
           content: {

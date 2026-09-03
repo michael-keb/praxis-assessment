@@ -31,7 +31,9 @@ export default function CaseReviewPage() {
           {candidate.linkedin && (
             <><b>LinkedIn:</b> <a href={candidate.linkedin} target="_blank" rel="noreferrer">{candidate.linkedin}</a><br /></>
           )}
-          <b>Upwork:</b> <a href={candidate.upwork} target="_blank" rel="noreferrer">{candidate.upwork}</a>
+          {candidate.upwork && (
+            <><b>Upwork:</b> <a href={candidate.upwork} target="_blank" rel="noreferrer">{candidate.upwork}</a><br /></>
+          )}
         </p>
       )}
       {payload ? (

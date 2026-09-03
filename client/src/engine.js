@@ -16,7 +16,7 @@ export function createEngine(caseId) {
 
   let state = {
     startedAt: null,
-    candidate: null,        // {name, upwork, cv} captured at the gate
+    candidate: null,        // {name, linkedin} captured at the gate
     pausedTotal: 0,
     pauseStartedAt: null,
     lastSavedAt: null,
@@ -489,14 +489,11 @@ export function createEngine(caseId) {
       return mic;
     }
     try {
-      // Multipart: the CV file rides along with the details. The gate is the
-      // one trusted surface where candidates will hand over a document.
-      const fd = new FormData();
-      fd.append("caseId", caseId);
-      fd.append("name", details.name);
-      fd.append("upwork", details.upwork);
-      if (details.cvFile) fd.append("cv", details.cvFile, details.cvFile.name);
-      const res = await fetch(ENDPOINT + "/start", { method: "POST", body: fd });
+      const res = await fetch(ENDPOINT + "/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseId, ...details })
+      });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         stopSharing();
@@ -513,7 +510,7 @@ export function createEngine(caseId) {
       /* offline tolerance; server re-validates on submit */
     }
     // Persist only what serializes — the File object stays out of localStorage.
-    state.candidate = { name: details.name, upwork: details.upwork, cv: details.cvFile?.name || null };
+    state.candidate = { name: details.name, linkedin: details.linkedin };
     state.startedAt = now();
     logEvent({ t: 0, type: "unlock" });
     unlockSession(false);
