@@ -46,9 +46,12 @@ app.use("/api", docsRouter);
 
 /* Interior designer applicant shortlist (admin login required). */
 if (fs.existsSync(INTERIOR_DIR)) {
-  app.get("/interior-designers", (_req, res) => res.redirect(301, "/interior-designers/"));
   app.get("/interior designers", (_req, res) => res.redirect(301, "/interior-designers/"));
-  app.get("/interior-designers/", requireSignedIn, (_req, res) => {
+  const serveInteriorIndex = requireSignedIn;
+  app.get("/interior-designers", serveInteriorIndex, (_req, res) => {
+    res.sendFile(path.join(INTERIOR_DIR, "index.html"));
+  });
+  app.get("/interior-designers/", serveInteriorIndex, (_req, res) => {
     res.sendFile(path.join(INTERIOR_DIR, "index.html"));
   });
   app.use(
