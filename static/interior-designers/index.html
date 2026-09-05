@@ -2,206 +2,459 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shortlist — Interior Designer applicants</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#faf9f7" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Interior designers</title>
   <style>
     :root {
-      --bg: #0f1115; --panel: #1a1d24; --border: #2a2f3a; --text: #eef1f6; --muted: #9aa3b2;
-      --accent: #5b9cff; --yes: #3dd68c; --maybe: #ffb020; --no: #ff6b6b;
+      --bg: #faf9f7;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --line: #e8e6e1;
+      --yes: #1b7f5a;
+      --yes-bg: #e8f5ef;
+      --maybe: #b45309;
+      --maybe-bg: #fef3e2;
+      --no: #9ca3af;
+      --no-bg: #f3f4f6;
+      --accent: #1a1a1a;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--text); }
-    header { position: sticky; top: 0; z-index: 20; background: rgba(15,17,21,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 14px 20px; }
-    h1 { margin: 0 0 4px; font-size: 20px; }
-    .sub { color: var(--muted); font-size: 13px; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
-    .toolbar label, .toolbar button, .toolbar select { font-size: 13px; }
-    .toolbar button { background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
-    .toolbar button.secondary { background: var(--panel); color: var(--text); border: 1px solid var(--border); }
-    .counts { margin-left: auto; color: var(--muted); font-size: 13px; }
-    main { padding: 16px 20px 120px; max-width: 1400px; margin: 0 auto; }
-    .candidate { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 18px; overflow: hidden; }
-    .candidate.selected-yes { border-color: var(--yes); box-shadow: 0 0 0 1px rgba(61,214,140,.25); }
-    .candidate.selected-maybe { border-color: var(--maybe); }
-    .candidate.selected-no { opacity: .55; }
-    .candidate.hidden { display: none; }
-    .head { display: flex; gap: 14px; padding: 14px 16px; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-    .avatar { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; background: #222; flex-shrink: 0; }
-    .avatar.placeholder { display: grid; place-items: center; color: var(--muted); font-size: 22px; }
-    .info { flex: 1; min-width: 200px; }
-    .name { font-size: 18px; font-weight: 700; }
-    .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-    .meta a { color: #8ec5ff; }
-    .pick { display: flex; gap: 6px; flex-wrap: wrap; }
-    .pick button { border: 1px solid var(--border); background: #12151b; color: var(--text); border-radius: 999px; padding: 7px 12px; cursor: pointer; font-size: 12px; }
-    .pick button.active-yes { background: rgba(61,214,140,.15); border-color: var(--yes); color: var(--yes); }
-    .pick button.active-maybe { background: rgba(255,176,32,.12); border-color: var(--maybe); color: var(--maybe); }
-    .pick button.active-no { background: rgba(255,107,107,.12); border-color: var(--no); color: var(--no); }
-    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; padding: 12px; }
-    .shot { position: relative; aspect-ratio: 4/3; background: #0b0d11; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: zoom-in; }
-    .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .shot .remote { position: absolute; bottom: 6px; right: 6px; font-size: 10px; background: rgba(0,0,0,.7); padding: 2px 6px; border-radius: 4px; color: #ccc; }
-    .empty { padding: 20px 16px; color: var(--muted); font-size: 14px; }
-    .links { padding: 0 16px 12px; font-size: 12px; }
-    .links a { color: #8ec5ff; margin-right: 10px; }
-    .cover { font-size: 12px; color: #b8c0cc; margin: 0 16px 10px; line-height: 1.45; border-left: 3px solid var(--border); padding-left: 10px; }
-    .notes { font-size: 12px; color: #888; margin: 0 16px 12px; font-style: italic; }
-    .badge { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
-    .badge.high { background: rgba(61,214,140,.15); color: var(--yes); }
-    .badge.medium { background: rgba(255,176,32,.12); color: var(--maybe); }
-    .badge.low, .badge.none { background: rgba(255,107,107,.1); color: #f99; }
-    #shortlistPanel { position: fixed; bottom: 0; left: 0; right: 0; background: #12151b; border-top: 1px solid var(--border); padding: 10px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; z-index: 30; }
-    #shortlistPanel .list { flex: 1; font-size: 13px; color: var(--muted); min-width: 200px; }
-    #shortlistPanel strong { color: var(--yes); }
-    #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 50; align-items: center; justify-content: center; padding: 20px; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.4;
+      padding-bottom: calc(72px + var(--safe-b));
+    }
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(250,249,247,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: calc(12px + var(--safe-t)) 16px 12px;
+    }
+    .brand { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    h1 { margin: 4px 0 0; font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+    .stats { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .stat {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--muted);
+    }
+    .stat strong { color: var(--text); font-weight: 600; }
+    .filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 16px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+    .chip {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+    main { padding: 0 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .card.pick-yes { border-color: #9fd4bc; box-shadow: 0 0 0 1px #9fd4bc; }
+    .card.pick-maybe { border-color: #f0c987; box-shadow: 0 0 0 1px #f0c987; }
+    .card.pick-no { opacity: .72; }
+    .card.hidden { display: none; }
+    .card-head {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 12px;
+      padding: 14px 14px 10px;
+      align-items: center;
+    }
+    .avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--line);
+    }
+    .avatar.ph {
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .name { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+    .subline { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .links a {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+    }
+    .picks {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+    .pick {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--muted);
+      min-height: 44px;
+    }
+    .pick.yes.on { background: var(--yes-bg); color: var(--yes); }
+    .pick.maybe.on { background: var(--maybe-bg); color: var(--maybe); }
+    .pick.no.on { background: var(--no-bg); color: #6b7280; }
+    .gallery-wrap { padding: 0 0 14px; }
+    .gallery-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      padding: 0 14px 8px;
+    }
+    .gallery {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 14px 4px;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+    }
+    .gallery::-webkit-scrollbar { display: none; }
+    .thumb {
+      flex: 0 0 72%;
+      max-width: 280px;
+      scroll-snap-align: start;
+      border: 0;
+      padding: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--line);
+      aspect-ratio: 4/3;
+      cursor: pointer;
+    }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .empty-work {
+      margin: 0 14px 14px;
+      padding: 20px 14px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px dashed var(--line);
+    }
+    .dock {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      padding: 10px 16px calc(10px + var(--safe-b));
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .dock-summary {
+      flex: 1;
+      min-width: 0;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+    .dock-summary strong { color: var(--yes); font-weight: 600; }
+    .dock button {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      min-height: 44px;
+    }
+    .dock button.ghost {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    #lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0,0,0,.94);
+      flex-direction: column;
+      padding: var(--safe-t) 0 var(--safe-b);
+    }
     #lightbox.open { display: flex; }
-    #lightbox img { max-width: min(1200px, 96vw); max-height: 90vh; border-radius: 8px; }
-    #lightbox .close { position: absolute; top: 16px; right: 20px; color: #fff; font-size: 28px; cursor: pointer; }
+    .lb-top {
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 16px;
+    }
+    .lb-close {
+      border: 0;
+      background: rgba(255,255,255,.15);
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .lb-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      min-height: 0;
+    }
+    .lb-stage img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(80px + var(--safe-b));
+      transform: translateX(-50%) translateY(12px);
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      z-index: 60;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    @media (min-width: 720px) {
+      body { padding-bottom: 80px; }
+      main { max-width: 720px; margin: 0 auto; }
+      .top, .filters { padding-left: max(16px, calc(50% - 360px)); padding-right: max(16px, calc(50% - 360px)); }
+      .dock > * { max-width: 720px; margin: 0 auto; width: 100%; }
+      .thumb { flex-basis: 220px; max-width: 220px; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Interior Designer applicants — review & shortlist</h1>
-    <div class="sub">Interior Designer for Home Project · 27 candidates · click images to enlarge</div>
-    <div class="toolbar">
-      <label><input type="checkbox" id="onlyWithWork" /> Only show candidates with portfolio images</label>
-      <label><input type="checkbox" id="onlyPicked" /> Only shortlisted / maybe</label>
-      <select id="filterConfidence">
-        <option value="">All confidence levels</option>
-        <option value="high">High confidence only</option>
-        <option value="medium">Medium+ confidence</option>
-      </select>
-      <button type="button" id="exportBtn">Copy shortlist</button>
-      <button type="button" class="secondary" id="clearBtn">Clear picks</button>
-      <div class="counts" id="counts"></div>
-    </div>
+  <header class="top">
+    <div class="brand">Praxis</div>
+    <h1>Interior designers</h1>
+    <div class="stats" id="stats"></div>
   </header>
-  <main id="main"></main>
-  <div id="shortlistPanel">
-    <div class="list" id="shortlistSummary">Pick Yes or Maybe on candidates you want to keep.</div>
-    <button type="button" id="exportBtn2">Copy shortlist</button>
+  <div class="filters" id="filters">
+    <button type="button" class="chip on" data-filter="all">All</button>
+    <button type="button" class="chip" data-filter="work">Has portfolio</button>
+    <button type="button" class="chip" data-filter="yes">Shortlisted</button>
+    <button type="button" class="chip" data-filter="maybe">Maybe</button>
+    <button type="button" class="chip" data-filter="undecided">Undecided</button>
   </div>
-  <div id="lightbox"><span class="close" id="lbClose">×</span><img id="lbImg" alt="" /></div>
+  <main id="main"></main>
+  <div class="dock">
+    <div class="dock-summary" id="dockSummary">Tap Yes or Maybe to build your shortlist.</div>
+    <button type="button" class="ghost" id="clearBtn" hidden>Clear</button>
+    <button type="button" id="copyBtn">Copy list</button>
+  </div>
+  <div id="lightbox" aria-hidden="true">
+    <div class="lb-top"><button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button></div>
+    <div class="lb-stage"><img id="lbImg" alt="" /></div>
+  </div>
+  <div class="toast" id="toast">Copied</div>
   <script>
-    const DATA = {"built_at":"2026-09-05T06:31:59.355Z","job_id":"2095961518096053621","job_title":"Interior Designer for Home Project","applicants":[{"index":1,"name":"Antolin A.","confidence":"none","upwork":"https://www.upwork.com/freelancers/antolinacuna","bid":"USD 25.0","proposal_id":"2096059638866857985","folder":"01__antolin-a","headshot":"portfolio-work/01__antolin-a/headshot.jpg","notes":"No Behance/website found matching Upwork slug antolinacuna.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":2,"name":"Mahmoud M.","confidence":"medium","upwork":"https://www.upwork.com/freelancers/mahmoudkhaledm","bid":"USD 35","proposal_id":"2095988544770850817","folder":"02__mahmoud-m","headshot":"portfolio-work/02__mahmoud-m/headshot.jpg","notes":"Egypt-based interior designer on Behance; likely match but not verified via Upwork slug.","cover_snippet":"","sources":[{"url":"https://www.behance.net/mahmoud_khaaled","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/02__mahmoud-m/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/541df7248849809.69faf4a7c568e.jpg","bytes":3547082},{"file":"portfolio-work/02__mahmoud-m/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/546c71248849809.69faf4a7c6b4e.jpg","bytes":3383326},{"file":"portfolio-work/02__mahmoud-m/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/eacf67248849809.69faf4a7c5aff.jpg","bytes":3556532},{"file":"portfolio-work/02__mahmoud-m/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/24dbe6248849809.69faf4a7c516e.jpg","bytes":2644580},{"file":"portfolio-work/02__mahmoud-m/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/e77112248849809.69faf4a7c7439.jpg","bytes":3619106},{"file":"portfolio-work/02__mahmoud-m/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/d71840248849809.69faf4a7c6ffb.jpg","bytes":3553560},{"file":"portfolio-work/02__mahmoud-m/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/8c7b1c248849809.69faf4a7c6462.jpg","bytes":3714434},{"file":"portfolio-work/02__mahmoud-m/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/5bd33f248849809.69faf4a7c5f66.jpg","bytes":2920270},{"file":"portfolio-work/02__mahmoud-m/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/2cb940239142233.6923602d60121.jpg","bytes":2227994},{"file":"portfolio-work/02__mahmoud-m/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/9ba9f6248849809.69faf4a8dcf63.jpg","bytes":937492},{"file":"portfolio-work/02__mahmoud-m/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/7ff43e248849809.69faf4a8dcc0a.jpg","bytes":854528},{"file":"portfolio-work/02__mahmoud-m/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/dae487248849809.69faf4a8dc10a.jpg","bytes":887264}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/mahmoud_khaaled","https://www.instagram.com/mahmoudkhaled.designs/"]},{"index":3,"name":"Estefania De Los Angeles L.","confidence":"medium","upwork":"https://www.upwork.com/freelancers/~0142d867ef6253e109","bid":"USD 10.0","proposal_id":"2095988770693189632","folder":"03__estefania-de-los-angeles-l","headshot":"portfolio-work/03__estefania-de-los-angeles-l/headshot.jpg","notes":"No Behance portfolio found; Instagram username matches candidate name.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.instagram.com/__._estefaniadelosangeles/"]},{"index":4,"name":"Ali G.","confidence":"medium","upwork":"https://www.upwork.com/freelancers/alighiami","bid":"USD 30.0","proposal_id":"2095983881856094209","folder":"04__ali-g","headshot":"portfolio-work/04__ali-g/headshot.jpg","notes":"Upwork lists France; Instagram shows Iran-based architecture practice — verify identity.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.instagram.com/architect.alighiami/"]},{"index":5,"name":"Roushan M.","confidence":"high","upwork":"https://www.upwork.com/freelancers/roushanmir","bid":"USD 25.0","proposal_id":"2095963372120707073","folder":"05__roushan-m","headshot":"portfolio-work/05__roushan-m/headshot.jpg","notes":"Behance + YouTube walkthroughs linked directly in cover letter.","cover_snippet":"","sources":[{"url":"https://www.behance.net/roushanmir","skipped":false,"image_count":0,"projects":[]},{"url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","skipped":false,"image_count":8,"projects":[]},{"url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","skipped":false,"image_count":8,"projects":[]},{"url":"https://www.behance.net/gallery/245174237/Al-Awir-Villa-Dubai","skipped":false,"image_count":8,"projects":[]}],"images":[{"file":"portfolio-work/05__roushan-m/01.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/a08ead245236043.69a92d21cd317.jpg","bytes":1321554},{"file":"portfolio-work/05__roushan-m/02.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b692ca245236043.69a92d21cdab3.jpg","bytes":1364034},{"file":"portfolio-work/05__roushan-m/03.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/cf546c245236043.69a92d22a37c0.jpg","bytes":896832},{"file":"portfolio-work/05__roushan-m/04.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/05717e245236043.69a92d22a31d4.jpg","bytes":2860276},{"file":"portfolio-work/05__roushan-m/05.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/6425a8245236043.69a92d238f3ba.jpg","bytes":1667796},{"file":"portfolio-work/05__roushan-m/06.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/12a64d245236043.69a92d238fe47.jpg","bytes":1736240},{"file":"portfolio-work/05__roushan-m/07.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/886749245236043.69a92d2390c0e.jpg","bytes":1976800},{"file":"portfolio-work/05__roushan-m/08.jpg","source_url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/780c3f245236043.69a92d238f986.jpg","bytes":1868286},{"file":"portfolio-work/05__roushan-m/09.jpg","source_url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/e8a2e2220204109.67bef6b90e7de.jpg","bytes":78380},{"file":"portfolio-work/05__roushan-m/10.jpg","source_url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/f53ed8220204109.67bef6b90c32c.jpg","bytes":93160},{"file":"portfolio-work/05__roushan-m/11.jpg","source_url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/21929d220204109.67bef6b90d00b.jpg","bytes":247186},{"file":"portfolio-work/05__roushan-m/12.jpg","source_url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/3ad345220204109.67bef6b909e3a.jpg","bytes":153354},{"file":"portfolio-work/05__roushan-m/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/a08ead245236043.69a92d21cd317.jpg","bytes":1321554},{"file":"portfolio-work/05__roushan-m/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b692ca245236043.69a92d21cdab3.jpg","bytes":1364034},{"file":"portfolio-work/05__roushan-m/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/cf546c245236043.69a92d22a37c0.jpg","bytes":896832},{"file":"portfolio-work/05__roushan-m/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/05717e245236043.69a92d22a31d4.jpg","bytes":2860276}],"remote_images":[],"cover_letter_links":["https://www.behance.net/roushanmir","https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","https://www.behance.net/gallery/245174237/Al-Awir-Villa-Dubai","https://www.youtube.com/shorts/P1gNLB86D7Q","https://www.youtube.com/shorts/CNl1r_4W2sE","https://www.youtube.com/shorts/d769uw5XsgA"],"web_links":["https://www.youtube.com/shorts/P1gNLB86D7Q","https://www.youtube.com/shorts/CNl1r_4W2sE","https://www.youtube.com/shorts/d769uw5XsgA"]},{"index":6,"name":"Muhammad H.","confidence":"high","upwork":"https://www.upwork.com/freelancers/mhuzaifah","bid":"USD 25.0","proposal_id":"2095963541507543041","folder":"06__muhammad-h","headshot":"portfolio-work/06__muhammad-h/headshot.jpg","notes":"Behance username matches Upwork slug mhuzaifah.","cover_snippet":"","sources":[{"url":"https://www.behance.net/mhuzaifam","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/06__muhammad-h/bh01.png","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/c8757e251320951.6a33ab549a267.png","bytes":649006},{"file":"portfolio-work/06__muhammad-h/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/b68ab3227144099.683a9ac5bfb22.png","bytes":276322},{"file":"portfolio-work/06__muhammad-h/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/a3b338227110877.6839d49be84f3.png","bytes":276322},{"file":"portfolio-work/06__muhammad-h/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5dad3b227068815.683934e1f230c.png","bytes":323860},{"file":"portfolio-work/06__muhammad-h/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/649012227068815.683934e1f2a47.png","bytes":328536},{"file":"portfolio-work/06__muhammad-h/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/be1b6e227068541.6839333eaf5a2.png","bytes":181994},{"file":"portfolio-work/06__muhammad-h/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/6561b4227068541.6839333eae202.png","bytes":207324},{"file":"portfolio-work/06__muhammad-h/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5f01f1227068541.6839333eaf0a6.png","bytes":167682},{"file":"portfolio-work/06__muhammad-h/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/afd478227068541.6839333eae8e3.png","bytes":178748},{"file":"portfolio-work/06__muhammad-h/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/22c769227068541.6839333eafa99.png","bytes":161816},{"file":"portfolio-work/06__muhammad-h/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/193618227068541.6839333eaff90.png","bytes":163576},{"file":"portfolio-work/06__muhammad-h/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/137cd4227068541.6839333eb0947.png","bytes":181156}],"remote_images":[],"cover_letter_links":["https://www.youtube.com/watch?v=qurucg7bN8M"],"web_links":["https://www.behance.net/mhuzaifam","https://www.youtube.com/watch?v=qurucg7bN8M"]},{"index":7,"name":"Ahmed O.","confidence":"high","upwork":"https://www.upwork.com/freelancers/ahmadowida","bid":"USD 25.0","proposal_id":"2095963854290481153","folder":"07__ahmed-o","headshot":"portfolio-work/07__ahmed-o/headshot.jpg","notes":"Portfolio site linked in cover letter.","cover_snippet":"","sources":[{"url":"https://zakform.com/projects","skipped":false,"image_count":7,"projects":[]},{"url":"https://zakform.com/","skipped":false,"image_count":8,"projects":[]}],"images":[{"file":"portfolio-work/07__ahmed-o/01.webp","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1780116589828-wtpuztdj.webp","bytes":1002504},{"file":"portfolio-work/07__ahmed-o/02.jpg","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1782407915981-g27a681p.jpg","bytes":1744526},{"file":"portfolio-work/07__ahmed-o/03.webp","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1780092739096-4jemnzf1.webp","bytes":772220},{"file":"portfolio-work/07__ahmed-o/04.jpg","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1782406908120-zdcko8ie.jpg","bytes":2225470},{"file":"portfolio-work/07__ahmed-o/05.webp","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1780116823588-u0xp4vov.webp","bytes":1144254},{"file":"portfolio-work/07__ahmed-o/06.webp","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1780092763499-86q6jxiy.webp","bytes":852824},{"file":"portfolio-work/07__ahmed-o/07.webp","source_url":"https://zakform.com/projects","image_url":"https://zakform.com/uploads/1780092740637-i2fztz16.webp","bytes":1305044},{"file":"portfolio-work/07__ahmed-o/08.jpg","source_url":"https://zakform.com/","image_url":"https://zakform.com/uploads/1782407069828-t7gb18vb.jpg","bytes":2284421},{"file":"portfolio-work/07__ahmed-o/09.jpg","source_url":"https://zakform.com/","image_url":"https://zakform.com/uploads/1782508602002-ijknqyw3.jpg","bytes":4097511},{"file":"portfolio-work/07__ahmed-o/10.webp","source_url":"https://zakform.com/","image_url":"https://zakform.com/uploads/1780092768245-z6ry2bw4.webp","bytes":838894},{"file":"portfolio-work/07__ahmed-o/11.webp","source_url":"https://zakform.com/","image_url":"https://zakform.com/uploads/1780120903096-vo7t9xlz.webp","bytes":180424},{"file":"portfolio-work/07__ahmed-o/12.jpg","source_url":"https://zakform.com/","image_url":"https://zakform.com/uploads/1782406907286-yvfyvhk4.jpg","bytes":2226804}],"remote_images":[],"cover_letter_links":["https://zakform.com/projects"],"web_links":["https://zakform.com/","https://zakform.com/projects"]},{"index":8,"name":"Alex K.","confidence":"high","upwork":"https://www.upwork.com/freelancers/alexkiiski","bid":"USD 30.0","proposal_id":"2095964005074735105","folder":"08__alex-k","headshot":"portfolio-work/08__alex-k/headshot.jpg","notes":"Behance galleries authored by Alex Kiiski — matches Upwork slug.","cover_snippet":"","sources":[{"url":"https://www.behance.net/gallery/237354709/Interior-design","skipped":false,"image_count":6,"projects":[]},{"url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","skipped":false,"image_count":8,"projects":[]}],"images":[{"file":"portfolio-work/08__alex-k/01.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/34ce05237354709.68ff4fb51f7ee.png","bytes":2162506},{"file":"portfolio-work/08__alex-k/02.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/651228237354709.68ff4fb51fcef.png","bytes":2083046},{"file":"portfolio-work/08__alex-k/03.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/112606237354709.68ff4fb51e68a.png","bytes":2435646},{"file":"portfolio-work/08__alex-k/04.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/5f6b21237354709.68ff4fb51f0b4.png","bytes":4733562},{"file":"portfolio-work/08__alex-k/05.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b30367237354709.68ff4fb51ebd1.png","bytes":3224390},{"file":"portfolio-work/08__alex-k/06.png","source_url":"https://www.behance.net/gallery/237354709/Interior-design","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/7722aa237354709.68ff4fb520416.png","bytes":2876288},{"file":"portfolio-work/08__alex-k/07.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/11237c254027639.6a7898b3d5ce7.png","bytes":1914514},{"file":"portfolio-work/08__alex-k/08.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/739858254027639.6a7898b3d45c9.png","bytes":1830644},{"file":"portfolio-work/08__alex-k/09.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/edd5ff254027639.6a7898b3d26d0.png","bytes":1621240},{"file":"portfolio-work/08__alex-k/10.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/aa480a254027639.6a7898b3cfad1.png","bytes":10639272},{"file":"portfolio-work/08__alex-k/11.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/e7b1e5254027639.6a7898b3d05dc.png","bytes":14199421},{"file":"portfolio-work/08__alex-k/12.png","source_url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/acd53a254027639.6a7898b3ce3ea.png","bytes":7943136},{"file":"portfolio-work/08__alex-k/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/34ce05237354709.68ff4fb51f7ee.png","bytes":448740},{"file":"portfolio-work/08__alex-k/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/651228237354709.68ff4fb51fcef.png","bytes":467780},{"file":"portfolio-work/08__alex-k/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/112606237354709.68ff4fb51e68a.png","bytes":540388},{"file":"portfolio-work/08__alex-k/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5f6b21237354709.68ff4fb51f0b4.png","bytes":895514}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/gallery/237354709/Interior-design","https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D"]},{"index":9,"name":"Junaid A.","confidence":"high","upwork":"https://www.upwork.com/freelancers/arjunaid","bid":"USD 17.5","proposal_id":"2095977864103649281","folder":"09__junaid-a","headshot":"portfolio-work/09__junaid-a/headshot.jpg","notes":"Licensed architect in Lahore; strong match for Upwork slug arjunaid.","cover_snippet":"","sources":[{"url":"https://www.behance.net/jdarch","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/09__junaid-a/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/ee3556218702515.67a594a7cd9e5.jpg","bytes":443886},{"file":"portfolio-work/09__junaid-a/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/471bb7218702515.67a594a7cbe49.jpg","bytes":434032},{"file":"portfolio-work/09__junaid-a/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/dd4c1c218702515.67a594a7ce62b.jpg","bytes":410474},{"file":"portfolio-work/09__junaid-a/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/69d180218702515.67a594a7cc607.jpg","bytes":398772},{"file":"portfolio-work/09__junaid-a/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/33d365218702515.67a594a7cd239.jpg","bytes":492626},{"file":"portfolio-work/09__junaid-a/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/92df63218702515.67a594a7ccd79.jpg","bytes":438222},{"file":"portfolio-work/09__junaid-a/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/781684218702515.67a594a7ce169.jpg","bytes":443568},{"file":"portfolio-work/09__junaid-a/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/0ab3cc214662153.675bdf8090989.jpg","bytes":82772},{"file":"portfolio-work/09__junaid-a/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/129007214662153.675bdf80901a5.jpg","bytes":89210},{"file":"portfolio-work/09__junaid-a/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/37faf5214662153.675bdf808f9c5.jpg","bytes":98088},{"file":"portfolio-work/09__junaid-a/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/a79f75214662153.675bdf809104e.jpg","bytes":48050},{"file":"portfolio-work/09__junaid-a/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/hd_webp/b07fb0214662081.675bdf281070d.jpg","bytes":66974}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/jdarch"]},{"index":10,"name":"Elias T.","confidence":"high","upwork":"https://www.upwork.com/freelancers/~013c8a9c13865d6a1b","bid":"USD 10.0","proposal_id":"2095963633437442049","folder":"10__elias-t","headshot":"portfolio-work/10__elias-t/headshot.jpg","notes":"Two Google Drive portfolio PDFs linked in cover letter.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":["https://drive.google.com/file/d/1aZunEdnNEEddKJn4gzOYX1EeIZAatrAj/view?usp=sharing","https://drive.google.com/file/d/1BuO7WoUwtaq4SvI4cOx8SJSYPoxH0Sjm/view?usp=sharing"],"web_links":["https://drive.google.com/file/d/1aZunEdnNEEddKJn4gzOYX1EeIZAatrAj/view?usp=sharing","https://drive.google.com/file/d/1BuO7WoUwtaq4SvI4cOx8SJSYPoxH0Sjm/view?usp=sharing"]},{"index":11,"name":"Olajide O.","confidence":"low","upwork":"https://www.upwork.com/freelancers/~015d7fcfa96b24277b","bid":"USD 15.0","proposal_id":"2095963011179171841","folder":"11__olajide-o","headshot":"portfolio-work/11__olajide-o/headshot.jpg","notes":"Candidate is CAD/permit engineer; no interior design gallery found.","cover_snippet":"","sources":[{"url":"https://www.cadcrowd.com/profile/80039-olajide-mosuro/models","skipped":false,"image_count":0,"projects":[]}],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.cadcrowd.com/profile/80039-olajide-mosuro/models"]},{"index":12,"name":"Fariya K.","confidence":"none","upwork":"https://www.upwork.com/freelancers/fariyak3","bid":"USD 18.0","proposal_id":"2095990570945220609","folder":"12__fariya-k","headshot":"portfolio-work/12__fariya-k/headshot.jpg","notes":"No Behance profile matching fariyak3 or interior work found.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":13,"name":"Priyanka S.","confidence":"none","upwork":"https://www.upwork.com/freelancers/~01008a82457212b814","bid":"USD 25.0","proposal_id":"2095999324518006785","folder":"13__priyanka-s","headshot":"portfolio-work/13__priyanka-s/headshot.jpg","notes":"Multiple Priyanka interior designers on Behance (India); none verified to this Upwork profile.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":14,"name":"Sahil B.","confidence":"high","upwork":"https://www.upwork.com/freelancers/sahilbudhawani","bid":"USD 20.0","proposal_id":"2095963030641287169","folder":"14__sahil-b","headshot":"portfolio-work/14__sahil-b/headshot.jpg","notes":"Portfolio URL in profile; site may require JavaScript to render.","cover_snippet":"","sources":[{"url":"https://sahilb.tech/","skipped":false,"image_count":1,"projects":[]}],"images":[],"remote_images":[],"cover_letter_links":["https://sahilb.tech/"],"web_links":["https://sahilb.tech/"]},{"index":15,"name":"Aima A.","confidence":"none","upwork":"https://www.upwork.com/freelancers/aimaa6","bid":"USD 10.0","proposal_id":"2095967574996029441","folder":"15__aima-a","headshot":"portfolio-work/15__aima-a/headshot.jpg","notes":"Behance profiles for other Aima names found (graphic design); none verified.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":16,"name":"Toymur A.","confidence":"high","upwork":"https://www.upwork.com/freelancers/~01873b1646356de94e","bid":"USD 15","proposal_id":"2095965393099952129","folder":"16__toymur-a","headshot":"portfolio-work/16__toymur-a/headshot.jpg","notes":"Behance profile explicitly names Toymur Ahmed, interior designer.","cover_snippet":"","sources":[{"url":"https://www.behance.net/onestepinterior","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/16__toymur-a/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/dd5788244825899.699fecfea22c0.jpg","bytes":354980},{"file":"portfolio-work/16__toymur-a/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/3aeae5244825899.699fecfea2be3.jpg","bytes":279432},{"file":"portfolio-work/16__toymur-a/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/ee485f244825899.699fecfea38de.jpg","bytes":279624},{"file":"portfolio-work/16__toymur-a/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/7aee3c244825899.699fecfea31aa.jpg","bytes":305306},{"file":"portfolio-work/16__toymur-a/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/2b313e218439987.67a1c45e10983.jpg","bytes":96416},{"file":"portfolio-work/16__toymur-a/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/ff5d9f247399389.69d9f09842215.png","bytes":121422},{"file":"portfolio-work/16__toymur-a/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/13dad4247399389.69d9f09842a0d.png","bytes":142746},{"file":"portfolio-work/16__toymur-a/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/802edf247399389.69d9f098425ed.png","bytes":167178},{"file":"portfolio-work/16__toymur-a/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/b4aabc243826709.698a051c7d33d.png","bytes":139186},{"file":"portfolio-work/16__toymur-a/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/0ed930243826709.698a051c7d80c.png","bytes":127536},{"file":"portfolio-work/16__toymur-a/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/f2c41f243826471.698a042e44efc.png","bytes":321356},{"file":"portfolio-work/16__toymur-a/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/cf66c4243826471.698a042e459ae.png","bytes":309352}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/onestepinterior"]},{"index":17,"name":"Orest M.","confidence":"high","upwork":"https://www.upwork.com/freelancers/orestmoskal","bid":"USD 30.0","proposal_id":"2095962515761192961","folder":"17__orest-m","headshot":"portfolio-work/17__orest-m/headshot.jpg","notes":"Extensive Behance galleries in cover letter + DARK-RENDER studio site.","cover_snippet":"","sources":[{"url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","skipped":false,"image_count":8,"projects":[]},{"url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","skipped":false,"image_count":8,"projects":[]},{"url":"https://www.behance.net/gallery/87645735/Qatar-Interior-Design-by-Gordijovich","skipped":false,"image_count":6,"projects":[]},{"url":"https://www.behance.net/gallery/83270309/Pool","skipped":false,"image_count":8,"projects":[]},{"url":"https://www.behance.net/gallery/48767583/Porta-Fira-VIZ","skipped":false,"image_count":5,"projects":[]},{"url":"https://www.behance.net/darkrender","skipped":false,"image_count":0,"projects":[]},{"url":"https://dark-render.com/","skipped":false,"image_count":1,"projects":[]},{"url":"https://dark-render.com/studio/","skipped":false,"image_count":1,"projects":[]}],"images":[{"file":"portfolio-work/17__orest-m/01.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/4e34de105039523.5f723b2e37136.png","bytes":1489826},{"file":"portfolio-work/17__orest-m/02.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b162a0105039523.5f70a55675b4d.png","bytes":1930020},{"file":"portfolio-work/17__orest-m/03.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/1e940c105039523.5f70a55676143.png","bytes":1822134},{"file":"portfolio-work/17__orest-m/04.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/229ee7105039523.5f70a55676635.png","bytes":1605332},{"file":"portfolio-work/17__orest-m/05.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/d43f70105039523.5f723b2e35d98.png","bytes":1538180},{"file":"portfolio-work/17__orest-m/06.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/5700ef105039523.5f720de31711f.png","bytes":1653424},{"file":"portfolio-work/17__orest-m/07.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/dae6b0105039523.5f70d8375da59.png","bytes":2477698},{"file":"portfolio-work/17__orest-m/08.png","source_url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/f87a01105039523.5f708ec53ae97.png","bytes":379058},{"file":"portfolio-work/17__orest-m/09.jpg","source_url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/ec89ea75065011.5c41ffb5e555a.jpg","bytes":2932448},{"file":"portfolio-work/17__orest-m/10.jpg","source_url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b3f0c175065011.5c41ffb6077f1.jpg","bytes":3729686},{"file":"portfolio-work/17__orest-m/11.jpg","source_url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/f8a01175065011.5c41ffb5ecbd3.jpg","bytes":3350712},{"file":"portfolio-work/17__orest-m/12.jpg","source_url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/3ee73d75065011.5c41ffb5d6534.jpg","bytes":2959228},{"file":"portfolio-work/17__orest-m/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/4e34de105039523.5f723b2e37136.png","bytes":227564},{"file":"portfolio-work/17__orest-m/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/b162a0105039523.5f70a55675b4d.png","bytes":412500},{"file":"portfolio-work/17__orest-m/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/1e940c105039523.5f70a55676143.png","bytes":534234},{"file":"portfolio-work/17__orest-m/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/d43f70105039523.5f723b2e35d98.png","bytes":315732}],"remote_images":[],"cover_letter_links":["https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","https://www.behance.net/gallery/87645735/Qatar-Interior-Design-by-Gordijovich","https://www.behance.net/gallery/83270309/Pool","https://www.behance.net/gallery/48767583/Porta-Fira-VIZ","https://www.youtube.com/watch?v=x7UlzOilPL0"],"web_links":["https://www.behance.net/darkrender","https://dark-render.com/","https://dark-render.com/studio/","https://www.youtube.com/watch?v=x7UlzOilPL0"]},{"index":18,"name":"Ellie K.","confidence":"high","upwork":"https://www.upwork.com/freelancers/elliekafi","bid":"USD 35.0","proposal_id":"2095976084145807361","folder":"18__ellie-k","headshot":"portfolio-work/18__ellie-k/headshot.jpg","notes":"Ellie Kafi on Upwork matches Form Noor / Ellie Hopen LA architect.","cover_snippet":"","sources":[{"url":"https://www.formnoor.com/","skipped":false,"image_count":7,"projects":[]},{"url":"https://www.instagram.com/formnoor/","skipped":true,"note":"instagram skipped"}],"images":[{"file":"portfolio-work/18__ellie-k/01.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769115996917-3TJLLVP02KXO2MEYBZKM/image-asset.jpeg","bytes":271892},{"file":"portfolio-work/18__ellie-k/02.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769115997663-16Q1I1VXTGTNNKRGNDF0/image-asset.jpeg","bytes":387870},{"file":"portfolio-work/18__ellie-k/03.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769115998466-A2LBK5EPVPZUYBI9JNQT/image-asset.jpeg","bytes":338548},{"file":"portfolio-work/18__ellie-k/04.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769115999250-EUOFOT8CC8Z52QPK2RZC/image-asset.jpeg","bytes":64016},{"file":"portfolio-work/18__ellie-k/05.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769116000198-RPOCPWIN40A8JV1UA240/image-asset.jpeg","bytes":207868},{"file":"portfolio-work/18__ellie-k/06.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769116000938-ZSHBXVPESGX76O8S2PHJ/image-asset.jpeg","bytes":159422},{"file":"portfolio-work/18__ellie-k/07.webp","source_url":"https://www.formnoor.com/","image_url":"https://images.squarespace-cdn.com/content/v1/6961601ae031d407bbb1746f/1769191128133-Z885JAHA3L7M3P28M2S0/image-asset.jpeg","bytes":104644}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.formnoor.com/","https://www.instagram.com/formnoor/","https://voyagela.com/interview/hidden-gems-meet-ellie-hopen-of-form-noor/"]},{"index":19,"name":"Obiya A.","confidence":"none","upwork":"https://www.upwork.com/freelancers/obiyaa","bid":"USD 10.0","proposal_id":"2096055112403501057","folder":"19__obiya-a","headshot":"portfolio-work/19__obiya-a/headshot.jpg","notes":"No public Behance/website found matching obiyaa.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":20,"name":"Iryna H.","confidence":"high","upwork":"https://www.upwork.com/freelancers/irynaharbaruk","bid":"USD 30.0","proposal_id":"2095962925707751425","folder":"20__iryna-h","headshot":"portfolio-work/20__iryna-h/headshot.jpg","notes":"Behance username iraharbaruk matches Upwork slug irynaharbaruk.","cover_snippet":"","sources":[{"url":"https://www.behance.net/iraharbaruk","skipped":false,"image_count":0,"projects":[]},{"url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","skipped":false,"image_count":5,"projects":[]},{"url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","skipped":false,"image_count":8,"projects":[]}],"images":[{"file":"portfolio-work/20__iryna-h/01.jpg","source_url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/ccb93b76383649.5c9b4ac16bd04.jpg","bytes":798746},{"file":"portfolio-work/20__iryna-h/02.jpg","source_url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/54434076383649.5c9b4ac15e01c.jpg","bytes":438916},{"file":"portfolio-work/20__iryna-h/03.jpg","source_url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/94853d76383649.5ccabe3b2dc6a.jpg","bytes":311024},{"file":"portfolio-work/20__iryna-h/04.jpg","source_url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/3e3e9b76383649.5ccabe3b2df44.jpg","bytes":615424},{"file":"portfolio-work/20__iryna-h/05.jpg","source_url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/9a28a776383649.5ccabe3b2d959.jpg","bytes":689236},{"file":"portfolio-work/20__iryna-h/06.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/624853136398011.61f94e5b34674.jpg","bytes":84698},{"file":"portfolio-work/20__iryna-h/07.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/15209b136398011.61f916cdce9c4.jpg","bytes":121885},{"file":"portfolio-work/20__iryna-h/08.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400/09c2f4136398011.61f916cdcf2a2.jpg","bytes":1019153},{"file":"portfolio-work/20__iryna-h/09.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/2fb2e1136398011.61f916ce714a6.jpg","bytes":114308},{"file":"portfolio-work/20__iryna-h/10.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/1fb2b7136398011.61f916ce70ca6.jpg","bytes":146215},{"file":"portfolio-work/20__iryna-h/11.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/disp/1cc8eb136398011.61f916cf04c0d.jpg","bytes":80579},{"file":"portfolio-work/20__iryna-h/12.jpg","source_url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400/cee36a136398011.61f916cf03f2d.jpg","bytes":1081665},{"file":"portfolio-work/20__iryna-h/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/7361ab57246637.59ce11c3c1de6.jpg","bytes":161978},{"file":"portfolio-work/20__iryna-h/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/f8867057246637.59ce11c3c27ae.jpg","bytes":161690},{"file":"portfolio-work/20__iryna-h/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/2a98a957246637.59ce11c3c18d8.jpg","bytes":180702},{"file":"portfolio-work/20__iryna-h/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/e3bdbe57246637.59ce11c3c2cb3.jpg","bytes":198984}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/iraharbaruk","https://www.behance.net/gallery/76383649/Interior-Design-Showcase","https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m"]},{"index":21,"name":"Jawad A.","confidence":"high","upwork":"https://www.upwork.com/freelancers/~019e7f3717969c4e0c","bid":"USD 5.0","proposal_id":"2095964567636238337","folder":"21__jawad-a","headshot":"portfolio-work/21__jawad-a/headshot.jpg","notes":"Four Behance interior galleries linked directly in cover letter.","cover_snippet":"","sources":[{"url":"https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","skipped":false,"image_count":3,"projects":[]},{"url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","skipped":false,"image_count":4,"projects":[]},{"url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","skipped":false,"image_count":5,"projects":[]},{"url":"https://www.behance.net/gallery/249454975/Modern-Luxury-Bathroom-Designs","skipped":false,"image_count":4,"projects":[]}],"images":[{"file":"portfolio-work/21__jawad-a/01.jpg","source_url":"https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/1438c3249455223.6a07c68d52a7c.jpeg","bytes":171294},{"file":"portfolio-work/21__jawad-a/02.jpg","source_url":"https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/ae7b74249455223.6a07c68d525a9.jpeg","bytes":217856},{"file":"portfolio-work/21__jawad-a/03.jpg","source_url":"https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/5d66a5249455223.6a07c68d52eef.jpeg","bytes":149708},{"file":"portfolio-work/21__jawad-a/04.png","source_url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b92287249455077.6a07c4dccba05.png","bytes":1758706},{"file":"portfolio-work/21__jawad-a/05.png","source_url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/0c2fdd249455077.6a07c4dcccc92.png","bytes":672170},{"file":"portfolio-work/21__jawad-a/06.png","source_url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/4be51d249455077.6a07c4dccc331.png","bytes":747928},{"file":"portfolio-work/21__jawad-a/07.jpg","source_url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/e2597f249455077.6a07c4dccb1ee.jpeg","bytes":249388},{"file":"portfolio-work/21__jawad-a/08.png","source_url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/713d03249454813.6a07c1a0463c9.png","bytes":595020},{"file":"portfolio-work/21__jawad-a/09.png","source_url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/94e7e2249454813.6a07c1a04701f.png","bytes":723726},{"file":"portfolio-work/21__jawad-a/10.png","source_url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/2e1b92249454813.6a07c1a0479f4.png","bytes":813224},{"file":"portfolio-work/21__jawad-a/11.png","source_url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/1cffed249454813.6a07c1a047526.png","bytes":803148},{"file":"portfolio-work/21__jawad-a/12.jpg","source_url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/fs_webp/43f935249454813.6a07c62cf3d4a.jpeg","bytes":152318},{"file":"portfolio-work/21__jawad-a/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/b92287249455077.6a07c4dccba05.png","bytes":253652},{"file":"portfolio-work/21__jawad-a/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/0c2fdd249455077.6a07c4dcccc92.png","bytes":262248},{"file":"portfolio-work/21__jawad-a/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/4be51d249455077.6a07c4dccc331.png","bytes":212824},{"file":"portfolio-work/21__jawad-a/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/713d03249454813.6a07c1a0463c9.png","bytes":81114}],"remote_images":[],"cover_letter_links":["https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","https://www.behance.net/gallery/249454975/Modern-Luxury-Bathroom-Designs"],"web_links":[]},{"index":22,"name":"Arman A.","confidence":"low","upwork":"https://www.upwork.com/freelancers/~0179328e09931fac8f","bid":"USD 15.0","proposal_id":"2095974439116746753","folder":"22__arman-a","headshot":"portfolio-work/22__arman-a/headshot.jpg","notes":"Estonia-based IFIA inventor on Upwork; web matches are unverified.","cover_snippet":"","sources":[{"url":"https://arman-media.com/","skipped":false,"image_count":5,"projects":[]},{"url":"https://www.behance.net/armanazarip","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/22__arman-a/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/136595254986355.6a935e3c26afb.png","bytes":603408},{"file":"portfolio-work/22__arman-a/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/8399b0254986355.6a935e3c27021.png","bytes":410336},{"file":"portfolio-work/22__arman-a/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/cc58d4254986355.6a935e3c27a51.png","bytes":351208},{"file":"portfolio-work/22__arman-a/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/b1929e254986355.6a935e3c27574.png","bytes":644464},{"file":"portfolio-work/22__arman-a/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/ceb396254986355.6a935e3c26478.png","bytes":152176},{"file":"portfolio-work/22__arman-a/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/898c85254986229.6a935ca321d7a.png","bytes":151620},{"file":"portfolio-work/22__arman-a/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/731ecb254986229.6a935ca31f3a7.png","bytes":411914},{"file":"portfolio-work/22__arman-a/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/919d6d254986229.6a935ca31fc2f.png","bytes":184036},{"file":"portfolio-work/22__arman-a/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/8d80d8254986229.6a935ca323485.png","bytes":447560},{"file":"portfolio-work/22__arman-a/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/9a3421254986229.6a935ca320cb9.png","bytes":413686},{"file":"portfolio-work/22__arman-a/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/3c767a254986229.6a935ca31e252.png","bytes":176108},{"file":"portfolio-work/22__arman-a/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/1db97b254986229.6a935ca320467.png","bytes":441468}],"remote_images":[],"cover_letter_links":[],"web_links":["https://arman-media.com/","https://www.behance.net/armanazarip"]},{"index":23,"name":"Dilanka B.","confidence":"high","upwork":"https://www.upwork.com/freelancers/dilankabandara","bid":"USD 12.5","proposal_id":"2096005666894909441","folder":"23__dilanka-b","headshot":"portfolio-work/23__dilanka-b/headshot.jpg","notes":"Behance profile matches Upwork slug dilankabandara; also photographer on ArchDaily projects.","cover_snippet":"","sources":[{"url":"https://www.behance.net/dilankabandara1992","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/23__dilanka-b/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/d9a188228641937.685683111bc30.png","bytes":481276},{"file":"portfolio-work/23__dilanka-b/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/3cfcd2228641937.6856831116b9c.png","bytes":450286},{"file":"portfolio-work/23__dilanka-b/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/5933bf228641937.6856831118eba.png","bytes":479670},{"file":"portfolio-work/23__dilanka-b/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/971110228641937.6856831116602.png","bytes":487276},{"file":"portfolio-work/23__dilanka-b/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/fa7cc4228641937.6856831119465.png","bytes":293924},{"file":"portfolio-work/23__dilanka-b/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/732208228641937.68568311179ba.png","bytes":369190},{"file":"portfolio-work/23__dilanka-b/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/fe3528228641937.6856831118193.jpg","bytes":376478},{"file":"portfolio-work/23__dilanka-b/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/9f2585228641937.685683111741c.png","bytes":506802},{"file":"portfolio-work/23__dilanka-b/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/dfbfcb228641937.685683111acf9.png","bytes":382492},{"file":"portfolio-work/23__dilanka-b/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/8b7c2f228641937.6856831118895.png","bytes":368650},{"file":"portfolio-work/23__dilanka-b/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/6492e2228641937.685683111a167.png","bytes":404788},{"file":"portfolio-work/23__dilanka-b/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/1400_webp/fb0dfb228641937.6856831119c01.png","bytes":533398}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/dilankabandara1992"]},{"index":24,"name":"Minh N.","confidence":"none","upwork":"https://www.upwork.com/freelancers/~01d68444c9b3aee05a","bid":"USD 15.0","proposal_id":"2095985745207111681","folder":"24__minh-n","headshot":"portfolio-work/24__minh-n/headshot.jpg","notes":"Many Minh Nguyen interior designers in Vietnam; none verified to this profile.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":25,"name":"Biruk T.","confidence":"none","upwork":"https://www.upwork.com/freelancers/~016238ddcb73f618c8","bid":"USD 10.0","proposal_id":"2095974891553746945","folder":"25__biruk-t","headshot":"portfolio-work/25__biruk-t/headshot.jpg","notes":"No portfolio found matching Biruk T / architectural permit focus.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":26,"name":"Egla X.","confidence":"none","upwork":"https://www.upwork.com/freelancers/~01a10f0c2dc38dd625","bid":"USD 25.0","proposal_id":"2095969426889949185","folder":"26__egla-x","headshot":"portfolio-work/26__egla-x/headshot.jpg","notes":"No public portfolio found for Albania architect drafter.","cover_snippet":"","sources":[],"images":[],"remote_images":[],"cover_letter_links":[],"web_links":[]},{"index":27,"name":"Santi L.","confidence":"low","upwork":"https://www.upwork.com/freelancers/~0175af30ffa310b333","bid":"USD 35.0","proposal_id":"2096049969754783745","folder":"27__santi-l","headshot":"portfolio-work/27__santi-l/headshot.jpg","notes":"Argentina-based archviz profile found; not verified to Upwork slug.","cover_snippet":"","sources":[{"url":"https://www.behance.net/ssvisualization/projects","skipped":false,"image_count":0,"projects":[]}],"images":[{"file":"portfolio-work/27__santi-l/bh01.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/b4d577246647911.69ca8af331ddc.jpg","bytes":605112},{"file":"portfolio-work/27__santi-l/bh02.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/a1df87246647911.69ca8af3318bc.jpg","bytes":687342},{"file":"portfolio-work/27__santi-l/bh03.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/37db51243086965.6993461a334e4.jpg","bytes":1158922},{"file":"portfolio-work/27__santi-l/bh04.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_3840_webp/a8a967243086965.6993461a32c79.jpg","bytes":1020112},{"file":"portfolio-work/27__santi-l/bh05.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/bf7bf4254535621.6a862fff74b89.jpg","bytes":137430},{"file":"portfolio-work/27__santi-l/bh06.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/287d79243605357.69866a9389ed1.jpg","bytes":279310},{"file":"portfolio-work/27__santi-l/bh07.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/86ead8243605357.6984c825d2b34.jpg","bytes":27558},{"file":"portfolio-work/27__santi-l/bh08.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/2aafa0243086965.697a3d744a012.jpg","bytes":128908},{"file":"portfolio-work/27__santi-l/bh09.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/63c12e243086965.697a3d7447324.jpg","bytes":171562},{"file":"portfolio-work/27__santi-l/bh10.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/ec04e0243086965.697a3d74490be.jpg","bytes":289982},{"file":"portfolio-work/27__santi-l/bh11.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/fec148243086965.697a3d744b8a9.jpg","bytes":172092},{"file":"portfolio-work/27__santi-l/bh12.webp","source_url":"behance","image_url":"https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/b507ea224106633.698022714e362.jpg","bytes":313250}],"remote_images":[],"cover_letter_links":[],"web_links":["https://www.behance.net/ssvisualization/projects"]}]};
-    const STORAGE_KEY = 'upwork-portfolio-picks-2095961518096053621';
+    const DATA = {"title":"Interior designers","subtitle":"27 candidates","applicants":[{"id":1,"name":"Antolin A.","headshot":"portfolio-work/01__antolin-a/headshot.jpg","rate":"$25.0","images":[],"links":[],"hasWork":false},{"id":2,"name":"Mahmoud M.","headshot":"portfolio-work/02__mahmoud-m/headshot.jpg","rate":"$35","images":["portfolio-work/02__mahmoud-m/bh01.webp","portfolio-work/02__mahmoud-m/bh02.webp","portfolio-work/02__mahmoud-m/bh03.webp","portfolio-work/02__mahmoud-m/bh04.webp","portfolio-work/02__mahmoud-m/bh05.webp","portfolio-work/02__mahmoud-m/bh06.webp","portfolio-work/02__mahmoud-m/bh07.webp","portfolio-work/02__mahmoud-m/bh08.webp","portfolio-work/02__mahmoud-m/bh09.webp","portfolio-work/02__mahmoud-m/bh10.webp","portfolio-work/02__mahmoud-m/bh11.webp","portfolio-work/02__mahmoud-m/bh12.webp"],"links":[{"url":"https://www.behance.net/mahmoud_khaaled","label":"Behance"},{"url":"https://www.instagram.com/mahmoudkhaled.designs/","label":"Instagram"}],"hasWork":true},{"id":3,"name":"Estefania De Los Angeles L.","headshot":"portfolio-work/03__estefania-de-los-angeles-l/headshot.jpg","rate":"$10.0","images":[],"links":[{"url":"https://www.instagram.com/__._estefaniadelosangeles/","label":"Instagram"}],"hasWork":false},{"id":4,"name":"Ali G.","headshot":"portfolio-work/04__ali-g/headshot.jpg","rate":"$30.0","images":[],"links":[{"url":"https://www.instagram.com/architect.alighiami/","label":"Instagram"}],"hasWork":false},{"id":5,"name":"Roushan M.","headshot":"portfolio-work/05__roushan-m/headshot.jpg","rate":"$25.0","images":["portfolio-work/05__roushan-m/bh01.webp","portfolio-work/05__roushan-m/bh02.webp","portfolio-work/05__roushan-m/bh03.webp","portfolio-work/05__roushan-m/bh04.webp"],"links":[{"url":"https://www.behance.net/roushanmir","label":"Behance"},{"url":"https://www.behance.net/gallery/245236043/Al-Awir-Villa-Dubai","label":"Behance"},{"url":"https://www.behance.net/gallery/220204109/Basement-Guest-Area-Interior-Design-Spec-Book","label":"Behance"},{"url":"https://www.behance.net/gallery/245174237/Al-Awir-Villa-Dubai","label":"Behance"}],"hasWork":true},{"id":6,"name":"Muhammad H.","headshot":"portfolio-work/06__muhammad-h/headshot.jpg","rate":"$25.0","images":["portfolio-work/06__muhammad-h/bh01.png","portfolio-work/06__muhammad-h/bh02.webp","portfolio-work/06__muhammad-h/bh03.webp","portfolio-work/06__muhammad-h/bh04.webp","portfolio-work/06__muhammad-h/bh05.webp","portfolio-work/06__muhammad-h/bh06.webp","portfolio-work/06__muhammad-h/bh07.webp","portfolio-work/06__muhammad-h/bh08.webp","portfolio-work/06__muhammad-h/bh09.webp","portfolio-work/06__muhammad-h/bh10.webp","portfolio-work/06__muhammad-h/bh11.webp","portfolio-work/06__muhammad-h/bh12.webp"],"links":[{"url":"https://www.behance.net/mhuzaifam","label":"Behance"}],"hasWork":true},{"id":7,"name":"Ahmed O.","headshot":"portfolio-work/07__ahmed-o/headshot.jpg","rate":"$25.0","images":["portfolio-work/07__ahmed-o/01.webp","portfolio-work/07__ahmed-o/02.jpg","portfolio-work/07__ahmed-o/03.webp","portfolio-work/07__ahmed-o/04.jpg","portfolio-work/07__ahmed-o/05.webp","portfolio-work/07__ahmed-o/06.webp","portfolio-work/07__ahmed-o/07.webp","portfolio-work/07__ahmed-o/08.jpg","portfolio-work/07__ahmed-o/09.jpg","portfolio-work/07__ahmed-o/10.webp","portfolio-work/07__ahmed-o/11.webp","portfolio-work/07__ahmed-o/12.jpg"],"links":[{"url":"https://zakform.com/projects","label":"zakform.com"},{"url":"https://zakform.com/","label":"zakform.com"}],"hasWork":true},{"id":8,"name":"Alex K.","headshot":"portfolio-work/08__alex-k/headshot.jpg","rate":"$30.0","images":["portfolio-work/08__alex-k/bh01.webp","portfolio-work/08__alex-k/bh02.webp","portfolio-work/08__alex-k/bh03.webp","portfolio-work/08__alex-k/bh04.webp"],"links":[{"url":"https://www.behance.net/gallery/237354709/Interior-design","label":"Behance"},{"url":"https://www.behance.net/gallery/254027639/Contemporary-Family-Home-Interior-Design-3D","label":"Behance"}],"hasWork":true},{"id":9,"name":"Junaid A.","headshot":"portfolio-work/09__junaid-a/headshot.jpg","rate":"$17.5","images":["portfolio-work/09__junaid-a/bh01.webp","portfolio-work/09__junaid-a/bh02.webp","portfolio-work/09__junaid-a/bh03.webp","portfolio-work/09__junaid-a/bh04.webp","portfolio-work/09__junaid-a/bh05.webp","portfolio-work/09__junaid-a/bh06.webp","portfolio-work/09__junaid-a/bh07.webp","portfolio-work/09__junaid-a/bh08.webp","portfolio-work/09__junaid-a/bh09.webp","portfolio-work/09__junaid-a/bh10.webp","portfolio-work/09__junaid-a/bh11.webp","portfolio-work/09__junaid-a/bh12.webp"],"links":[{"url":"https://www.behance.net/jdarch","label":"Behance"}],"hasWork":true},{"id":10,"name":"Elias T.","headshot":"portfolio-work/10__elias-t/headshot.jpg","rate":"$10.0","images":[],"links":[],"hasWork":false},{"id":11,"name":"Olajide O.","headshot":"portfolio-work/11__olajide-o/headshot.jpg","rate":"$15.0","images":[],"links":[{"url":"https://www.cadcrowd.com/profile/80039-olajide-mosuro/models","label":"cadcrowd.com"}],"hasWork":false},{"id":12,"name":"Fariya K.","headshot":"portfolio-work/12__fariya-k/headshot.jpg","rate":"$18.0","images":[],"links":[],"hasWork":false},{"id":13,"name":"Priyanka S.","headshot":"portfolio-work/13__priyanka-s/headshot.jpg","rate":"$25.0","images":[],"links":[],"hasWork":false},{"id":14,"name":"Sahil B.","headshot":"portfolio-work/14__sahil-b/headshot.jpg","rate":"$20.0","images":[],"links":[{"url":"https://sahilb.tech/","label":"sahilb.tech"}],"hasWork":false},{"id":15,"name":"Aima A.","headshot":"portfolio-work/15__aima-a/headshot.jpg","rate":"$10.0","images":[],"links":[],"hasWork":false},{"id":16,"name":"Toymur A.","headshot":"portfolio-work/16__toymur-a/headshot.jpg","rate":"$15","images":["portfolio-work/16__toymur-a/bh01.webp","portfolio-work/16__toymur-a/bh02.webp","portfolio-work/16__toymur-a/bh03.webp","portfolio-work/16__toymur-a/bh04.webp","portfolio-work/16__toymur-a/bh05.webp","portfolio-work/16__toymur-a/bh06.webp","portfolio-work/16__toymur-a/bh07.webp","portfolio-work/16__toymur-a/bh08.webp","portfolio-work/16__toymur-a/bh09.webp","portfolio-work/16__toymur-a/bh10.webp","portfolio-work/16__toymur-a/bh11.webp","portfolio-work/16__toymur-a/bh12.webp"],"links":[{"url":"https://www.behance.net/onestepinterior","label":"Behance"}],"hasWork":true},{"id":17,"name":"Orest M.","headshot":"portfolio-work/17__orest-m/headshot.jpg","rate":"$30.0","images":["portfolio-work/17__orest-m/bh01.webp","portfolio-work/17__orest-m/bh02.webp","portfolio-work/17__orest-m/bh03.webp","portfolio-work/17__orest-m/bh04.webp"],"links":[{"url":"https://www.behance.net/gallery/105039523/VR-TOUR-California-Martis-CampJoseph-Ferrugio","label":"Behance"},{"url":"https://www.behance.net/gallery/75065011/Drakes-Manor-House-in-Hometown-Toronto","label":"Behance"},{"url":"https://www.behance.net/gallery/87645735/Qatar-Interior-Design-by-Gordijovich","label":"Behance"},{"url":"https://www.behance.net/gallery/83270309/Pool","label":"Behance"}],"hasWork":true},{"id":18,"name":"Ellie K.","headshot":"portfolio-work/18__ellie-k/headshot.jpg","rate":"$35.0","images":["portfolio-work/18__ellie-k/01.webp","portfolio-work/18__ellie-k/02.webp","portfolio-work/18__ellie-k/03.webp","portfolio-work/18__ellie-k/04.webp","portfolio-work/18__ellie-k/05.webp","portfolio-work/18__ellie-k/06.webp","portfolio-work/18__ellie-k/07.webp"],"links":[{"url":"https://www.formnoor.com/","label":"formnoor.com"},{"url":"https://www.instagram.com/formnoor/","label":"Instagram"},{"url":"https://voyagela.com/interview/hidden-gems-meet-ellie-hopen-of-form-noor/","label":"voyagela.com"}],"hasWork":true},{"id":19,"name":"Obiya A.","headshot":"portfolio-work/19__obiya-a/headshot.jpg","rate":"$10.0","images":[],"links":[],"hasWork":false},{"id":20,"name":"Iryna H.","headshot":"portfolio-work/20__iryna-h/headshot.jpg","rate":"$30.0","images":["portfolio-work/20__iryna-h/bh01.webp","portfolio-work/20__iryna-h/bh02.webp","portfolio-work/20__iryna-h/bh03.webp","portfolio-work/20__iryna-h/bh04.webp"],"links":[{"url":"https://www.behance.net/iraharbaruk","label":"Behance"},{"url":"https://www.behance.net/gallery/76383649/Interior-Design-Showcase","label":"Behance"},{"url":"https://www.behance.net/gallery/136398011/MK-Studio-Apartment-40-m","label":"Behance"}],"hasWork":true},{"id":21,"name":"Jawad A.","headshot":"portfolio-work/21__jawad-a/headshot.jpg","rate":"$5.0","images":["portfolio-work/21__jawad-a/bh01.webp","portfolio-work/21__jawad-a/bh02.webp","portfolio-work/21__jawad-a/bh03.webp","portfolio-work/21__jawad-a/bh04.webp"],"links":[{"url":"https://www.behance.net/gallery/249455223/Modern-Luxury-Bedroom-Designs","label":"Behance"},{"url":"https://www.behance.net/gallery/249455077/Luxury-Walk-In-Wardrobe-Interiors","label":"Behance"},{"url":"https://www.behance.net/gallery/249454813/Modern-Living-Room-Designs","label":"Behance"},{"url":"https://www.behance.net/gallery/249454975/Modern-Luxury-Bathroom-Designs","label":"Behance"}],"hasWork":true},{"id":22,"name":"Arman A.","headshot":"portfolio-work/22__arman-a/headshot.jpg","rate":"$15.0","images":["portfolio-work/22__arman-a/bh01.webp","portfolio-work/22__arman-a/bh02.webp","portfolio-work/22__arman-a/bh03.webp","portfolio-work/22__arman-a/bh04.webp","portfolio-work/22__arman-a/bh05.webp","portfolio-work/22__arman-a/bh06.webp","portfolio-work/22__arman-a/bh07.webp","portfolio-work/22__arman-a/bh08.webp","portfolio-work/22__arman-a/bh09.webp","portfolio-work/22__arman-a/bh10.webp","portfolio-work/22__arman-a/bh11.webp","portfolio-work/22__arman-a/bh12.webp"],"links":[{"url":"https://arman-media.com/","label":"arman-media.com"},{"url":"https://www.behance.net/armanazarip","label":"Behance"}],"hasWork":true},{"id":23,"name":"Dilanka B.","headshot":"portfolio-work/23__dilanka-b/headshot.jpg","rate":"$12.5","images":["portfolio-work/23__dilanka-b/bh01.webp","portfolio-work/23__dilanka-b/bh02.webp","portfolio-work/23__dilanka-b/bh03.webp","portfolio-work/23__dilanka-b/bh04.webp","portfolio-work/23__dilanka-b/bh05.webp","portfolio-work/23__dilanka-b/bh06.webp","portfolio-work/23__dilanka-b/bh07.webp","portfolio-work/23__dilanka-b/bh08.webp","portfolio-work/23__dilanka-b/bh09.webp","portfolio-work/23__dilanka-b/bh10.webp","portfolio-work/23__dilanka-b/bh11.webp","portfolio-work/23__dilanka-b/bh12.webp"],"links":[{"url":"https://www.behance.net/dilankabandara1992","label":"Behance"}],"hasWork":true},{"id":24,"name":"Minh N.","headshot":"portfolio-work/24__minh-n/headshot.jpg","rate":"$15.0","images":[],"links":[],"hasWork":false},{"id":25,"name":"Biruk T.","headshot":"portfolio-work/25__biruk-t/headshot.jpg","rate":"$10.0","images":[],"links":[],"hasWork":false},{"id":26,"name":"Egla X.","headshot":"portfolio-work/26__egla-x/headshot.jpg","rate":"$25.0","images":[],"links":[],"hasWork":false},{"id":27,"name":"Santi L.","headshot":"portfolio-work/27__santi-l/headshot.jpg","rate":"$35.0","images":["portfolio-work/27__santi-l/bh01.webp","portfolio-work/27__santi-l/bh02.webp","portfolio-work/27__santi-l/bh03.webp","portfolio-work/27__santi-l/bh04.webp","portfolio-work/27__santi-l/bh05.webp","portfolio-work/27__santi-l/bh06.webp","portfolio-work/27__santi-l/bh07.webp","portfolio-work/27__santi-l/bh08.webp","portfolio-work/27__santi-l/bh09.webp","portfolio-work/27__santi-l/bh10.webp","portfolio-work/27__santi-l/bh11.webp","portfolio-work/27__santi-l/bh12.webp"],"links":[{"url":"https://www.behance.net/ssvisualization/projects","label":"Behance"}],"hasWork":true}]};
+    const STORAGE_KEY = 'praxis-interior-designer-picks';
     let picks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    let activeFilter = 'all';
 
-    function allLinks(a) {
-      return [...(a.cover_letter_links||[]), ...(a.web_links||[])];
+    function initials(name) {
+      return name.split(/\s+/).map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+    }
+
+    function setPick(id, val) {
+      if (picks[id] === val) delete picks[id];
+      else picks[id] = val;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
+      render();
+    }
+
+    function matchesFilter(a) {
+      const p = picks[a.id] || '';
+      if (activeFilter === 'work') return a.hasWork;
+      if (activeFilter === 'yes') return p === 'yes';
+      if (activeFilter === 'maybe') return p === 'maybe';
+      if (activeFilter === 'undecided') return !p;
+      return true;
     }
 
     function render() {
       const main = document.getElementById('main');
-      const onlyWork = document.getElementById('onlyWithWork').checked;
-      const onlyPicked = document.getElementById('onlyPicked').checked;
-      const conf = document.getElementById('filterConfidence').value;
       main.innerHTML = '';
-
-      let yes=0, maybe=0, no=0, visible=0;
+      let yes = 0, maybe = 0, no = 0, shown = 0;
       for (const a of DATA.applicants) {
-        const pick = picks[a.index] || '';
-        if (pick === 'yes') yes++; else if (pick === 'maybe') maybe++; else if (pick === 'no') no++;
-        const hasWork = (a.images && a.images.length) || (a.remote_images && a.remote_images.length);
-        if (onlyWork && !hasWork) continue;
-        if (onlyPicked && pick !== 'yes' && pick !== 'maybe') continue;
-        if (conf === 'high' && a.confidence !== 'high') continue;
-        if (conf === 'medium' && !['high','medium'].includes(a.confidence)) continue;
-        visible++;
+        const p = picks[a.id] || '';
+        if (p === 'yes') yes++;
+        else if (p === 'maybe') maybe++;
+        else if (p === 'no') no++;
+        if (!matchesFilter(a)) continue;
+        shown++;
 
-        const card = document.createElement('section');
-        card.className = 'candidate' + (pick ? ' selected-' + pick : '');
-        card.dataset.index = a.index;
-
-        const imgs = [
-          ...(a.images||[]).map(x => ({ src: x.file, remote: false })),
-          ...(a.remote_images||[]).slice(0,4).map(x => ({ src: x.image_url, remote: true }))
-        ];
-
+        const card = document.createElement('article');
+        card.className = 'card' + (p ? ' pick-' + p : '');
         card.innerHTML = `
-          <div class="head">
+          <div class="card-head">
             ${a.headshot
-              ? `<img class="avatar" src="${a.headshot}" alt="${a.name}">`
-              : `<div class="avatar placeholder">👤</div>`}
-            <div class="info">
-              <div class="name">${a.index}. ${a.name}
-                <span class="badge ${a.confidence}">${a.confidence}</span>
-              </div>
-              <div class="meta">
-                ${a.bid ? a.bid + ' · ' : ''}
-                <a href="${a.upwork}" target="_blank">Upwork profile</a>
-                · ${imgs.length} work image(s)
-              </div>
-            </div>
-            <div class="pick">
-              <button type="button" data-pick="yes" class="${pick==='yes'?'active-yes':''}">✓ Yes</button>
-              <button type="button" data-pick="maybe" class="${pick==='maybe'?'active-maybe':''}">? Maybe</button>
-              <button type="button" data-pick="no" class="${pick==='no'?'active-no':''}">✗ No</button>
+              ? '<img class="avatar" src="' + a.headshot + '" alt="">'
+              : '<div class="avatar ph">' + initials(a.name) + '</div>'}
+            <div>
+              <div class="name">${a.name}</div>
+              <div class="subline">${a.rate ? a.rate + '/hr · ' : ''}${a.images.length ? a.images.length + ' photos' : 'No photos yet'}</div>
+              ${a.links.length ? '<div class="links">' + a.links.map(l =>
+                '<a href="' + l.url + '" target="_blank" rel="noopener">' + l.label + '</a>').join('') + '</div>' : ''}
             </div>
           </div>
-          ${imgs.length ? `<div class="gallery">${imgs.map(i => `
-            <div class="shot" data-src="${i.src}">
-              <img src="${i.src}" loading="lazy" alt="${a.name} portfolio" />
-              ${i.remote ? '<span class="remote">remote</span>' : ''}
-            </div>`).join('')}</div>` : `<div class="empty">No portfolio images scraped — check external links below.</div>`}
-            ${allLinks(a).length ? `<div class="links">${allLinks(a).slice(0,6).map(u => `<a href="${u}" target="_blank">${new URL(u).hostname}</a>`).join('')}</div>` : ''}
-            ${a.cover_snippet ? `<div class="cover">${a.cover_snippet}${a.cover_snippet.length>=280?'…':''}</div>` : ''}
-            ${a.notes ? `<div class="notes">${a.notes}</div>` : ''}
+          <div class="picks">
+            <button type="button" class="pick yes ${p==='yes'?'on':''}" data-pick="yes">Yes</button>
+            <button type="button" class="pick maybe ${p==='maybe'?'on':''}" data-pick="maybe">Maybe</button>
+            <button type="button" class="pick no ${p==='no'?'on':''}" data-pick="no">Pass</button>
+          </div>
+          ${a.images.length
+            ? '<div class="gallery-wrap"><div class="gallery-label">Portfolio</div><div class="gallery">' +
+              a.images.map(src => '<button type="button" class="thumb" data-src="' + src + '"><img src="' + src + '" loading="lazy" alt=""></button>').join('') +
+              '</div></div>'
+            : '<div class="empty-work">No portfolio images on file</div>'}
         `;
 
-        card.querySelectorAll('.pick button').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const val = btn.dataset.pick;
-            picks[a.index] = picks[a.index] === val ? '' : val;
-            if (!picks[a.index]) delete picks[a.index];
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
-            render();
-          });
+        card.querySelectorAll('.pick').forEach(btn => {
+          btn.addEventListener('click', () => setPick(a.id, btn.dataset.pick));
         });
-        card.querySelectorAll('.shot').forEach(el => {
-          el.addEventListener('click', () => openLightbox(el.dataset.src));
+        card.querySelectorAll('.thumb').forEach(btn => {
+          btn.addEventListener('click', () => openLightbox(btn.dataset.src));
         });
         main.appendChild(card);
       }
 
-      document.getElementById('counts').textContent =
-        `${visible} shown · ${yes} yes · ${maybe} maybe · ${no} no`;
+      document.getElementById('stats').innerHTML =
+        '<span class="stat"><strong>' + shown + '</strong> shown</span>' +
+        '<span class="stat"><strong>' + yes + '</strong> yes</span>' +
+        '<span class="stat"><strong>' + maybe + '</strong> maybe</span>';
 
-      const yesList = DATA.applicants.filter(a => picks[a.index]==='yes').map(a => a.index + '. ' + a.name);
-      const maybeList = DATA.applicants.filter(a => picks[a.index]==='maybe').map(a => a.index + '. ' + a.name);
-      document.getElementById('shortlistSummary').innerHTML =
-        yesList.length || maybeList.length
-          ? `<strong>Yes (${yesList.length}):</strong> ${yesList.join(', ') || '—'}
-             ${maybeList.length ? ' · <strong>Maybe ('+maybeList.length+'):</strong> ' + maybeList.join(', ') : ''}`
-          : 'Pick Yes or Maybe on candidates you want to keep.';
+      const yesNames = DATA.applicants.filter(a => picks[a.id]==='yes').map(a => a.name);
+      const maybeNames = DATA.applicants.filter(a => picks[a.id]==='maybe').map(a => a.name);
+      const parts = [];
+      if (yesNames.length) parts.push('<strong>Yes (' + yesNames.length + '):</strong> ' + yesNames.join(', '));
+      if (maybeNames.length) parts.push('<strong>Maybe (' + maybeNames.length + '):</strong> ' + maybeNames.join(', '));
+      document.getElementById('dockSummary').innerHTML = parts.length
+        ? parts.join(' · ')
+        : 'Tap Yes or Maybe to build your shortlist.';
+      document.getElementById('clearBtn').hidden = !(yes || maybe || no);
     }
 
     function openLightbox(src) {
       document.getElementById('lbImg').src = src;
       document.getElementById('lightbox').classList.add('open');
+      document.getElementById('lightbox').setAttribute('aria-hidden', 'false');
     }
-    document.getElementById('lbClose').onclick = () => document.getElementById('lightbox').classList.remove('open');
-    document.getElementById('lightbox').onclick = (e) => { if (e.target.id==='lightbox') e.currentTarget.classList.remove('open'); };
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('open');
+      document.getElementById('lightbox').setAttribute('aria-hidden', 'true');
+      document.getElementById('lbImg').src = '';
+    }
+    document.getElementById('lbClose').onclick = closeLightbox;
+    document.getElementById('lightbox').addEventListener('click', (e) => {
+      if (e.target.id === 'lightbox') closeLightbox();
+    });
 
-    function exportShortlist() {
-      const lines = ['SHORTLIST — ' + DATA.job_title, ''];
-      for (const tier of ['yes','maybe']) {
-        const label = tier === 'yes' ? 'YES' : 'MAYBE';
-        lines.push(label + ':');
-        for (const a of DATA.applicants.filter(x => picks[x.index]===tier)) {
-          lines.push('- ' + a.index + '. ' + a.name + ' (' + (a.bid||'') + ') ' + a.upwork);
-        }
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    function copyShortlist() {
+      const lines = [DATA.title, ''];
+      const yes = DATA.applicants.filter(a => picks[a.id]==='yes');
+      const maybe = DATA.applicants.filter(a => picks[a.id]==='maybe');
+      if (yes.length) {
+        lines.push('YES:');
+        yes.forEach(a => lines.push('- ' + a.name + (a.rate ? ' (' + a.rate + '/hr)' : '')));
         lines.push('');
       }
-      navigator.clipboard.writeText(lines.join('\n')).then(() => alert('Shortlist copied to clipboard'));
+      if (maybe.length) {
+        lines.push('MAYBE:');
+        maybe.forEach(a => lines.push('- ' + a.name + (a.rate ? ' (' + a.rate + '/hr)' : '')));
+      }
+      const text = lines.join('\n').trim();
+      if (!text || (!yes.length && !maybe.length)) {
+        showToast('Nothing to copy yet');
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => showToast('Shortlist copied'));
     }
 
-    ['onlyWithWork','onlyPicked','filterConfidence'].forEach(id =>
-      document.getElementById(id).addEventListener('change', render));
-    document.getElementById('exportBtn').onclick = exportShortlist;
-    document.getElementById('exportBtn2').onclick = exportShortlist;
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+        chip.classList.add('on');
+        activeFilter = chip.dataset.filter;
+        render();
+      });
+    });
+    document.getElementById('copyBtn').onclick = copyShortlist;
     document.getElementById('clearBtn').onclick = () => {
-      if (confirm('Clear all picks?')) { picks = {}; localStorage.removeItem(STORAGE_KEY); render(); }
+      if (confirm('Clear all picks?')) {
+        picks = {};
+        localStorage.removeItem(STORAGE_KEY);
+        render();
+      }
     };
     render();
   </script>
