@@ -48,10 +48,13 @@ app.use("/api", docsRouter);
 if (fs.existsSync(INTERIOR_DIR)) {
   app.get("/interior-designers", (_req, res) => res.redirect(301, "/interior-designers/"));
   app.get("/interior designers", (_req, res) => res.redirect(301, "/interior-designers/"));
+  app.get("/interior-designers/", requireSignedIn, (_req, res) => {
+    res.sendFile(path.join(INTERIOR_DIR, "index.html"));
+  });
   app.use(
     "/interior-designers",
     requireSignedIn,
-    express.static(INTERIOR_DIR, { index: "index.html" })
+    express.static(INTERIOR_DIR, { index: false, redirect: false })
   );
 }
 
