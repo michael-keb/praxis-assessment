@@ -10,9 +10,19 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
+import { currentUser } from "./auth.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
+const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
+
+function requireSignedIn(req, res, next) {
+  if (!currentUser(req)) {
+    const nextUrl = encodeURIComponent(req.originalUrl);
+    return res.redirect(`/auth?next=${nextUrl}`);
+  }
+  next();
+}
 
 seedAdmin();
 
@@ -34,11 +44,23 @@ app.use("/api/integrations", integrationsRouter);
    SPA fallback below leaves it alone. */
 app.use("/api", docsRouter);
 
+/* Interior designer applicant shortlist (admin login required). */
+if (fs.existsSync(INTERIOR_DIR)) {
+  app.get("/interior-designers", (_req, res) => res.redirect(301, "/interior-designers/"));
+  app.get("/interior designers", (_req, res) => res.redirect(301, "/interior-designers/"));
+  app.use(
+    "/interior-designers",
+    requireSignedIn,
+    express.static(INTERIOR_DIR, { index: "index.html" })
+  );
+}
+
 /* Built React app + SPA fallback. */
 if (fs.existsSync(DIST)) {
   app.use(express.static(DIST));
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
+    if (req.path.startsWith("/interior-designers")) return next();
     res.sendFile(path.join(DIST, "index.html"));
   });
 } else {
@@ -51,4 +73,7 @@ app.listen(PORT, () => {
   console.log(`Praxis assessment server on http://0.0.0.0:${PORT}`);
   console.log(`  data: ${DATA_DIR}`);
   console.log(`  docs: http://0.0.0.0:${PORT}/api/docs`);
+  if (fs.existsSync(INTERIOR_DIR)) {
+    console.log(`  interior designers: /interior-designers/`);
+  }
 });

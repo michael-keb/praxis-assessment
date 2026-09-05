@@ -25,6 +25,7 @@ RUN apt-get update \
 
 COPY server ./server
 COPY --from=build /app/dist ./dist
+COPY static ./static
 
 EXPOSE 8124
 CMD ["node", "server/index.js"]

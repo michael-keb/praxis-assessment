@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 
 /* Admin login only — candidates never sign in; they enter their details
    at the assessment gate. */
 export default function AuthPage({ onAuthed }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -19,6 +20,11 @@ export default function AuthPage({ onAuthed }) {
     try {
       const { user } = await api.login(form);
       onAuthed(user);
+      const next = searchParams.get("next");
+      if (next && /^\/[^/]/.test(next) && !next.startsWith("//")) {
+        window.location.href = next;
+        return;
+      }
       navigate(user.role === "admin" ? "/admin" : "/", { replace: true });
     } catch (err) {
       setError(err.message);
