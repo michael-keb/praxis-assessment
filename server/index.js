@@ -10,19 +10,10 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
-import { currentUser } from "./auth.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
-
-function requireSignedIn(req, res, next) {
-  if (!currentUser(req)) {
-    const nextUrl = encodeURIComponent(req.originalUrl);
-    return res.redirect(`/auth?next=${nextUrl}`);
-  }
-  next();
-}
 
 seedAdmin();
 
@@ -44,19 +35,14 @@ app.use("/api/integrations", integrationsRouter);
    SPA fallback below leaves it alone. */
 app.use("/api", docsRouter);
 
-/* Interior designer applicant shortlist (admin login required). */
+/* Interior designer applicant shortlist (public). */
 if (fs.existsSync(INTERIOR_DIR)) {
   app.get("/interior designers", (_req, res) => res.redirect(301, "/interior-designers/"));
-  const serveInteriorIndex = requireSignedIn;
-  app.get("/interior-designers", serveInteriorIndex, (_req, res) => {
-    res.sendFile(path.join(INTERIOR_DIR, "index.html"));
-  });
-  app.get("/interior-designers/", serveInteriorIndex, (_req, res) => {
+  app.get(["/interior-designers", "/interior-designers/"], (_req, res) => {
     res.sendFile(path.join(INTERIOR_DIR, "index.html"));
   });
   app.use(
     "/interior-designers",
-    requireSignedIn,
     express.static(INTERIOR_DIR, { index: false, redirect: false })
   );
 }
