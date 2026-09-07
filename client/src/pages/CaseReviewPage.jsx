@@ -13,7 +13,7 @@ export default function CaseReviewPage() {
 
   if (error) return <main className="page"><div className="error-box">{error}</div></main>;
   if (!data) return null;
-  const { payload, candidate, frames, audio = [] } = data;
+  const { payload, candidate, frames, audio = [], portfolio = [] } = data;
 
   return (
     <main className="page wide review">
@@ -35,6 +35,21 @@ export default function CaseReviewPage() {
             <><b>Upwork:</b> <a href={candidate.upwork} target="_blank" rel="noreferrer">{candidate.upwork}</a><br /></>
           )}
         </p>
+      )}
+      {portfolio.length > 0 && (
+        <>
+          <h3>Portfolio ({portfolio.length})</h3>
+          <div className="filmstrip">
+            {portfolio.map((name, i) => (
+              <figure key={name}>
+                <a href={`/api/admin/sessions/${code}/portfolio/${name}`} target="_blank" rel="noreferrer">
+                  <img src={`/api/admin/sessions/${code}/portfolio/${name}`} loading="lazy" alt={name} />
+                </a>
+                <figcaption>{(candidate?.portfolio && candidate.portfolio[i]) || name}</figcaption>
+              </figure>
+            ))}
+          </div>
+        </>
       )}
       {payload ? (
         <>

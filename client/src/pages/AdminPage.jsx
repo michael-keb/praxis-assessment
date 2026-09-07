@@ -104,13 +104,14 @@ export default function AdminPage({ user, onLogout }) {
   );
 }
 
-const DEFAULT_GATE = { requireLinkedin: true, requireUpwork: false, requireCv: false };
+const DEFAULT_GATE = { requireLinkedin: true, requireUpwork: false, requireCv: false, requirePortfolio: false };
 
 function gateSummary(a) {
   const parts = ["Name"];
   if (a.require_linkedin) parts.push("LinkedIn");
   if (a.require_upwork) parts.push("Upwork");
   if (a.require_cv) parts.push("CV");
+  if (a.require_portfolio) parts.push("Portfolio");
   return parts.join(" · ");
 }
 
@@ -135,6 +136,7 @@ function GateFieldsEditor({ value, onChange }) {
         {row("requireLinkedin", "LinkedIn profile URL")}
         {row("requireUpwork", "Upwork profile URL")}
         {row("requireCv", "CV / résumé upload")}
+        {row("requirePortfolio", "Image portfolio upload")}
       </div>
       <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
         Full name is always required. Turn fields off when you only need a name.
@@ -161,6 +163,7 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       requireLinkedin: !!a.require_linkedin,
       requireUpwork: !!a.require_upwork,
       requireCv: !!a.require_cv,
+      requirePortfolio: !!a.require_portfolio,
     });
   }
   function cancelEdit() { setEditing(null); }
@@ -181,6 +184,7 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       requireLinkedin: editing.requireLinkedin,
       requireUpwork: editing.requireUpwork,
       requireCv: editing.requireCv,
+      requirePortfolio: editing.requirePortfolio,
     };
     try {
       if (editing.id) await api.adminUpdateAssessment(editing.id, body);
@@ -245,6 +249,7 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
               requireLinkedin: editing.requireLinkedin,
               requireUpwork: editing.requireUpwork,
               requireCv: editing.requireCv,
+              requirePortfolio: editing.requirePortfolio,
             }}
             onChange={(gate) => setEditing({ ...editing, ...gate })}
           />

@@ -10,6 +10,7 @@ import { requireAdmin } from "./auth.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
+const PORTFOLIO_RE = /^\d{2}\.(jpe?g|png|webp)$/i;
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
@@ -35,6 +36,7 @@ function parseGateFields(body) {
     requireLinkedin: bool(body?.requireLinkedin, true),
     requireUpwork: bool(body?.requireUpwork, false),
     requireCv: bool(body?.requireCv, false),
+    requirePortfolio: bool(body?.requirePortfolio, false),
   };
 }
 
@@ -145,14 +147,36 @@ adminRouter.get("/sessions/:code", (req, res) => {
       .filter((n) => AUDIO_RE.test(n))
       .sort();
   } catch {}
+  let portfolio = [];
+  try {
+    portfolio = fs.readdirSync(path.join(SUBMISSIONS_DIR, row.code, "portfolio"))
+      .filter((n) => PORTFOLIO_RE.test(n))
+      .sort();
+  } catch {}
+  let portfolioNames = [];
+  try { portfolioNames = JSON.parse(row.candidate_portfolio || "[]"); } catch { portfolioNames = []; }
   const candidate = row.candidate_name
-    ? { name: row.candidate_name, cv: row.candidate_cv, linkedin: row.candidate_linkedin, email: row.candidate_email, upwork: row.candidate_upwork }
+    ? {
+        name: row.candidate_name,
+        cv: row.candidate_cv,
+        linkedin: row.candidate_linkedin,
+        email: row.candidate_email,
+        upwork: row.candidate_upwork,
+        portfolio: portfolioNames,
+      }
     : null;
-  res.json({ code: row, candidate, payload, frames, audio });
+  res.json({ code: row, candidate, payload, frames, audio, portfolio });
 });
 
-/* The CV uploaded at the gate. Stored as cv.<ext> in the case directory;
-   downloaded under the candidate's original filename. */
+adminRouter.get("/sessions/:code/portfolio/:name", (req, res) => {
+  const row = getCode(String(req.params.code || "").toUpperCase());
+  const name = path.basename(req.params.name || "");
+  if (!row || !PORTFOLIO_RE.test(name)) return res.status(404).end();
+  res.sendFile(path.join(SUBMISSIONS_DIR, row.code, "portfolio", name), (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
+
 adminRouter.get("/sessions/:code/cv", (req, res) => {
   const row = getCode(String(req.params.code || "").toUpperCase());
   if (!row) return res.status(404).end();

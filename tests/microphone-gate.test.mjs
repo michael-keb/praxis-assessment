@@ -1,0 +1,279 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createEngine } from '../client/src/engine.js';
+
+const flush = async () => { for (let i = 0; i < 25; i++) await Promise.resolve(); };
+const details = { name: 'Mic test' };
+
+async function harness(t, { assembly = false, micDenied = false, pendingMic = false, micThrow = null } = {}) {
+  const originals = new Map();
+  const put = (key, value) => {
+    originals.set(key, Object.getOwnPropertyDescriptor(globalThis, key));
+    Object.defineProperty(globalThis, key, { configurable: true, writable: true, value });
+  };
+  const store = new Map(), deadlines = new Map(), requests = [], recognizers = [], sockets = [], screens = [];
+  let seq = 0, releaseMic;
+  const track = () => ({ readyState: 'live', getSettings: () => ({ displaySurface: 'monitor' }),
+    addEventListener(type, fn) { this[type] = fn; }, stop() { this.readyState = 'ended'; } });
+  const micTrack = track();
+  const mic = { getTracks: () => [micTrack], getAudioTracks: () => [micTrack] };
+  class SR {
+    constructor() { recognizers.push(this); }
+    start() { this.onstart?.(); }
+    stop() { this.stopped = true; }
+    say(text) { const result = [{ transcript: text }]; result.isFinal = true;
+      this.onresult?.({ resultIndex: 0, results: [result] }); }
+  }
+  class WS {
+    constructor() { sockets.push(this); this.readyState = 1; }
+    close() { this.closed = true; }
+    send() {}
+    say(text) { this.onmessage?.({ data: JSON.stringify({ type: 'Turn', transcript: text, end_of_turn: false }) }); }
+  }
+  class AC {
+    sampleRate = 16000;
+    resume() { this.resumed = true; return Promise.resolve(); }
+    close() { return Promise.resolve(); }
+    createMediaStreamSource() { return { connect() {} }; }
+    createScriptProcessor() { return { connect() {}, disconnect() {} }; }
+  }
+  put('window', { SpeechRecognition: SR, AudioContext: AC, addEventListener() {}, removeEventListener() {} });
+  put('document', { createElement: () => ({ play: () => Promise.resolve() }), addEventListener() {}, removeEventListener() {} });
+  put('localStorage', { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) });
+  put('navigator', { mediaDevices: {
+    getDisplayMedia: async () => { const tr = track(); screens.push(tr); return { getTracks: () => [tr], getVideoTracks: () => [tr] }; },
+    getUserMedia: async () => {
+      if (micDenied) throw micThrow || new Error('denied');
+      if (pendingMic) return new Promise(resolve => { releaseMic = () => resolve(mic); });
+      return mic;
+    }
+  } });
+  put('WebSocket', WS);
+  put('setTimeout', (fn, ms) => { const id = ++seq; deadlines.set(id, { fn, ms }); return id; });
+  put('clearTimeout', id => deadlines.delete(id));
+  put('setInterval', () => ++seq);
+  put('clearInterval', () => {});
+  put('fetch', async (url) => {
+    requests.push(url);
+    if (url.includes('/session?')) return { json: async () => ({ status: 'unused' }) };
+    if (url.endsWith('/transcribe-token')) return { ok: assembly, json: async () => ({ token: 'test' }) };
+    return { ok: true, json: async () => ({ assessment: { title: 'Hidden brief', durationSeconds: 900 } }) };
+  });
+  const engine = createEngine('TEST01');
+  t.after(() => {
+    engine.destroy();
+    for (const [key, original] of originals) {
+      if (original) Object.defineProperty(globalThis, key, original);
+      else delete globalThis[key];
+    }
+  });
+  engine.boot();
+  await flush();
+  return { engine, recognizers, sockets, screens, micTrack, store,
+    releaseMic: () => releaseMic(),
+    starts: () => requests.filter(url => url.endsWith('/start')).length,
+    timeout: () => [...deadlines.values()].find(timer => timer.ms === 30000).fn() };
+}
+
+test('browser startup and empty results do not start; spoken words unlock using the same recognizer', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  assert.equal(h.engine.snapshot().micCheck, 'checking');
+  assert.equal(h.engine.snapshot().phase, 'gate');
+  assert.equal(h.starts(), 0);
+  h.recognizers[0].say('  ');
+  await flush();
+  assert.equal(h.starts(), 0);
+  h.recognizers[0].say('My microphone is working');
+  assert.equal((await begin).ok, true);
+  assert.equal(h.starts(), 1);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.recognizers.length, 1);
+  assert.equal(h.engine.snapshot().transcript.tail.length, 0);
+  const saved = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  assert.equal(saved.log.filter(event => event.type === 'voice').length, 0);
+});
+
+test('silent microphone times out without consuming the code, releases resources, and can retry', async t => {
+  const h = await harness(t);
+  const first = h.engine.begin(details);
+  await flush();
+  assert.equal((await h.engine.begin(details)).ok, false);
+  h.timeout();
+  assert.equal((await first).ok, false);
+  assert.equal(h.starts(), 0);
+  assert.equal(h.screens[0].readyState, 'ended');
+  assert.equal(h.recognizers[0].stopped, true);
+  const retry = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].say('late obsolete result');
+  assert.equal(h.starts(), 0);
+  h.recognizers[1].say('Ready now');
+  assert.equal((await retry).ok, true);
+});
+
+test('browser audio-capture failure fails promptly and cleans up', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].onerror({ error: 'audio-capture' });
+  assert.equal((await begin).ok, false);
+  assert.equal(h.starts(), 0);
+  assert.equal(h.screens[0].readyState, 'ended');
+});
+
+test('screen disconnected during the voice check cannot start the assessment', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.screens[0].stop();
+  h.screens[0].ended();
+  h.recognizers[0].say('Ready');
+  assert.equal((await begin).ok, false);
+  assert.equal(h.starts(), 0);
+});
+
+test('AssemblyAI socket opening is insufficient; actual transcription is required', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  await flush();
+  assert.equal(h.starts(), 0);
+  h.sockets[0].say('My microphone is working');
+  assert.equal((await begin).ok, true);
+  assert.equal(h.starts(), 1);
+  assert.equal(h.micTrack.readyState, 'live');
+  assert.equal(h.recognizers.length, 0);
+});
+
+test('microphone permission denial does not consume the code', async t => {
+  const h = await harness(t, { assembly: true, micDenied: true });
+  assert.equal((await h.engine.begin(details)).ok, false);
+  assert.equal(h.starts(), 0);
+  assert.equal(h.screens[0].readyState, 'ended');
+});
+
+test('late permission grant after timeout releases the mic and cannot start', async t => {
+  const h = await harness(t, { assembly: true, pendingMic: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.timeout();
+  assert.equal((await begin).ok, false);
+  h.releaseMic();
+  await flush();
+  assert.equal(h.micTrack.readyState, 'ended');
+  assert.equal(h.sockets.length, 0);
+  assert.equal(h.starts(), 0);
+});
+
+test('destroy during check cancels startup', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.engine.destroy();
+  assert.equal((await begin).ok, false);
+  assert.equal(h.starts(), 0);
+});
+
+test('resuming requires a fresh spoken check before unpausing', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].say('Ready');
+  await begin;
+  h.screens[0].stop();
+  h.screens[0].ended();
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  const resume = h.engine.reshare();
+  await flush();
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  h.recognizers[1].say('Ready again');
+  assert.equal((await resume).ok, true);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.starts(), 1);
+});
+
+test('AssemblyAI open but silent times out and stops the mic and socket', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  await flush();
+  h.timeout();
+  assert.equal((await begin).ok, false);
+  assert.equal(h.starts(), 0);
+  assert.equal(h.micTrack.readyState, 'ended');
+  assert.equal(h.sockets[0].closed, true);
+});
+
+test('disconnected microphone fails the check promptly', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  h.micTrack.stop();
+  h.micTrack.ended();
+  assert.equal((await begin).ok, false);
+  assert.equal(h.starts(), 0);
+});
+
+test('muted input cannot pass using a delayed transcription response', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  h.micTrack.muted = true;
+  h.sockets[0].say('Earlier words');
+  await flush();
+  assert.equal(h.starts(), 0);
+  h.timeout();
+  assert.equal((await begin).ok, false);
+});
+
+test('no microphone device fails fast with a specific message, even on the browser engine path', async t => {
+  const h = await harness(t, { micDenied: true, micThrow: Object.assign(new Error('nf'), { name: 'NotFoundError' }) });
+  const result = await h.engine.begin(details);
+  assert.equal(result.ok, false);
+  assert.match(result.message, /No microphone was found/);
+  assert.equal(h.recognizers.length, 0);
+  assert.equal(h.starts(), 0);
+  assert.equal(h.screens[0].readyState, 'ended');
+});
+
+test('microphone in use by another app is reported as such', async t => {
+  const h = await harness(t, { assembly: true, micDenied: true, micThrow: Object.assign(new Error('busy'), { name: 'NotReadableError' }) });
+  const result = await h.engine.begin(details);
+  assert.equal(result.ok, false);
+  assert.match(result.message, /another app/);
+  assert.equal(h.starts(), 0);
+});
+
+test('microphone lost mid-session pauses the assessment; recovery re-checks the mic without a new screen pick', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  await flush();
+  h.sockets[0].say('My microphone is working');
+  assert.equal((await begin).ok, true);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  h.micTrack.ended();
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  assert.equal(h.engine.snapshot().blockedTitle, 'Microphone disconnected');
+  assert.equal(h.engine.snapshot().screenLive, true);
+  const saved = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  assert.equal(saved.log.some(event => event.type === 'mic_lost'), true);
+  h.micTrack.readyState = 'live'; // a real getUserMedia hands back a fresh track; the harness reuses one
+  const resume = h.engine.reshare();
+  await flush();
+  assert.equal(h.screens.length, 1);
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  h.sockets[1].onopen();
+  await flush();
+  h.sockets[1].say('Back again');
+  assert.equal((await resume).ok, true);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.starts(), 1);
+});

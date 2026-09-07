@@ -74,6 +74,7 @@ export const openapiSpec = {
           linkedin: { type: "boolean" },
           upwork: { type: "boolean" },
           cv: { type: "boolean" },
+          portfolio: { type: "boolean" }
         }
       },
       Assessment: {
@@ -86,6 +87,7 @@ export const openapiSpec = {
           require_linkedin: { type: "boolean" },
           require_upwork: { type: "boolean" },
           require_cv: { type: "boolean" },
+          require_portfolio: { type: "boolean" },
           created_at: { type: "string" },
           updated_at: { type: "string" },
           code_count: { type: "integer", description: "Codes issued under this assessment (list endpoint only)." }
@@ -100,7 +102,8 @@ export const openapiSpec = {
           durationMinutes: { type: "integer", minimum: 1 },
           requireLinkedin: { type: "boolean", default: true },
           requireUpwork: { type: "boolean", default: false },
-          requireCv: { type: "boolean", default: false }
+          requireCv: { type: "boolean", default: false },
+          requirePortfolio: { type: "boolean", default: false }
         }
       },
       CodeRecord: {
@@ -257,7 +260,8 @@ export const openapiSpec = {
                       properties: {
                         title: { type: "string" },
                         brief: { type: "string", description: "Only present while the code is active." },
-                        durationSeconds: { type: "integer" }
+                        durationSeconds: { type: "integer" },
+                        gateFields: { $ref: "#/components/schemas/GateFields" }
                       }
                     }
                   }
@@ -273,7 +277,7 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Unlock a code and bind the candidate's details to it",
         description:
-          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate. Which fields are required is configured per assessment (`gateFields` on `/session`); send JSON when no CV is required, or `multipart/form-data` when a CV upload is required.",
+          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate. Which fields are required is configured per assessment (`gateFields` on `/session`); send JSON when no uploads are required, or `multipart/form-data` when a CV and/or image portfolio is required.",
         security: [],
         requestBody: {
           required: true,
@@ -293,13 +297,18 @@ export const openapiSpec = {
             "multipart/form-data": {
               schema: {
                 type: "object",
-                required: ["caseId", "name", "cv"],
+                required: ["caseId", "name"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
                   name: { type: "string", maxLength: 120 },
                   linkedin: { type: "string" },
                   upwork: { type: "string" },
-                  cv: { type: "string", format: "binary", description: "Required when the assessment's gateFields.cv is true." }
+                  cv: { type: "string", format: "binary", description: "Required when the assessment's gateFields.cv is true." },
+                  portfolio: {
+                    type: "array",
+                    items: { type: "string", format: "binary" },
+                    description: "1–10 JPG/PNG/WebP images. Required when the assessment's gateFields.portfolio is true."
+                  }
                 }
               }
             }

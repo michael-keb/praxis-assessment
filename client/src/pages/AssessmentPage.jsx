@@ -64,16 +64,24 @@ function Gate({ engine, snap }) {
   const [error, setError] = useState("");
   const [form, setForm] = useState({ name: "", linkedin: "", upwork: "" });
   const [cvFile, setCvFile] = useState(null);
+  const [portfolioFiles, setPortfolioFiles] = useState([]);
 
-  const gate = snap.assessment?.gateFields || { linkedin: true, upwork: false, cv: false };
+  const gate = snap.assessment?.gateFields || { linkedin: true, upwork: false, cv: false, portfolio: false };
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
   const cvOk = !gate.cv || (cvFile && /\.(pdf|doc|docx)$/i.test(cvFile.name) && cvFile.size <= 8 * 1024 * 1024);
+  const IMAGE_OK = /\.(jpe?g|png|webp)$/i;
+  const portfolioOk = !gate.portfolio || (
+    portfolioFiles.length >= 1 &&
+    portfolioFiles.length <= 10 &&
+    portfolioFiles.every((f) => IMAGE_OK.test(f.name) && f.size <= 8 * 1024 * 1024)
+  );
   const detailsComplete =
     form.name.trim() &&
     (!gate.linkedin || /^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(form.linkedin.trim())) &&
     (!gate.upwork || /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(form.upwork.trim())) &&
-    cvOk;
+    cvOk &&
+    portfolioOk;
 
   async function begin() {
     setBusy(true);
@@ -83,6 +91,7 @@ function Gate({ engine, snap }) {
       linkedin: gate.linkedin ? form.linkedin.trim() : "",
       upwork: gate.upwork ? form.upwork.trim() : "",
       cvFile: gate.cv ? cvFile : null,
+      portfolioFiles: gate.portfolio ? portfolioFiles : [],
     });
     if (!result.ok) {
       setError(result.message);
@@ -97,12 +106,13 @@ function Gate({ engine, snap }) {
           <div className="gate-mark">praxis</div>
           <h1>Before you start</h1>
           <p className="lede">
-            The assessment brief is revealed the moment your screen and microphone
-            are connected — and the clock starts with it.
+            First, connect your screen and microphone and say a sentence so we can
+            check that your voice is being transcribed. Only after that check passes
+            will the brief appear and the clock start.
           </p>
           <div className="gate-warning">
             <ul>
-              <li><b>The timer starts immediately.</b> You will have {fmt(snap.duration)},
+              <li><b>The timer starts after the microphone check passes.</b> You will have {fmt(snap.duration)},
                 with a hard stop at 0:00 — your session submits automatically, finished or not.</li>
               <li><b>This code is single-use.</b> Once started there is no restart and no
                 fresh timer. Only begin when you are ready to spend the full time now.</li>
@@ -115,8 +125,14 @@ function Gate({ engine, snap }) {
             </ul>
           </div>
           <button className="btn-accent" disabled={busy} onClick={begin}>
-            {busy ? "Waiting for screen & mic…" : "I'm ready — start and reveal the brief"}
+            {busy ? (snap.micCheck === "checking" ? "Listening — say a sentence now…" : "Connecting…") : "Check microphone and start"}
           </button>
+          {busy && snap.micCheck === "checking" && (
+            <div className="gate-warning" role="status" aria-live="polite">
+              <b>Say: “My microphone is working and I am ready to begin.”</b>
+              <p>Keep speaking until we hear you. The timer has not started and your code has not been used. Allow microphone access if prompted.</p>
+            </div>
+          )}
           {!busy && (
             <button className="btn-ghost" onClick={() => { setError(""); setStep("details"); }}>
               Go back
@@ -125,7 +141,8 @@ function Gate({ engine, snap }) {
           {error && <div className="error-box">{error}</div>}
           <p className="fine">
             Your browser will ask to share your screen — choose <b>Entire Screen</b> —
-            then for microphone access. A single tab or window is not accepted.
+            then for microphone access. Speak the test sentence when prompted.
+            A single tab or window is not accepted.
           </p>
         </div>
       </div>
@@ -178,6 +195,23 @@ function Gate({ engine, snap }) {
             {cvFile && !cvOk && (
               <p style={{ fontSize: 12.5, color: "var(--danger)", marginTop: 6 }}>
                 Must be a .pdf, .doc, or .docx under 8 MB.
+              </p>
+            )}
+          </div>
+        )}
+        {gate.portfolio && (
+          <div className="field">
+            <label htmlFor="g-portfolio">Image portfolio (JPG, PNG or WebP, 1–10 images, max 8&nbsp;MB each)</label>
+            <input id="g-portfolio" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple
+              onChange={(e) => setPortfolioFiles([...e.target.files || []].slice(0, 10))} />
+            {portfolioFiles.length > 0 && (
+              <ul style={{ fontSize: 12.5, margin: "8px 0 0", paddingLeft: 18, color: "var(--ink-soft)" }}>
+                {portfolioFiles.map((f) => <li key={f.name + f.size}>{f.name}</li>)}
+              </ul>
+            )}
+            {portfolioFiles.length > 0 && !portfolioOk && (
+              <p style={{ fontSize: 12.5, color: "var(--danger)", marginTop: 6 }}>
+                Each file must be a JPG, PNG, or WebP under 8 MB (1–10 images).
               </p>
             )}
           </div>
@@ -280,9 +314,12 @@ function Task({ engine, snap }) {
 
 function BlockedOverlay({ engine, snap }) {
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   async function reshare() {
     setError("");
+    setBusy(true);
     const result = await engine.reshare();
+    setBusy(false);
     if (!result.ok) setError(result.message);
   }
   return (
@@ -290,9 +327,16 @@ function BlockedOverlay({ engine, snap }) {
       <div className="inner">
         <div className="mark">■</div>
         <h1>{snap.blockedTitle}</h1>
-        <p>The assessment is locked and the timer is paused until you share your <b>entire screen</b> again.</p>
+        <p>
+          {snap.screenLive
+            ? <>The assessment is locked and the timer is paused until your <b>microphone</b> is reconnected and passes the spoken check.</>
+            : <>The assessment is locked and the timer is paused until you share your <b>entire screen</b> and pass the microphone check.</>}
+        </p>
         <p className="pause-budget">Pause budget remaining: {fmt(snap.pauseBudgetLeft)}</p>
-        <button className="btn-light" onClick={reshare}>Share entire screen</button>
+        <button className="btn-light" disabled={busy} onClick={reshare}>
+          {busy ? "Connecting…" : snap.screenLive ? "Check microphone and continue" : "Share screen and check microphone"}
+        </button>
+        {busy && snap.micCheck === "checking" && <p role="status">Say: “My microphone is working and I am ready to continue.” Keep speaking until the assessment resumes.</p>}
         {error && <div className="blocked-err">{error}</div>}
       </div>
     </div>

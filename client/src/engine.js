@@ -47,6 +47,11 @@ export function createEngine(caseId) {
   let micStream = null;        // the ONE mic stream this page holds (assembly mode)
   let transcribing = false;    // should a transcription engine be running
   let micLive = false;         // an engine is actually live (UI indicator)
+  let micCheck = "idle";       // idle | checking | passed
+  let finishMicCheck = null;
+  let transcriptionGeneration = 0;
+  let connecting = false;
+  let destroyed = false;
   let interim = "";            // in-flight words, not yet finalized
   let silentLogged = false;    // mic heard nothing for a while (banner + log event)
   let transcriptTail = [];     // last few finalized lines, for the on-screen captions
@@ -100,6 +105,8 @@ export function createEngine(caseId) {
       confidence: state.confidence,
       doneReason: state.doneReason,
       micLive,
+      micCheck,
+      screenLive: screenLive(),
       micSilent: silentLogged,
       transcript: { tail: [...transcriptTail], interim },
       assessment: assessmentMeta,
@@ -176,6 +183,7 @@ export function createEngine(caseId) {
     }).catch(() => ({ ok: false, reason: "denied",
       message: "Screen sharing was declined. The assessment cannot run without it." }));
   }
+  function screenLive() { return !!captureStream?.getVideoTracks().some((track) => track.readyState === "live"); }
   function stopSharing() {
     captureStream?.getTracks().forEach((tr) => tr.stop());
     captureStream = null;
@@ -192,7 +200,10 @@ export function createEngine(caseId) {
   let lastHeardAt = 0; // last time ANY words (interim or final) arrived
 
   function stopTranscription() {
+    transcriptionGeneration++;
     transcribing = false;
+    finishMicCheck?.({ ok: false, message: "Microphone check cancelled. You can try again when ready." });
+    if (recognition) recognition.onstart = recognition.onresult = recognition.onerror = recognition.onend = null;
     try { recognition?.stop(); } catch { /* already stopped */ }
     recognition = null;
     teardownAssembly();
@@ -201,8 +212,10 @@ export function createEngine(caseId) {
   }
 
   function teardownAssembly() {
+    clearTimeout(muteTimer);
     try { processor?.disconnect(); } catch { /* not connected */ }
     processor = null;
+    if (ws) ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
     try { ws?.close(); } catch { /* already closed */ }
     ws = null;
     try { audioCtx?.close(); } catch { /* already closed */ }
@@ -237,11 +250,13 @@ export function createEngine(caseId) {
     reconnecting = true;
     micLive = false;
     emit();
+    const generation = transcriptionGeneration;
     setTimeout(async () => {
       reconnecting = false;
-      if (!transcribing || finalized) return;
+      if (!transcribing || finalized || generation !== transcriptionGeneration) return;
       teardownAssembly();
       const again = await startAssemblyTranscription();
+      if (generation !== transcriptionGeneration) return;
       if (!again.ok && transcribing && !finalized) {
         logEvent({ type: "transcript_error", error: "assembly reconnect failed — falling back to browser engine" });
         const fallback = await startBrowserTranscription();
@@ -251,21 +266,30 @@ export function createEngine(caseId) {
   }
 
   async function startAssemblyTranscription() {
+    const generation = transcriptionGeneration;
     const token = await mintStreamToken();
+    if (generation !== transcriptionGeneration) return { ok: false, reason: "cancelled" };
     if (!token) return { ok: false, reason: "no_token" };
 
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
         video: false
       });
-    } catch {
-      return { ok: false, reason: "mic_denied",
-        message: "Microphone access was declined. The assessment needs you to talk through your thinking." };
+      if (generation !== transcriptionGeneration) {
+        stream.getTracks().forEach((track) => track.stop());
+        return { ok: false, reason: "cancelled" };
+      }
+      micStream = stream;
+      stream.getAudioTracks().forEach((track) => watchMicTrack(track, generation));
+    } catch (err) {
+      return micError(err);
     }
 
     const AC = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AC({ sampleRate: 16000 });
+    await audioCtx.resume();
+    if (generation !== transcriptionGeneration) return { ok: false, reason: "cancelled" };
     const rate = Math.round(audioCtx.sampleRate); // browser may not honour 16k — tell AAI what we actually have
     const source = audioCtx.createMediaStreamSource(micStream);
     processor = audioCtx.createScriptProcessor(4096, 1, 1);
@@ -303,8 +327,9 @@ export function createEngine(caseId) {
         const text = (msg.transcript || "").trim();
         if (!text) return;
         lastHeardAt = now();
+        confirmMicrophone(text);
         if (msg.end_of_turn && msg.turn_is_formatted) {
-          logEvent({ type: "voice", text });
+          if (running && micCheck !== "checking") logEvent({ type: "voice", text });
           transcriptTail = [...transcriptTail, text].slice(-4);
           interim = "";
         } else if (!msg.end_of_turn) {
@@ -327,11 +352,16 @@ export function createEngine(caseId) {
   /* Orchestrator: AssemblyAI when the server offers tokens, else the
      browser's own recognizer. A declined mic fails begin() either way. */
   async function startTranscription() {
+    const generation = transcriptionGeneration;
     transcribing = true;
     const primary = await startAssemblyTranscription();
+    if (generation !== transcriptionGeneration) return { ok: false, reason: "cancelled" };
     if (primary.ok) return primary;
     if (primary.reason === "mic_denied") { transcribing = false; return primary; }
     teardownAssembly();
+    const probe = await probeMicDevice();
+    if (generation !== transcriptionGeneration) return { ok: false, reason: "cancelled" };
+    if (!probe.ok) { transcribing = false; return probe; }
     return startBrowserTranscription();
   }
 
@@ -363,8 +393,9 @@ export function createEngine(caseId) {
           const r = ev.results[i];
           const text = (r[0]?.transcript || "").trim();
           if (!text) continue;
+          confirmMicrophone(text);
           if (r.isFinal) {
-            logEvent({ type: "voice", text });
+            if (running && micCheck !== "checking") logEvent({ type: "voice", text });
             transcriptTail = [...transcriptTail, text].slice(-4);
           } else {
             interim += (interim ? " " : "") + text;
@@ -373,6 +404,11 @@ export function createEngine(caseId) {
         emit();
       };
       recognition.onerror = (ev) => {
+        micLive = false;
+        emit();
+        if (finishMicCheck && ev.error !== "no-speech") {
+          finishMicCheck({ ok: false, message: "We couldn't hear you through live transcription. Check microphone permission, unmute your mic, and check your connection, then try again." });
+        }
         // Permission refusals fail the start; transient errors (no-speech,
         // network hiccups) are logged and ridden out via the auto-restart.
         if (!settled && (ev.error === "not-allowed" || ev.error === "service-not-allowed")) {
@@ -385,10 +421,15 @@ export function createEngine(caseId) {
         if (ev.error && ev.error !== "no-speech" && running && !finalized) {
           logEvent({ type: "transcript_error", error: String(ev.error) });
         }
+        if (settled && (ev.error === "audio-capture" || ev.error === "not-allowed" || ev.error === "service-not-allowed")) {
+          micLost(ev.error);
+        }
       };
       // Chrome ends continuous sessions after silence — restart for as long
       // as the session wants a transcript.
       recognition.onend = () => {
+        micLive = false;
+        emit();
         if (transcribing && !finalized) {
           try { recognition.start(); } catch { /* restarting too fast — the next tick's watchdog catches a dead mic */ }
         } else {
@@ -406,6 +447,107 @@ export function createEngine(caseId) {
         }
       }
     });
+  }
+
+  /* getUserMedia failures are not all "declined". Tell the candidate what is
+     actually wrong so they can fix it. Every branch keeps reason "mic_denied"
+     so startTranscription() stops here instead of trying the browser engine. */
+  function micError(err) {
+    const name = err?.name || "";
+    let message;
+    if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
+      message = "No microphone was found. Plug in or enable a microphone or headset, then try again. The assessment cannot run without one.";
+    } else if (name === "NotReadableError" || name === "TrackStartError" || name === "AbortError") {
+      message = "Your microphone could not be started — another app (Zoom, Teams, Meet, a recorder) is probably using it. Close that app, then try again.";
+    } else if (name === "SecurityError") {
+      message = "Microphone access is blocked on this page. Open the exact https:// link you were sent, not a copy.";
+    } else {
+      message = "Microphone access was declined. Allow the microphone for this site (the lock or camera icon in the address bar), then try again. The assessment needs you to talk through your thinking.";
+    }
+    return { ok: false, reason: "mic_denied", kind: name || "unknown", message };
+  }
+
+  /* The browser engine (Web Speech API) opens its own mic and never reports
+     WHY it failed. Probe the device first so a missing or busy microphone
+     fails with a clear message instead of a 30s silent-check timeout. */
+  async function probeMicDevice() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      return { ok: false, reason: "mic_denied", kind: "unsupported",
+        message: "This browser cannot access a microphone. Use a current version of Chrome or Edge." };
+    }
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      probe.getTracks().forEach((track) => track.stop());
+      return { ok: true };
+    } catch (err) {
+      return micError(err);
+    }
+  }
+
+  /* Mic gone mid-session (unplugged, permission revoked, muted for good):
+     treat it exactly like a stopped screen share — pause and lock until the
+     candidate reconnects and passes the spoken check again. */
+  let muteTimer = null;
+  function micLost(reason) {
+    if (!running || phase !== "running" || finalized) return;
+    logEvent({ type: "mic_lost", reason });
+    stopTranscription();
+    block(reason === "muted" ? "Microphone muted" : "Microphone disconnected");
+  }
+  function watchMicTrack(track, generation) {
+    track.addEventListener("ended", () => {
+      if (generation !== transcriptionGeneration) return;
+      micLive = false;
+      finishMicCheck?.({ ok: false, message: "Your microphone disconnected. Reconnect it and try again." });
+      emit();
+      micLost("ended");
+    });
+    track.addEventListener("mute", () => {
+      if (generation !== transcriptionGeneration) return;
+      clearTimeout(muteTimer);
+      muteTimer = setTimeout(() => {
+        if (generation !== transcriptionGeneration || !track.muted) return;
+        micLost("muted");
+      }, 8000);
+    });
+    track.addEventListener("unmute", () => clearTimeout(muteTimer));
+  }
+
+  // A connection or permission grant is insufficient: require actual words
+  // from the same transcription engine that will be used for the assessment.
+  function confirmMicrophone(text) {
+    const liveInput = !micStream || micStream.getAudioTracks().some((track) =>
+      track.readyState === "live" && track.enabled !== false && !track.muted);
+    if (text.trim() && micLive && transcribing && liveInput) finishMicCheck?.({ ok: true });
+  }
+
+  async function checkMicrophone() {
+    stopTranscription();
+    micCheck = "checking";
+    transcriptTail = [];
+    interim = "";
+    emit();
+    const result = await new Promise((resolve) => {
+      const timeout = setTimeout(() => finishMicCheck?.({ ok: false,
+        message: "We couldn't hear any words. Allow microphone access, unmute your microphone, check the input selected in your browser or system settings, then try again and speak a full sentence. " +
+          (running ? "Your assessment is still paused." : "Your assessment has not started.") }), 30000);
+      finishMicCheck = (value) => {
+        clearTimeout(timeout);
+        finishMicCheck = null;
+        resolve(value);
+      };
+      const finish = finishMicCheck;
+      startTranscription().then((value) => {
+        if (!value.ok && finishMicCheck === finish) finish(value);
+      }).catch(() => {
+        if (finishMicCheck === finish) finish({ ok: false,
+          message: "Could not connect your microphone. Check your microphone and connection, then try again." });
+      });
+    });
+    micCheck = result.ok ? "passed" : "idle";
+    if (!result.ok) stopTranscription();
+    emit();
+    return result;
   }
 
   /* Nothing heard for a while during a running session: the candidate has a
@@ -478,25 +620,40 @@ export function createEngine(caseId) {
   }
 
   async function begin(details) {
+    if (connecting || phase !== "gate" || destroyed) return { ok: false, message: "A connection check is already in progress." };
+    connecting = true;
+    try { return await beginChecked(details); }
+    finally { connecting = false; }
+  }
+
+  async function beginChecked(details) {
     // Screen + mic first: the code must only bind once capture is actually live,
     // otherwise a declined share would burn the code with no session.
     const screen = await startCapture();
     if (!screen.ok) return screen;
-    const mic = await startTranscription();
+    if (destroyed) { stopSharing(); return { ok: false }; }
+    const mic = await checkMicrophone();
     if (!mic.ok) {
       stopSharing();
       stopTranscription();
       return mic;
     }
+    if (!captureStream?.getVideoTracks().some((track) => track.readyState === "live") || !micLive) {
+      stopSharing();
+      stopTranscription();
+      return { ok: false, message: "Your screen or microphone disconnected during the check. Please connect them and try again. Your assessment has not started." };
+    }
     try {
       let res;
-      if (details.cvFile) {
+      const portfolioFiles = details.portfolioFiles || [];
+      if (details.cvFile || portfolioFiles.length) {
         const fd = new FormData();
         fd.append("caseId", caseId);
         fd.append("name", details.name);
         if (details.linkedin) fd.append("linkedin", details.linkedin);
         if (details.upwork) fd.append("upwork", details.upwork);
-        fd.append("cv", details.cvFile, details.cvFile.name);
+        if (details.cvFile) fd.append("cv", details.cvFile, details.cvFile.name);
+        for (const file of portfolioFiles) fd.append("portfolio", file, file.name);
         res = await fetch(ENDPOINT + "/start", { method: "POST", body: fd });
       } else {
         res = await fetch(ENDPOINT + "/start", {
@@ -531,8 +688,11 @@ export function createEngine(caseId) {
       linkedin: details.linkedin || null,
       upwork: details.upwork || null,
       cv: details.cvFile?.name || null,
+      portfolio: (details.portfolioFiles || []).map((f) => f.name),
     };
     state.startedAt = now();
+    transcriptTail = [];
+    interim = "";
     logEvent({ t: 0, type: "unlock" });
     unlockSession(false);
     setPhase("running");
@@ -540,14 +700,25 @@ export function createEngine(caseId) {
   }
 
   async function reshare() {
-    const result = await startCapture();
+    if (connecting || destroyed) return { ok: false, message: "A connection check is already in progress." };
+    connecting = true;
+    try { return await reshareChecked(); }
+    finally { connecting = false; }
+  }
+
+  async function reshareChecked() {
+    const result = screenLive() ? { ok: true } : await startCapture();
     if (result.ok) {
-      if (!micLive) {
-        const mic = await startTranscription();
-        if (!mic.ok) {
-          stopSharing();
-          return mic;
-        }
+      if (destroyed) { stopSharing(); return { ok: false }; }
+      const mic = await checkMicrophone();
+      if (!mic.ok) {
+        stopSharing();
+        return mic;
+      }
+      if (!captureStream?.getVideoTracks().some((track) => track.readyState === "live") || !micLive) {
+        stopSharing();
+        stopTranscription();
+        return { ok: false, message: "Your screen or microphone disconnected. Please try again." };
       }
       unblock();
       return result;
@@ -716,6 +887,7 @@ export function createEngine(caseId) {
   }
 
   function boot() {
+    destroyed = false;
     attachGlobal();
     if (!caseId || !/^[A-Z0-9]{4,12}$/.test(caseId)) {
       fatal("This link is not valid",
@@ -749,6 +921,7 @@ export function createEngine(caseId) {
   }
 
   function destroy() {
+    destroyed = true;
     timers.forEach(clearInterval);
     timers.length = 0;
     detachGlobal();

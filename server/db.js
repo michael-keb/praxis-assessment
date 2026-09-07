@@ -54,19 +54,27 @@ for (const [col, def] of [
   ["require_linkedin", 1],
   ["require_upwork", 0],
   ["require_cv", 0],
+  ["require_portfolio", 0],
 ]) {
   try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} INTEGER NOT NULL DEFAULT ${def}`); } catch { /* exists */ }
 }
+try { db.exec(`ALTER TABLE codes ADD COLUMN candidate_portfolio TEXT`); } catch { /* exists */ }
 
 export const DEFAULT_DURATION_MINUTES = 15;
-export const DEFAULT_GATE_FIELDS = { requireLinkedin: true, requireUpwork: false, requireCv: false };
+export const DEFAULT_GATE_FIELDS = {
+  requireLinkedin: true,
+  requireUpwork: false,
+  requireCv: false,
+  requirePortfolio: false,
+};
 
 export function gateFieldsFromAssessment(assessment) {
-  if (!assessment) return { linkedin: true, upwork: false, cv: false };
+  if (!assessment) return { linkedin: true, upwork: false, cv: false, portfolio: false };
   return {
     linkedin: !!assessment.require_linkedin,
     upwork: !!assessment.require_upwork,
     cv: !!assessment.require_cv,
+    portfolio: !!assessment.require_portfolio,
   };
 }
 
@@ -109,8 +117,8 @@ export function getAssessment(id) {
 export function createAssessment({ title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
   const ts = nowIso();
   const info = db.prepare(
-    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, require_portfolio, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     title,
     brief || "",
@@ -118,6 +126,7 @@ export function createAssessment({ title, brief, durationMinutes, gateFields = D
     gateFields.requireLinkedin ? 1 : 0,
     gateFields.requireUpwork ? 1 : 0,
     gateFields.requireCv ? 1 : 0,
+    gateFields.requirePortfolio ? 1 : 0,
     ts,
     ts
   );
@@ -127,7 +136,7 @@ export function createAssessment({ title, brief, durationMinutes, gateFields = D
 export function updateAssessment(id, { title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
   db.prepare(
     `UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?,
-     require_linkedin = ?, require_upwork = ?, require_cv = ?, updated_at = ?
+     require_linkedin = ?, require_upwork = ?, require_cv = ?, require_portfolio = ?, updated_at = ?
      WHERE id = ?`
   ).run(
     title,
@@ -136,6 +145,7 @@ export function updateAssessment(id, { title, brief, durationMinutes, gateFields
     gateFields.requireLinkedin ? 1 : 0,
     gateFields.requireUpwork ? 1 : 0,
     gateFields.requireCv ? 1 : 0,
+    gateFields.requirePortfolio ? 1 : 0,
     nowIso(),
     id
   );

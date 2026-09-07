@@ -10,9 +10,11 @@ const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
 const LINKEDIN_RE = /^https?:\/\/(www\.)?linkedin\.com\/.+/i;
 const UPWORK_RE = /^https?:\/\/(www\.)?upwork\.com\/.+/i;
 const CV_EXT_RE = /\.(pdf|doc|docx)$/i;
+const IMAGE_EXT_RE = /\.(jpe?g|png|webp)$/i;
+const PORTFOLIO_MAX = 10;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 120 } });
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024, files: 8 } });
-const cvUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 } });
+const startUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 11 } });
 
 /* No candidate accounts: identity is the details captured at the gate,
    bound to the single-use code. Admin routes stay behind auth. */
@@ -45,8 +47,11 @@ assessmentRouter.get("/session", (req, res) => {
   });
 });
 
-/* Unlock: bind the candidate's details to the code. CV rides multipart when required. */
-assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
+/* Unlock: bind the candidate's details to the code. CV and portfolio ride multipart when required. */
+assessmentRouter.post("/start", startUpload.fields([
+  { name: "cv", maxCount: 1 },
+  { name: "portfolio", maxCount: PORTFOLIO_MAX },
+]), (req, res) => {
   const row = getCode(String(req.body?.caseId || "").trim().toUpperCase());
   if (!row) return res.status(403).json({ error: "unknown code" });
   if (row.status === "void") return res.status(403).json({ error: "code voided" });
@@ -60,7 +65,8 @@ assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
   const name = String(req.body?.name || "").trim();
   const linkedin = String(req.body?.linkedin || "").trim();
   const upwork = String(req.body?.upwork || "").trim();
-  const cv = req.file;
+  const cv = req.files?.cv?.[0];
+  const portfolioFiles = req.files?.portfolio || [];
 
   if (!name || name.length > 120) return res.status(400).json({ error: "Enter your full name." });
   if (gate.linkedin && !LINKEDIN_RE.test(linkedin)) {
@@ -72,6 +78,12 @@ assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
   if (gate.cv && (!cv || !cv.buffer?.length || !CV_EXT_RE.test(cv.originalname || ""))) {
     return res.status(400).json({ error: "Attach your CV as a PDF or Word document (.pdf, .doc, .docx)." });
   }
+  if (gate.portfolio) {
+    const valid = portfolioFiles.filter((f) => f?.buffer?.length && IMAGE_EXT_RE.test(f.originalname || ""));
+    if (!valid.length || valid.length > PORTFOLIO_MAX) {
+      return res.status(400).json({ error: "Upload 1–10 portfolio images (JPG, PNG, or WebP)." });
+    }
+  }
 
   let cvName = null;
   if (gate.cv && cv) {
@@ -80,8 +92,23 @@ assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
     cvName = path.basename(cv.originalname).slice(0, 120);
   }
 
+  let portfolioJson = null;
+  if (gate.portfolio && portfolioFiles.length) {
+    const dir = caseDir(row.code, "portfolio");
+    const names = [];
+    portfolioFiles.forEach((file) => {
+      const match = (file.originalname || "").match(IMAGE_EXT_RE);
+      if (!match || !file.buffer?.length) return;
+      const ext = match[0].toLowerCase() === ".jpeg" ? ".jpg" : match[0].toLowerCase();
+      const stored = `${String(names.length + 1).padStart(2, "0")}${ext}`;
+      fs.writeFileSync(path.join(dir, stored), file.buffer);
+      names.push(path.basename(file.originalname).slice(0, 120));
+    });
+    portfolioJson = JSON.stringify(names);
+  }
+
   db.prepare(`UPDATE codes SET status='active', started_at=?,
-              candidate_name=?, candidate_linkedin=?, candidate_upwork=?, candidate_cv=?
+              candidate_name=?, candidate_linkedin=?, candidate_upwork=?, candidate_cv=?, candidate_portfolio=?
               WHERE code=? AND status='unused'`)
     .run(
       nowIso(),
@@ -89,6 +116,7 @@ assessmentRouter.post("/start", cvUpload.single("cv"), (req, res) => {
       gate.linkedin ? linkedin : null,
       gate.upwork ? upwork : null,
       cvName,
+      portfolioJson,
       row.code
     );
   console.log(`session started: ${row.code} by ${name}`);
@@ -133,7 +161,8 @@ assessmentRouter.post("/", (req, res) => {
     name: row.candidate_name || null,
     linkedinProfile: row.candidate_linkedin || null,
     email: row.candidate_email || null,   // legacy sessions captured email instead
-    upworkProfile: row.candidate_upwork || null
+    upworkProfile: row.candidate_upwork || null,
+    portfolio: (() => { try { return JSON.parse(row.candidate_portfolio || "[]"); } catch { return []; } })()
   };
   const end = [...(payload.log || [])].reverse().find((e) => e.type === "end") || {};
   fs.writeFileSync(path.join(caseDir(row.code), "payload.json"), JSON.stringify(payload, null, 2));

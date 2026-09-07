@@ -4,3 +4,7 @@ data/
 .DS_Store
 .env
 ~$*.docx
+
+# candidate data pulled from production — never commit
+Assessment_review/
+downloads/
