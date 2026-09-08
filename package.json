@@ -8,7 +8,8 @@
     "dev:server": "node server/index.js",
     "build": "vite build",
     "start": "node server/index.js",
-    "sync:interior-designers": "node scripts/sync-interior-designers.mjs"
+    "sync:interior-designers": "node scripts/sync-interior-designers.mjs",
+    "scrape:public-portfolios": "node scripts/scrape-public-portfolios.mjs"
   },
   "dependencies": {
     "archiver": "^7.0.1",

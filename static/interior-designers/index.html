@@ -110,6 +110,9 @@
       color: var(--muted);
     }
     .name { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+    .name a { color: inherit; text-decoration: none; }
+    .name a:hover { text-decoration: underline; }
+    .avatar-link { display: block; line-height: 0; }
     .subline { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .links a {
@@ -171,6 +174,136 @@
       cursor: pointer;
     }
     .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .preview-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 0 14px 10px;
+    }
+    .preview-cell {
+      aspect-ratio: 1;
+      border: 0;
+      padding: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--line);
+      cursor: pointer;
+    }
+    .preview-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .profile-actions {
+      padding: 0 14px 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-profile {
+      flex: 1;
+      min-width: 140px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 44px;
+    }
+    .btn-profile.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn-profile:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+    #profileSheet {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 55;
+      background: rgba(0,0,0,.5);
+      padding: calc(12px + var(--safe-t)) 12px calc(12px + var(--safe-b));
+    }
+    #profileSheet.open { display: flex; align-items: flex-end; justify-content: center; }
+    .profile-panel {
+      width: 100%;
+      max-width: 720px;
+      max-height: 92vh;
+      background: var(--card);
+      border-radius: 20px 20px 16px 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 40px rgba(0,0,0,.18);
+    }
+    .profile-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+    .profile-head .avatar { width: 48px; height: 48px; }
+    .profile-head h2 { margin: 0; font-size: 18px; font-weight: 650; flex: 1; }
+    .profile-close {
+      border: 0;
+      background: var(--bg);
+      color: var(--text);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .profile-grid-wrap {
+      overflow: auto;
+      padding: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .profile-grid .cell {
+      aspect-ratio: 1;
+      border: 0;
+      padding: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--line);
+      cursor: pointer;
+    }
+    .profile-grid .cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .profile-empty {
+      padding: 32px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .profile-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding: 0 16px 16px;
+    }
+    .profile-links a {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+    }
     .assess {
       margin: 0 14px 12px;
       padding: 12px 14px;
@@ -336,9 +469,24 @@
     <div class="lb-top"><button type="button" class="lb-close" id="lbClose" aria-label="Close">×</button></div>
     <div class="lb-stage"><img id="lbImg" alt="" /></div>
   </div>
+  <div id="profileSheet" aria-hidden="true">
+    <div class="profile-panel" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <div class="profile-head">
+        <img class="avatar" id="profileAvatar" alt="" hidden>
+        <div class="avatar ph" id="profileAvatarPh" hidden></div>
+        <h2 id="profileTitle">Profile</h2>
+        <button type="button" class="profile-close" id="profileClose" aria-label="Close">×</button>
+      </div>
+      <div class="profile-grid-wrap">
+        <div class="profile-grid" id="profileGrid"></div>
+        <div class="profile-empty" id="profileEmpty" hidden>No portfolio images on file yet.</div>
+      </div>
+      <div class="profile-links" id="profileLinks"></div>
+    </div>
+  </div>
   <div class="toast" id="toast">Copied</div>
   <script>
-    const DATA = {"title": "Interior designers", "subtitle": "Top 5 from the cognitive assessment", "applicants": [{"id": 19, "name": "Obiya A.", "headshot": "portfolio-work/19__obiya-a/headshot.jpg", "rate": "$10.0", "images": [], "links": [], "hasWork": false, "assessment": {"rank": 1, "case": "K4E8RR", "fullName": "Obiya Abubakar sadiq", "index": 3.67, "dims": [{"id": "C1", "label": "Problem framing", "score": 5.0, "absent": false}, {"id": "C2", "label": "Structural decomposition", "score": 4.0, "absent": false}, {"id": "C3", "label": "Constraint & tradeoff", "score": 4.0, "absent": false}, {"id": "C4", "label": "Justification depth", "score": 5.0, "absent": false}, {"id": "C5", "label": "Handling uncertainty", "score": 4.0, "absent": false}, {"id": "C6", "label": "Self-correction", "score": 3.0, "absent": false}, {"id": "C7", "label": "Tool orchestration", "score": 1.0, "absent": true}, {"id": "C8", "label": "Explanatory clarity", "score": 4.0, "absent": false}, {"id": "C9", "label": "Claim–action coherence", "score": 3.0, "absent": true}], "strongest": ["Problem framing", "Justification depth"], "weakest": ["Tool orchestration", "Claim–action coherence"], "ownWords": 100, "readsScript": false, "aiUsed": false, "minutes": 15, "absent": ["Tool orchestration", "Claim–action coherence"]}}, {"id": 15, "name": "Aima A.", "headshot": "portfolio-work/15__aima-a/headshot.jpg", "rate": "$10.0", "images": [], "links": [], "hasWork": false, "assessment": {"rank": 2, "case": "QAHYVA", "fullName": "Aima Aftab", "index": 3.44, "dims": [{"id": "C1", "label": "Problem framing", "score": 4.0, "absent": false}, {"id": "C2", "label": "Structural decomposition", "score": 4.0, "absent": false}, {"id": "C3", "label": "Constraint & tradeoff", "score": 4.0, "absent": false}, {"id": "C4", "label": "Justification depth", "score": 4.0, "absent": false}, {"id": "C5", "label": "Handling uncertainty", "score": 4.0, "absent": false}, {"id": "C6", "label": "Self-correction", "score": 3.0, "absent": false}, {"id": "C7", "label": "Tool orchestration", "score": 1.0, "absent": true}, {"id": "C8", "label": "Explanatory clarity", "score": 4.0, "absent": false}, {"id": "C9", "label": "Claim–action coherence", "score": 3.0, "absent": true}], "strongest": ["Problem framing", "Structural decomposition"], "weakest": ["Tool orchestration", "Claim–action coherence"], "ownWords": 93, "readsScript": false, "aiUsed": false, "minutes": 10, "absent": ["Tool orchestration", "Claim–action coherence"]}}, {"id": 6, "name": "Muhammad H.", "headshot": "portfolio-work/06__muhammad-h/headshot.jpg", "rate": "$25.0", "images": ["portfolio-work/06__muhammad-h/bh01.png", "portfolio-work/06__muhammad-h/bh02.webp", "portfolio-work/06__muhammad-h/bh03.webp", "portfolio-work/06__muhammad-h/bh04.webp", "portfolio-work/06__muhammad-h/bh05.webp", "portfolio-work/06__muhammad-h/bh06.webp", "portfolio-work/06__muhammad-h/bh07.webp", "portfolio-work/06__muhammad-h/bh08.webp", "portfolio-work/06__muhammad-h/bh09.webp", "portfolio-work/06__muhammad-h/bh10.webp", "portfolio-work/06__muhammad-h/bh11.webp", "portfolio-work/06__muhammad-h/bh12.webp"], "links": [{"url": "https://www.behance.net/mhuzaifam", "label": "Behance"}], "hasWork": true, "assessment": {"rank": 3, "case": "TBVSFH", "fullName": "Muhammad Huzaifah", "index": 3.33, "dims": [{"id": "C1", "label": "Problem framing", "score": 4.0, "absent": false}, {"id": "C2", "label": "Structural decomposition", "score": 3.0, "absent": false}, {"id": "C3", "label": "Constraint & tradeoff", "score": 3.0, "absent": false}, {"id": "C4", "label": "Justification depth", "score": 3.0, "absent": false}, {"id": "C5", "label": "Handling uncertainty", "score": 4.0, "absent": false}, {"id": "C6", "label": "Self-correction", "score": 2.0, "absent": false}, {"id": "C7", "label": "Tool orchestration", "score": 3.0, "absent": false}, {"id": "C8", "label": "Explanatory clarity", "score": 4.0, "absent": false}, {"id": "C9", "label": "Claim–action coherence", "score": 4.0, "absent": false}], "strongest": ["Problem framing", "Handling uncertainty"], "weakest": ["Self-correction", "Tool orchestration"], "ownWords": 91, "readsScript": false, "aiUsed": true, "minutes": 15, "absent": []}}, {"id": 26, "name": "Egla X.", "headshot": "portfolio-work/26__egla-x/headshot.jpg", "rate": "$25.0", "images": [], "links": [], "hasWork": false, "assessment": {"rank": 4, "case": "VDUSU6", "fullName": "Egla Xhaferri", "index": 3.33, "dims": [{"id": "C1", "label": "Problem framing", "score": 4.0, "absent": false}, {"id": "C2", "label": "Structural decomposition", "score": 4.0, "absent": false}, {"id": "C3", "label": "Constraint & tradeoff", "score": 3.0, "absent": false}, {"id": "C4", "label": "Justification depth", "score": 3.0, "absent": false}, {"id": "C5", "label": "Handling uncertainty", "score": 4.0, "absent": false}, {"id": "C6", "label": "Self-correction", "score": 2.0, "absent": false}, {"id": "C7", "label": "Tool orchestration", "score": 2.0, "absent": false}, {"id": "C8", "label": "Explanatory clarity", "score": 4.0, "absent": false}, {"id": "C9", "label": "Claim–action coherence", "score": 4.0, "absent": false}], "strongest": ["Problem framing", "Structural decomposition"], "weakest": ["Tool orchestration", "Self-correction"], "ownWords": 100, "readsScript": false, "aiUsed": false, "minutes": 15, "absent": []}}, {"id": 16, "name": "Toymur A.", "headshot": "portfolio-work/16__toymur-a/headshot.jpg", "rate": "$15", "images": ["portfolio-work/16__toymur-a/bh01.webp", "portfolio-work/16__toymur-a/bh02.webp", "portfolio-work/16__toymur-a/bh03.webp", "portfolio-work/16__toymur-a/bh04.webp", "portfolio-work/16__toymur-a/bh05.webp", "portfolio-work/16__toymur-a/bh06.webp", "portfolio-work/16__toymur-a/bh07.webp", "portfolio-work/16__toymur-a/bh08.webp", "portfolio-work/16__toymur-a/bh09.webp", "portfolio-work/16__toymur-a/bh10.webp", "portfolio-work/16__toymur-a/bh11.webp", "portfolio-work/16__toymur-a/bh12.webp"], "links": [{"url": "https://www.behance.net/onestepinterior", "label": "Behance"}], "hasWork": true, "assessment": {"rank": 5, "case": "Q4DBRQ", "fullName": "Toymur Ahmed", "index": 2.67, "dims": [{"id": "C1", "label": "Problem framing", "score": 2.0, "absent": false}, {"id": "C2", "label": "Structural decomposition", "score": 2.0, "absent": false}, {"id": "C3", "label": "Constraint & tradeoff", "score": 2.0, "absent": false}, {"id": "C4", "label": "Justification depth", "score": 2.0, "absent": false}, {"id": "C5", "label": "Handling uncertainty", "score": 3.0, "absent": false}, {"id": "C6", "label": "Self-correction", "score": 3.0, "absent": false}, {"id": "C7", "label": "Tool orchestration", "score": 2.0, "absent": false}, {"id": "C8", "label": "Explanatory clarity", "score": 3.0, "absent": false}, {"id": "C9", "label": "Claim–action coherence", "score": 5.0, "absent": false}], "strongest": ["Claim–action coherence", "Handling uncertainty"], "weakest": ["Tool orchestration", "Justification depth"], "ownWords": 96, "readsScript": false, "aiUsed": false, "minutes": 15, "absent": []}}], "cohort": {"assessed": 24, "submitted": 27}};
+    const DATA = {"title":"Interior designers","subtitle":"Top 5 from the cognitive assessment","applicants":[{"id":19,"name":"Obiya A.","headshot":"portfolio-work/19__obiya-a/headshot.jpg","rate":"$10.0","images":["portfolio-work/19__obiya-a/01.web.jpg","portfolio-work/19__obiya-a/02.web.jpg","portfolio-work/19__obiya-a/03.web.jpg","portfolio-work/19__obiya-a/04.web.jpg","portfolio-work/19__obiya-a/05.web.jpg","portfolio-work/19__obiya-a/06.web.jpg","portfolio-work/19__obiya-a/07.web.jpg","portfolio-work/19__obiya-a/08.web.jpg","portfolio-work/19__obiya-a/09.web.jpg","portfolio-work/19__obiya-a/10.web.jpg","portfolio-work/19__obiya-a/11.web.jpg","portfolio-work/19__obiya-a/12.web.jpg"],"links":[],"hasWork":true,"assessment":{"rank":1,"case":"K4E8RR","fullName":"Obiya Abubakar sadiq","index":3.67,"dims":[{"id":"C1","label":"Problem framing","score":5,"absent":false},{"id":"C2","label":"Structural decomposition","score":4,"absent":false},{"id":"C3","label":"Constraint & tradeoff","score":4,"absent":false},{"id":"C4","label":"Justification depth","score":5,"absent":false},{"id":"C5","label":"Handling uncertainty","score":4,"absent":false},{"id":"C6","label":"Self-correction","score":3,"absent":false},{"id":"C7","label":"Tool orchestration","score":1,"absent":true},{"id":"C8","label":"Explanatory clarity","score":4,"absent":false},{"id":"C9","label":"Claim–action coherence","score":3,"absent":true}],"strongest":["Problem framing","Justification depth"],"weakest":["Tool orchestration","Claim–action coherence"],"ownWords":100,"readsScript":false,"aiUsed":false,"minutes":15,"absent":["Tool orchestration","Claim–action coherence"]},"profileUrl":"https://www.upwork.com/freelancers/obiyaa"},{"id":15,"name":"Aima A.","headshot":"portfolio-work/15__aima-a/headshot.jpg","rate":"$10.0","images":[],"links":[],"hasWork":false,"assessment":{"rank":2,"case":"QAHYVA","fullName":"Aima Aftab","index":3.44,"dims":[{"id":"C1","label":"Problem framing","score":4,"absent":false},{"id":"C2","label":"Structural decomposition","score":4,"absent":false},{"id":"C3","label":"Constraint & tradeoff","score":4,"absent":false},{"id":"C4","label":"Justification depth","score":4,"absent":false},{"id":"C5","label":"Handling uncertainty","score":4,"absent":false},{"id":"C6","label":"Self-correction","score":3,"absent":false},{"id":"C7","label":"Tool orchestration","score":1,"absent":true},{"id":"C8","label":"Explanatory clarity","score":4,"absent":false},{"id":"C9","label":"Claim–action coherence","score":3,"absent":true}],"strongest":["Problem framing","Structural decomposition"],"weakest":["Tool orchestration","Claim–action coherence"],"ownWords":93,"readsScript":false,"aiUsed":false,"minutes":10,"absent":["Tool orchestration","Claim–action coherence"]},"profileUrl":"https://www.upwork.com/freelancers/aimaa6"},{"id":6,"name":"Muhammad H.","headshot":"portfolio-work/06__muhammad-h/headshot.jpg","rate":"$25.0","images":["portfolio-work/06__muhammad-h/bh01.web.jpg","portfolio-work/06__muhammad-h/bh02.webp","portfolio-work/06__muhammad-h/bh03.webp","portfolio-work/06__muhammad-h/bh04.webp","portfolio-work/06__muhammad-h/bh05.webp","portfolio-work/06__muhammad-h/bh06.webp","portfolio-work/06__muhammad-h/bh07.webp","portfolio-work/06__muhammad-h/bh08.webp","portfolio-work/06__muhammad-h/bh09.webp","portfolio-work/06__muhammad-h/bh10.webp","portfolio-work/06__muhammad-h/bh11.webp","portfolio-work/06__muhammad-h/bh12.webp"],"links":[{"url":"https://www.behance.net/mhuzaifam","label":"Behance"}],"hasWork":true,"assessment":{"rank":3,"case":"TBVSFH","fullName":"Muhammad Huzaifah","index":3.33,"dims":[{"id":"C1","label":"Problem framing","score":4,"absent":false},{"id":"C2","label":"Structural decomposition","score":3,"absent":false},{"id":"C3","label":"Constraint & tradeoff","score":3,"absent":false},{"id":"C4","label":"Justification depth","score":3,"absent":false},{"id":"C5","label":"Handling uncertainty","score":4,"absent":false},{"id":"C6","label":"Self-correction","score":2,"absent":false},{"id":"C7","label":"Tool orchestration","score":3,"absent":false},{"id":"C8","label":"Explanatory clarity","score":4,"absent":false},{"id":"C9","label":"Claim–action coherence","score":4,"absent":false}],"strongest":["Problem framing","Handling uncertainty"],"weakest":["Self-correction","Tool orchestration"],"ownWords":91,"readsScript":false,"aiUsed":true,"minutes":15,"absent":[]},"profileUrl":"https://www.upwork.com/freelancers/mhuzaifah"},{"id":26,"name":"Egla X.","headshot":"portfolio-work/26__egla-x/headshot.jpg","rate":"$25.0","images":[],"links":[],"hasWork":false,"assessment":{"rank":4,"case":"VDUSU6","fullName":"Egla Xhaferri","index":3.33,"dims":[{"id":"C1","label":"Problem framing","score":4,"absent":false},{"id":"C2","label":"Structural decomposition","score":4,"absent":false},{"id":"C3","label":"Constraint & tradeoff","score":3,"absent":false},{"id":"C4","label":"Justification depth","score":3,"absent":false},{"id":"C5","label":"Handling uncertainty","score":4,"absent":false},{"id":"C6","label":"Self-correction","score":2,"absent":false},{"id":"C7","label":"Tool orchestration","score":2,"absent":false},{"id":"C8","label":"Explanatory clarity","score":4,"absent":false},{"id":"C9","label":"Claim–action coherence","score":4,"absent":false}],"strongest":["Problem framing","Structural decomposition"],"weakest":["Tool orchestration","Self-correction"],"ownWords":100,"readsScript":false,"aiUsed":false,"minutes":15,"absent":[]},"profileUrl":"https://www.upwork.com/freelancers/~01a10f0c2dc38dd625"},{"id":16,"name":"Toymur A.","headshot":"portfolio-work/16__toymur-a/headshot.jpg","rate":"$15","images":["portfolio-work/16__toymur-a/bh01.webp","portfolio-work/16__toymur-a/bh02.webp","portfolio-work/16__toymur-a/bh03.webp","portfolio-work/16__toymur-a/bh04.webp","portfolio-work/16__toymur-a/bh05.webp","portfolio-work/16__toymur-a/bh06.webp","portfolio-work/16__toymur-a/bh07.webp","portfolio-work/16__toymur-a/bh08.webp","portfolio-work/16__toymur-a/bh09.webp","portfolio-work/16__toymur-a/bh10.webp","portfolio-work/16__toymur-a/bh11.webp","portfolio-work/16__toymur-a/bh12.webp"],"links":[{"url":"https://www.behance.net/onestepinterior","label":"Behance"}],"hasWork":true,"assessment":{"rank":5,"case":"Q4DBRQ","fullName":"Toymur Ahmed","index":2.67,"dims":[{"id":"C1","label":"Problem framing","score":2,"absent":false},{"id":"C2","label":"Structural decomposition","score":2,"absent":false},{"id":"C3","label":"Constraint & tradeoff","score":2,"absent":false},{"id":"C4","label":"Justification depth","score":2,"absent":false},{"id":"C5","label":"Handling uncertainty","score":3,"absent":false},{"id":"C6","label":"Self-correction","score":3,"absent":false},{"id":"C7","label":"Tool orchestration","score":2,"absent":false},{"id":"C8","label":"Explanatory clarity","score":3,"absent":false},{"id":"C9","label":"Claim–action coherence","score":5,"absent":false}],"strongest":["Claim–action coherence","Handling uncertainty"],"weakest":["Tool orchestration","Justification depth"],"ownWords":96,"readsScript":false,"aiUsed":false,"minutes":15,"absent":[]},"profileUrl":"https://www.upwork.com/freelancers/~01873b1646356de94e"}],"cohort":{"assessed":24,"submitted":27}};
     const STORAGE_KEY = 'praxis-interior-designer-picks';
     let picks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
     let activeFilter = 'all';
@@ -367,6 +515,7 @@
         '<div class="assess-dims">' + dims + '</div>' +
         '<div class="assess-pattern"><span>Strongest</span> ' + s.strongest.join(', ') + ' &nbsp;·&nbsp; <span>Weakest</span> ' + s.weakest.join(', ') + '</div>' +
         '<div class="assess-tags">' + tags + '</div>' +
+        note +
         '</div>';
     }
 
@@ -403,14 +552,31 @@
         card.innerHTML = `
           <div class="card-head">
             ${a.headshot
-              ? '<img class="avatar" src="' + a.headshot + '" alt="">'
+              ? (a.profileUrl
+                ? '<a class="avatar-link" href="' + a.profileUrl + '" target="_blank" rel="noopener"><img class="avatar" src="' + a.headshot + '" alt=""></a>'
+                : '<img class="avatar" src="' + a.headshot + '" alt="">')
               : '<div class="avatar ph">' + initials(a.name) + '</div>'}
             <div>
-              <div class="name">${a.name}</div>
+              <div class="name">${a.profileUrl
+                ? '<a href="' + a.profileUrl + '" target="_blank" rel="noopener">' + a.name + '</a>'
+                : a.name}</div>
               <div class="subline">${a.rate ? a.rate + '/hr · ' : ''}${a.images.length ? a.images.length + ' photos' : 'No photos yet'}</div>
               ${a.links.length ? '<div class="links">' + a.links.map(l =>
                 '<a href="' + l.url + '" target="_blank" rel="noopener">' + l.label + '</a>').join('') + '</div>' : ''}
             </div>
+          </div>
+          ${a.images.length
+            ? '<div class="preview-row">' + a.images.slice(0, 4).map(src =>
+              '<button type="button" class="preview-cell" data-src="' + src + '"><img src="' + src + '" loading="lazy" alt=""></button>'
+            ).join('') + '</div>'
+            : '<div class="empty-work">No portfolio images on file</div>'}
+          <div class="profile-actions">
+            ${a.profileUrl
+              ? '<a class="btn-profile primary" href="' + a.profileUrl + '" target="_blank" rel="noopener">View profile</a>'
+              : '<button type="button" class="btn-profile primary" disabled>View profile</button>'}
+            ${a.images.length
+              ? '<button type="button" class="btn-profile" data-portfolio="' + a.id + '">View portfolio</button>'
+              : ''}
           </div>
           ${a.assessment ? renderAssessment(a.assessment) : ''}
           <div class="picks">
@@ -418,19 +584,15 @@
             <button type="button" class="pick maybe ${p==='maybe'?'on':''}" data-pick="maybe">Maybe</button>
             <button type="button" class="pick no ${p==='no'?'on':''}" data-pick="no">Pass</button>
           </div>
-          ${a.images.length
-            ? '<div class="gallery-wrap"><div class="gallery-label">Portfolio</div><div class="gallery">' +
-              a.images.map(src => '<button type="button" class="thumb" data-src="' + src + '"><img src="' + src + '" loading="lazy" alt=""></button>').join('') +
-              '</div></div>'
-            : '<div class="empty-work">No portfolio images on file</div>'}
         `;
 
         card.querySelectorAll('.pick').forEach(btn => {
           btn.addEventListener('click', () => setPick(a.id, btn.dataset.pick));
         });
-        card.querySelectorAll('.thumb').forEach(btn => {
-          btn.addEventListener('click', () => openLightbox(btn.dataset.src));
+        card.querySelectorAll('.preview-cell').forEach(btn => {
+          btn.addEventListener('click', () => openProfileGallery(a));
         });
+        card.querySelector('[data-portfolio]')?.addEventListener('click', () => openProfileGallery(a));
         main.appendChild(card);
       }
 
@@ -460,6 +622,77 @@
       document.getElementById('lightbox').setAttribute('aria-hidden', 'true');
       document.getElementById('lbImg').src = '';
     }
+
+    function openProfileGallery(a) {
+      const sheet = document.getElementById('profileSheet');
+      const grid = document.getElementById('profileGrid');
+      const empty = document.getElementById('profileEmpty');
+      const links = document.getElementById('profileLinks');
+      const av = document.getElementById('profileAvatar');
+      const avPh = document.getElementById('profileAvatarPh');
+
+      document.getElementById('profileTitle').innerHTML = a.profileUrl
+        ? '<a href="' + a.profileUrl + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + a.name + '</a>'
+        : a.name;
+      if (a.headshot) {
+        av.src = a.headshot;
+        av.hidden = false;
+        avPh.hidden = true;
+      } else {
+        av.hidden = true;
+        avPh.hidden = false;
+        avPh.textContent = initials(a.name);
+      }
+
+      grid.innerHTML = '';
+      if (a.images.length) {
+        empty.hidden = true;
+        for (const src of a.images) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cell';
+          btn.innerHTML = '<img src="' + src + '" loading="lazy" alt="">';
+          btn.addEventListener('click', () => openLightbox(src));
+          grid.appendChild(btn);
+        }
+      } else {
+        empty.hidden = false;
+      }
+
+      links.innerHTML = '';
+      if (a.profileUrl) {
+        const up = document.createElement('a');
+        up.href = a.profileUrl;
+        up.target = '_blank';
+        up.rel = 'noopener';
+        up.textContent = 'Upwork profile';
+        links.appendChild(up);
+      }
+      for (const l of a.links || []) {
+        const el = document.createElement('a');
+        el.href = l.url;
+        el.target = '_blank';
+        el.rel = 'noopener';
+        el.textContent = l.label;
+        links.appendChild(el);
+      }
+
+      sheet.classList.add('open');
+      sheet.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeProfileGallery() {
+      const sheet = document.getElementById('profileSheet');
+      sheet.classList.remove('open');
+      sheet.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('profileClose').onclick = closeProfileGallery;
+    document.getElementById('profileSheet').addEventListener('click', (e) => {
+      if (e.target.id === 'profileSheet') closeProfileGallery();
+    });
     document.getElementById('lbClose').onclick = closeLightbox;
     document.getElementById('lightbox').addEventListener('click', (e) => {
       if (e.target.id === 'lightbox') closeLightbox();
