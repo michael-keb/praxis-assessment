@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api.js";
+
+const BriefEditor = lazy(() => import("../components/BriefEditor.jsx"));
 
 export default function AdminPage({ user, onLogout }) {
   const [assessments, setAssessments] = useState([]);
@@ -254,14 +256,14 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
             onChange={(gate) => setEditing({ ...editing, ...gate })}
           />
           <div className="field">
-            <label htmlFor="a-brief">Brief (shown to the candidate — separate paragraphs with a blank line)</label>
-            <textarea
-              id="a-brief"
-              style={{ minHeight: 260 }}
-              value={editing.brief}
-              onChange={(e) => setEditing({ ...editing, brief: e.target.value })}
-              placeholder="Create something from nothing. Use this time however you need — build, research, draft, prototype..."
-            />
+            <label id="a-brief-label" htmlFor="a-brief">Brief (shown to the candidate)</label>
+            <Suspense fallback={<p>Loading brief editor…</p>}>
+              <BriefEditor
+                key={editing.id ?? "new"}
+                value={editing.brief}
+                onChange={(brief) => setEditing((current) => ({ ...current, brief }))}
+              />
+            </Suspense>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
             <button className="btn-primary" style={{ padding: "9px 18px", fontSize: 14.5 }} disabled={busy} onClick={save}>

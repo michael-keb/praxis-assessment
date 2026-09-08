@@ -8,3 +8,5 @@ data/
 # candidate data pulled from production — never commit
 Assessment_review/
 downloads/
+test-results/
+playwright-report/

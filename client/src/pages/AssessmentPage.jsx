@@ -1,22 +1,11 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "react-router-dom";
 import { createEngine } from "../engine.js";
+import BriefContent from "../components/BriefContent.jsx";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
 const DEFAULT_TITLE = "Assessment";
-const DEFAULT_BRIEF =
-  "Create something from nothing. Use this time however you need — " +
-  "build, research, draft, prototype. Speak out loud as you go so we can follow how you think.";
-
-function Brief({ text, className }) {
-  const paras = (text || DEFAULT_BRIEF).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-  return paras.map((p, i) => (
-    <p className={className} key={i}>
-      {p.split("\n").flatMap((line, j) => (j === 0 ? [line] : [<br key={j} />, line]))}
-    </p>
-  ));
-}
 
 export default function AssessmentPage() {
   const [params] = useSearchParams();
@@ -286,7 +275,7 @@ function Task({ engine, snap }) {
 
         <section className="brief open-brief">
           <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
-          <Brief className="open-prompt" text={snap.assessment?.brief} />
+          <BriefContent text={snap.assessment?.brief} />
         </section>
 
         <section className="work open-work">

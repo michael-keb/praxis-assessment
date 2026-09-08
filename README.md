@@ -39,6 +39,17 @@ npm run dev                                                            # Vite :5
 
 ## Operating it
 
+Assessment briefs support formatted paste from documents and web pages, or
+Markdown (including text copied from ChatGPT). The admin editor provides heading
+levels, bold, italics, bullet and numbered lists, undo/redo, and a candidate
+preview. Formatting is saved as Markdown in the existing `brief` field; existing
+plain text briefs still preserve paragraphs and line breaks. Candidates see the
+same document formatting after starting their assessment.
+
+Run `npm test` for the session engine checks. For the brief editor browser checks,
+run `npx playwright install chromium` once, then `npm run test:briefs`. These use
+an isolated temporary database, never live assessments.
+
 1. Log in at `/auth` with the admin account, you land on `/admin`.
 2. Issue codes — each row has a copy-ready link: `https://host/assess?case=7K2M9Q`.
 3. Send one link per candidate. The candidate signs up (name, email,

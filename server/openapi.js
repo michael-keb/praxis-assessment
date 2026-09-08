@@ -82,7 +82,7 @@ export const openapiSpec = {
         properties: {
           id: { type: "integer" },
           title: { type: "string" },
-          brief: { type: "string", description: "Markdown-ish brief shown to the candidate." },
+          brief: { type: "string", description: "Markdown brief shown to the candidate. Supports headings, bold, italics, lists, links and code; plain text and line breaks remain supported." },
           duration_minutes: { type: "integer", minimum: 1 },
           require_linkedin: { type: "boolean" },
           require_upwork: { type: "boolean" },
@@ -98,7 +98,7 @@ export const openapiSpec = {
         required: ["title", "durationMinutes"],
         properties: {
           title: { type: "string" },
-          brief: { type: "string" },
+          brief: { type: "string", description: "Brief as Markdown or plain text. The admin rich text editor saves Markdown." },
           durationMinutes: { type: "integer", minimum: 1 },
           requireLinkedin: { type: "boolean", default: true },
           requireUpwork: { type: "boolean", default: false },
