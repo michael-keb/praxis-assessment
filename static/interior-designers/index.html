@@ -552,14 +552,10 @@
         card.innerHTML = `
           <div class="card-head">
             ${a.headshot
-              ? (a.profileUrl
-                ? '<a class="avatar-link" href="' + a.profileUrl + '" target="_blank" rel="noopener"><img class="avatar" src="' + a.headshot + '" alt=""></a>'
-                : '<img class="avatar" src="' + a.headshot + '" alt="">')
+              ? '<img class="avatar" src="' + a.headshot + '" alt="">'
               : '<div class="avatar ph">' + initials(a.name) + '</div>'}
             <div>
-              <div class="name">${a.profileUrl
-                ? '<a href="' + a.profileUrl + '" target="_blank" rel="noopener">' + a.name + '</a>'
-                : a.name}</div>
+              <div class="name">${a.name}</div>
               <div class="subline">${a.rate ? a.rate + '/hr · ' : ''}${a.images.length ? a.images.length + ' photos' : 'No photos yet'}</div>
               ${a.links.length ? '<div class="links">' + a.links.map(l =>
                 '<a href="' + l.url + '" target="_blank" rel="noopener">' + l.label + '</a>').join('') + '</div>' : ''}
@@ -626,9 +622,7 @@
       const av = document.getElementById('profileAvatar');
       const avPh = document.getElementById('profileAvatarPh');
 
-      document.getElementById('profileTitle').innerHTML = a.profileUrl
-        ? '<a href="' + a.profileUrl + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">' + a.name + '</a>'
-        : a.name;
+      document.getElementById('profileTitle').textContent = a.name;
       if (a.headshot) {
         av.src = a.headshot;
         av.hidden = false;
@@ -655,14 +649,6 @@
       }
 
       links.innerHTML = '';
-      if (a.profileUrl) {
-        const up = document.createElement('a');
-        up.href = a.profileUrl;
-        up.target = '_blank';
-        up.rel = 'noopener';
-        up.textContent = 'Upwork profile';
-        links.appendChild(up);
-      }
       for (const l of a.links || []) {
         const el = document.createElement('a');
         el.href = l.url;
