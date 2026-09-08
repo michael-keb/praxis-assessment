@@ -14,6 +14,7 @@ import { PORT } from "./config.js";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
+const CAREERS_DIR = path.join(ROOT, "static", "careers");
 
 seedAdmin();
 
@@ -47,12 +48,24 @@ if (fs.existsSync(INTERIOR_DIR)) {
   );
 }
 
+/* Careers (public job postings). */
+if (fs.existsSync(CAREERS_DIR)) {
+  app.get(["/careers", "/careers/"], (_req, res) => {
+    res.sendFile(path.join(CAREERS_DIR, "index.html"));
+  });
+  app.use(
+    "/careers",
+    express.static(CAREERS_DIR, { index: false, redirect: false })
+  );
+}
+
 /* Built React app + SPA fallback. */
 if (fs.existsSync(DIST)) {
   app.use(express.static(DIST));
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) return next();
     if (req.path.startsWith("/interior-designers")) return next();
+    if (req.path.startsWith("/careers")) return next();
     res.sendFile(path.join(DIST, "index.html"));
   });
 } else {
@@ -67,5 +80,8 @@ app.listen(PORT, () => {
   console.log(`  docs: http://0.0.0.0:${PORT}/api/docs`);
   if (fs.existsSync(INTERIOR_DIR)) {
     console.log(`  interior designers: /interior-designers/`);
+  }
+  if (fs.existsSync(CAREERS_DIR)) {
+    console.log(`  careers: /careers/`);
   }
 });

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#faf9f7" />
+  <meta name="description" content="Careers at Praxis — Backend Engineer (remote, full-time)." />
+  <title>Careers — Backend Engineer</title>
+  <style>
+    :root {
+      --bg: #faf9f7;
+      --card: #ffffff;
+      --text: #1a1a1a;
+      --muted: #6b6b6b;
+      --line: #e8e6e1;
+      --accent: #1a1a1a;
+      --accent-soft: #2d5a4a;
+      --highlight: #e8f5ef;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --max: 720px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+      padding-bottom: calc(32px + var(--safe-b));
+    }
+    .top {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(250,249,247,.94);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: calc(14px + var(--safe-t)) 20px 14px;
+    }
+    .top-inner {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand {
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back:hover { color: var(--text); }
+    .wrap {
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 24px 20px 0;
+    }
+    .hero {
+      margin-bottom: 28px;
+    }
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(28px, 5vw, 36px);
+      font-weight: 700;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+    }
+    .hero .lede {
+      margin: 0;
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .tag {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+    .tag.accent {
+      background: var(--highlight);
+      border-color: #9fd4bc;
+      color: var(--accent-soft);
+    }
+    .apply-bar {
+      margin: 24px 0 32px;
+      padding: 20px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      justify-content: space-between;
+    }
+    .apply-bar p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      flex: 1;
+      min-width: 200px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 24px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: .92; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 24px 22px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .card p { margin: 0 0 14px; }
+    .card p:last-child { margin-bottom: 0; }
+    .card ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+    .card li {
+      margin-bottom: 8px;
+    }
+    .card li:last-child { margin-bottom: 0; }
+    .stack {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .pill {
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--text);
+    }
+    .foot {
+      max-width: var(--max);
+      margin: 32px auto 0;
+      padding: 0 20px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <a class="brand" href="/">Praxis</a>
+      <a class="back" href="/careers/">Careers</a>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1>Backend Engineer</h1>
+      <p class="lede">
+        Help build the engine behind a top-ranked social trading platform — real-time markets,
+        copy trading, and APIs used at scale. Fully remote. Strong cash plus equity.
+      </p>
+      <div class="tags">
+        <span class="tag accent">Full-time</span>
+        <span class="tag">Fully remote</span>
+        <span class="tag">US &amp; AU team</span>
+      </div>
+    </section>
+
+    <div class="apply-bar" id="apply">
+      <p>Ready to own backend services on a platform where latency, correctness, and trust matter.</p>
+      <a class="btn" href="mailto:careers@praxis-au.com?subject=Backend%20Engineer%20%E2%80%94%20Application">Apply now</a>
+    </div>
+
+    <article class="card">
+      <h2>About the company</h2>
+      <p>
+        We’re a US-based fintech startup — five years in, profitable, and entering a major Series A
+        with institutional investors. Our product is <strong>social investing</strong>: traders build
+        portfolios, share ideas, and earn when others follow their performance. We’re top-three globally
+        in our category, with a strong focus on crypto today and room to grow.
+      </p>
+      <p>
+        The team is fully remote, spread across the US and Australia, with competitive cash
+        compensation and meaningful stock options. You’ll work with people who care about shipping
+        reliable systems, not slide decks.
+      </p>
+    </article>
+
+    <article class="card">
+      <h2>The role</h2>
+      <p>
+        We’re looking for a <strong>Backend Engineer</strong> to own core services and APIs end to end.
+        You’ll design, build, and run the systems that power social feeds, paper trading, live trading,
+        and copy trading — from WebSockets and HTTP APIs to Kafka pipelines and Redis/Valkey caches.
+      </p>
+      <p>This is a hands-on role: you’ll write production code, review PRs, debug incidents, and
+        shape how we build for the long term.</p>
+      <p><strong>Core stack:</strong></p>
+      <div class="stack">
+        <span class="pill">TypeScript</span>
+        <span class="pill">Node 22</span>
+        <span class="pill">Express</span>
+        <span class="pill">Kysely</span>
+        <span class="pill">PostgreSQL</span>
+        <span class="pill">Python</span>
+        <span class="pill">FastAPI</span>
+        <span class="pill">Kafka</span>
+        <span class="pill">Redis / Valkey</span>
+      </div>
+    </article>
+
+    <article class="card">
+      <h2>What you’ll do</h2>
+      <ul>
+        <li>Design, implement, and maintain backend APIs and background workers</li>
+        <li>Own services across social, paper trading, live trading, and copy trading</li>
+        <li>Write and review PostgreSQL queries — performance and correctness matter</li>
+        <li>Produce and consume Kafka events with solid retries and idempotency</li>
+        <li>Keep paper, live, and copy trading cleanly separated: balances, P&amp;L, and trader payouts</li>
+        <li>Build paper trading: simulated positions on live prices, including SL/TP and liquidation</li>
+        <li>Integrate live trading with a non-custodial perp DEX — immutable trade records (no edits, no deletes)</li>
+        <li>Review pull requests, debug production issues, and ship changes that are safe at scale</li>
+        <li>Partner with mobile and product engineers on clear, stable API contracts</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>What we’re looking for</h2>
+      <ul>
+        <li>4+ years building backend services in production</li>
+        <li>Strong TypeScript/Node.js and/or Python experience</li>
+        <li>Deep SQL and PostgreSQL — you’re comfortable owning schema and query performance</li>
+        <li>Event-driven systems in anger (Kafka or similar)</li>
+        <li>HTTP API design and operation you’d be happy to put your name on</li>
+        <li>Ownership mindset: debugging, deployments, on-call — you don’t disappear after merge</li>
+        <li>Ability to extend existing code without inventing a parallel pattern every time</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>Nice to have</h2>
+      <ul>
+        <li>Trading systems, perpetual futures, DEX, or exchange infrastructure</li>
+        <li>Copy trading or fan-out execution patterns</li>
+        <li>Kafka in production (e.g. AWS MSK)</li>
+        <li>AWS: ECS, Aurora, IAM</li>
+        <li>Kysely, Express, or FastAPI</li>
+        <li>Terraform</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>Tech stack</h2>
+      <div class="stack">
+        <span class="pill">Node 22</span>
+        <span class="pill">TypeScript</span>
+        <span class="pill">Express</span>
+        <span class="pill">Kysely</span>
+        <span class="pill">Yarn 4</span>
+        <span class="pill">Python</span>
+        <span class="pill">FastAPI</span>
+        <span class="pill">Aurora PostgreSQL 16</span>
+        <span class="pill">Kafka (AWS MSK)</span>
+        <span class="pill">Valkey / Redis</span>
+        <span class="pill">ECS Fargate</span>
+        <span class="pill">Terraform</span>
+      </div>
+    </article>
+
+    <div class="apply-bar">
+      <p>Send your CV and a short note on something backend you’re proud of.</p>
+      <a class="btn" href="mailto:careers@praxis-au.com?subject=Backend%20Engineer%20%E2%80%94%20Application">Apply now</a>
+    </div>
+  </div>
+
+  <footer class="foot">Praxis · Careers</footer>
+</body>
+</html>
