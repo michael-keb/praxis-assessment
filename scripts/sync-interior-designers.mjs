@@ -159,6 +159,15 @@ function mergePortfolioIntoData(existingData, workManifest, galleries, workDir) 
         .filter((u) => u && !skipLink(u))
         .slice(0, 4)
         .map((url) => ({ url, label: linkLabel(url) }));
+      const pdfRel = src.folder
+        ? `portfolio-work/${src.folder}/portfolio.pdf`
+        : null;
+      if (
+        pdfRel &&
+        fs.existsSync(path.join(workDir, src.folder, "portfolio.pdf"))
+      ) {
+        links.unshift({ url: pdfRel, label: "Portfolio PDF" });
+      }
       const rate = src.bid
         ? String(src.bid).replace(/^USD\s*/i, "$").trim()
         : a.rate;
