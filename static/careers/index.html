@@ -101,42 +101,21 @@
       border-color: #9fd4bc;
       color: var(--accent-soft);
     }
-    .apply-bar {
-      margin: 24px 0 32px;
+    .contact {
+      margin: 32px 0 0;
       padding: 20px;
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 16px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 16px;
-      justify-content: space-between;
-    }
-    .apply-bar p {
-      margin: 0;
-      font-size: 14px;
-      color: var(--muted);
-      flex: 1;
-      min-width: 200px;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 48px;
-      padding: 0 24px;
-      border-radius: 12px;
       font-size: 15px;
+      color: var(--muted);
+    }
+    .contact a {
+      color: var(--text);
       font-weight: 600;
       text-decoration: none;
-      border: none;
-      cursor: pointer;
-      background: var(--accent);
-      color: #fff;
-      white-space: nowrap;
     }
-    .btn:hover { opacity: .92; }
+    .contact a:hover { text-decoration: underline; }
     .card {
       background: var(--card);
       border: 1px solid var(--line);
@@ -208,11 +187,6 @@
         <span class="tag">US &amp; AU team</span>
       </div>
     </section>
-
-    <div class="apply-bar" id="apply">
-      <p>Ready to own backend services on a platform where latency, correctness, and trust matter.</p>
-      <a class="btn" href="mailto:careers@praxis-au.com?subject=Backend%20Engineer%20%E2%80%94%20Application">Apply now</a>
-    </div>
 
     <article class="card">
       <h2>About the company</h2>
@@ -310,10 +284,10 @@
       </div>
     </article>
 
-    <div class="apply-bar">
-      <p>Send your CV and a short note on something backend you’re proud of.</p>
-      <a class="btn" href="mailto:careers@praxis-au.com?subject=Backend%20Engineer%20%E2%80%94%20Application">Apply now</a>
-    </div>
+    <p class="contact">
+      Interested? Email <a href="mailto:michael@praxis-au.com?subject=Backend%20Engineer">michael@praxis-au.com</a>
+      with your CV and a short note on something backend you’re proud of.
+    </p>
   </div>
 
   <footer class="foot">Praxis · Careers</footer>
