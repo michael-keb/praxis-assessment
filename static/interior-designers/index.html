@@ -570,14 +570,9 @@
               '<button type="button" class="preview-cell" data-src="' + src + '"><img src="' + src + '" loading="lazy" alt=""></button>'
             ).join('') + '</div>'
             : '<div class="empty-work">No portfolio images on file</div>'}
-          <div class="profile-actions">
-            ${a.profileUrl
-              ? '<a class="btn-profile primary" href="' + a.profileUrl + '" target="_blank" rel="noopener">View profile</a>'
-              : '<button type="button" class="btn-profile primary" disabled>View profile</button>'}
-            ${a.images.length
-              ? '<button type="button" class="btn-profile" data-portfolio="' + a.id + '">View portfolio</button>'
-              : ''}
-          </div>
+          ${a.images.length
+            ? '<div class="profile-actions"><button type="button" class="btn-profile primary" data-portfolio="' + a.id + '">View portfolio</button></div>'
+            : ''}
           ${a.assessment ? renderAssessment(a.assessment) : ''}
           <div class="picks">
             <button type="button" class="pick yes ${p==='yes'?'on':''}" data-pick="yes">Yes</button>
