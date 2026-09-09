@@ -43,3 +43,7 @@ services:
         sync: false
       - key: EXTENSION_API_KEY  # set in the Render dashboard
         sync: false
+      - key: REQOPS_NFINY_PASSWORD  # client portal at /reqops/nfiny/
+        sync: false
+      - key: RECRUITMENT_MANAGER_API_URL  # e.g. https://your-rm-host or http://127.0.0.1:8125 locally
+        sync: false

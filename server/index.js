@@ -12,6 +12,7 @@ import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
 import { createSendASweetRouter } from "./sendasweet.js";
 import { startSessionSweeper } from "./assessment-session.js";
+import { mountReqopsNfiny } from "./reqopsNfiny.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -74,6 +75,9 @@ if (fs.existsSync(SENDASWEET_DIR)) {
   app.use("/sendasweet", createSendASweetRouter(SENDASWEET_DIR));
 }
 
+/* ReqOps client recruitment observatory (password gate). */
+mountReqopsNfiny(app);
+
 /* Built React app + SPA fallback. */
 if (fs.existsSync(DIST)) {
   app.use(express.static(DIST));
@@ -81,6 +85,7 @@ if (fs.existsSync(DIST)) {
     if (req.path.startsWith("/api/")) return next();
     if (req.path.startsWith("/interior-designers")) return next();
     if (req.path.startsWith("/careers")) return next();
+    if (req.path.startsWith("/reqops/nfiny")) return next();
     if (req.path === "/sendasweet" || req.path.startsWith("/sendasweet/")) return next();
     res.sendFile(path.join(DIST, "index.html"));
   });
