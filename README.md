@@ -1,8 +1,8 @@
 # Praxis Reasoning Assessment
 
 Full-stack React app. One problem, 15 minutes, hard timer, any tools permitted
-including AI. Candidates **sign up for an account**, open their **unique
-server-issued code link**, and must share their **entire screen** — the
+including AI. Candidates open their **unique server-issued code link**, provide
+the requested profile details, and must share their **entire screen** — the
 assessment locks and the timer pauses whenever sharing stops (cumulative
 pause capped at 5 min, then auto-submit).
 
@@ -10,8 +10,8 @@ pause capped at 5 min, then auto-submit).
 
 - **Client** — React 18 + Vite + React Router (`client/`). The session
   engine (`client/src/engine.js`) is framework-agnostic: timer + pause
-  accounting, entire-screen enforcement, event logging, localStorage
-  resume, 1fps frame shipping.
+  accounting, entire-screen enforcement, live transcription, durable session
+  checkpoints, localStorage resume, and IndexedDB-backed 1fps frame uploads.
 - **Server** — Node 22 + Express (`server/`): bcrypt accounts, JWT
   httpOnly-cookie sessions, SQLite (better-sqlite3) for users + codes,
   filesystem for payloads/frames, zip export.
@@ -46,19 +46,23 @@ preview. Formatting is saved as Markdown in the existing `brief` field; existing
 plain text briefs still preserve paragraphs and line breaks. Candidates see the
 same document formatting after starting their assessment.
 
-Run `npm test` for the session engine checks. For the brief editor browser checks,
-run `npx playwright install chromium` once, then `npm run test:briefs`. These use
-an isolated temporary database, never live assessments.
+Run `npm test` for the engine and server session checks. Install Chromium once
+with `npx playwright install chromium`, then run `npm run test:briefs` for the
+brief editor or `npm run test:experience` for candidate journeys, interrupted
+connections, recording recovery, ownership, and submission. Browser suites build
+the app and use disposable databases and synthetic media, never live assessments.
 
 1. Log in at `/auth` with the admin account, you land on `/admin`.
 2. Issue codes — each row has a copy-ready link: `https://host/assess?case=7K2M9Q`.
-3. Send one link per candidate. The candidate signs up (name, email,
-   password, Upwork profile URL), consents to recording, and shares their
-   entire screen; only then does the timer start.
-4. Codes are single-use and bind to the account **and** device that starts
-   them; `void` a code to disable it.
-5. Review in `/admin`: per-session page shows candidate identity, zones,
-   confidence, paused time, full event log, 1fps frame filmstrip; `zip`
+3. Send one link per candidate. The candidate provides the assessment's required
+   identity, profile or file fields, consents, shares their entire screen, and
+   passes a spoken microphone check. The timer starts when the server confirms
+   the start and the brief appears.
+4. Codes are single-use and bind atomically to a server-issued token held by the
+   browser that starts them. The same browser can resume; competing owners are
+   rejected. `void` a code to disable it.
+5. Review in `/admin`: per-session page shows candidate identity, paused time,
+   saved draft or final transcript, event log, and 1fps frame filmstrip; `zip`
    downloads everything for offline processing (manual → Lambda → ReqOps
    Capture flow).
 
@@ -69,15 +73,29 @@ an isolated temporary database, never live assessments.
 - Sharing stops → full-screen lock, timer paused, pause budget counting
   down. Budget exhausted → auto-submit (`end.reason = "pause_limit"`).
 - Closing the tab counts as paused time; reopening the link resumes
-  (same browser). 0:00 → auto-submit (`expired`).
-- The server attaches the signed-in account identity to the payload —
-  the client cannot claim to be someone else.
+  in the same browser with a fresh screen/microphone check. Durable server
+  checkpoints retain the transcript and finalize abandoned sessions after the
+  remaining pause budget even if the browser never reopens. 0:00 → auto-submit
+  (`expired`).
+- A disconnected transcription service is retried; exhausted recovery pauses
+  the assessment and provides a reconnect action.
+- Submission stops capture immediately, then remains on **Saving your session**
+  until queued frames and the final result are acknowledged. Failed uploads
+  stay in IndexedDB and retry on reconnect or reload.
+- The server freezes the assigned brief, duration and required fields at start,
+  and attaches the candidate identity captured by that start to the result.
+- Existing active sessions created before browser ownership was introduced
+  cannot be securely adopted by a new browser. Before deploying this change,
+  allow those sessions to finish; otherwise review their evidence, void their
+  codes and issue replacement codes. Existing submitted results remain available
+  to admins. Preserve the database and JWT secret across restarts.
 
 ## Data
 
 `data/` (Docker volume `assessment-data`):
 
-- `assessment.db` — users, codes (status: unused → active → submitted; void)
+- `assessment.db` — users, codes (status: unused → active → submitted; void),
+  frozen assessments, session owners and durable checkpoints
 - `submissions/<CODE>/payload.json` — zones, confidence, `pausedTotal`,
   candidate identity, full event log
 - `submissions/<CODE>/frames/f_<t>.jpg` — 1fps frames; `t` is seconds of
@@ -90,10 +108,12 @@ Event types: `unlock`, `end` (`submitted`|`expired`|`pause_limit`),
 
 ## Config
 
-- `client/src/engine.js` — `DURATION` (15 min), `PAUSE_LIMIT` (5 min).
+- `client/src/engine.js` — `DEFAULT_DURATION` (15 min), `PAUSE_LIMIT` (5 min).
 - `server/config.js` — the listen port, **locked to 8124**.
 - Server env — `ASSESSMENT_PORT`, `DATA_DIR`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
   `JWT_SECRET` (optional; auto-generated and persisted if unset),
+  `ASSEMBLYAI_API_KEY` (optional; enables the primary live transcription service;
+  browser speech recognition is the fallback),
   `EXTENSION_API_KEY` (optional; enables `/api/integrations/*`, see below).
 
 ### Port

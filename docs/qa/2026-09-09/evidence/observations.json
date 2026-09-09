@@ -1,0 +1,204 @@
+[
+  {
+    "test": "PASS full candidate flow preserves transcript, screen frames, identity and ZIP",
+    "code": "86XAQS",
+    "status": "submitted",
+    "frames": [
+      "f_1.jpg",
+      "f_2.jpg"
+    ],
+    "transcript": [
+      {
+        "type": "voice",
+        "text": "I recommend the simpler design because it is testable.",
+        "t": 0
+      }
+    ],
+    "zipBytes": 6901
+  },
+  {
+    "test": "BUG-01 false submitted screen after HTTP 503, no recovery on reload",
+    "mode": "HTTP 503",
+    "attempts": 1,
+    "server": {
+      "status": "active",
+      "startedAt": "2026-09-09T07:27:22Z",
+      "endReason": null,
+      "candidateName": "QA Candidate",
+      "assessment": {
+        "title": "QA BUG-01 false submitted screen after HTTP 503, no recovery on reload",
+        "durationSeconds": 900,
+        "gateFields": {
+          "linkedin": false,
+          "upwork": false,
+          "cv": false,
+          "portfolio": false
+        },
+        "brief": "QA assigned brief: explain the tradeoffs."
+      }
+    },
+    "reviewPayload": null,
+    "visible": "\u2713\nSESSION SUBMITTED\n\nThank you. Your screen recording and voice transcript have been submitted. You may close this tab."
+  },
+  {
+    "test": "BUG-01 false submitted screen after offline, no recovery on reload",
+    "mode": "offline",
+    "attempts": 2,
+    "server": {
+      "status": "active",
+      "startedAt": "2026-09-09T07:27:23Z",
+      "endReason": null,
+      "candidateName": "QA Candidate",
+      "assessment": {
+        "title": "QA BUG-01 false submitted screen after offline, no recovery on reload",
+        "durationSeconds": 900,
+        "gateFields": {
+          "linkedin": false,
+          "upwork": false,
+          "cv": false,
+          "portfolio": false
+        },
+        "brief": "QA assigned brief: explain the tradeoffs."
+      }
+    },
+    "reviewPayload": null,
+    "visible": "\u2713\nSESSION SUBMITTED\n\nThank you. Your screen recording and voice transcript have been submitted. You may close this tab."
+  },
+  {
+    "test": "BUG-02 failed start request starts clock with wrong brief and loses identity",
+    "code": "3QPRUV",
+    "candidate": null,
+    "storedCandidate": {
+      "name": null,
+      "linkedinProfile": null,
+      "email": null,
+      "upworkProfile": null,
+      "portfolio": []
+    },
+    "assignedBrief": "QA assigned brief: explain the tradeoffs.",
+    "actualBrief": "Create something from nothing"
+  },
+  {
+    "test": "BUG-03 final words visible on screen are dropped from submitted transcript",
+    "code": "V49EBP",
+    "visibleBeforeSubmit": "My final recommendation is option B.",
+    "submittedVoiceEvents": []
+  },
+  {
+    "test": "BUG-04 connection loss and failed browser fallback leave timer running with no microphone recovery control",
+    "code": "RM3JWU",
+    "timer": "14:01",
+    "visible": "praxis\nRM3JWU\n14:01\nHARD STOP AT 0:00 \u2014 SESSION SUBMITS AUTOMATICALLY.\nANY TOOLS PERMITTED, INCLUDING AI.\nTALK THROUGH YOUR THINKING \u2014 YOUR WORDS ARE TRANSCRIBED LIVE BELOW.\nQA BUG-04 CONNECTION LOSS AND FAILED BROWSER FALLBACK LEAVE TIMER RUNNING WITH NO MICROPHONE RECOVERY CONTROL\n\nQA assigned brief: explain the tradeoffs.\n\nSUBMIT SESSION\n\nAt 0:00 your session submits automatically.\n\nLIVE TRANSCRIPT\nStart talking \u2014 your words appear here as you speak.\nPRAXIS \u00b7 ASSESSMENT \u00b7 RM3JWU",
+    "liveMicTracks": [
+      "ended"
+    ]
+  },
+  {
+    "test": "BUG-05 screen disconnect while start response is pending does not pause assessment",
+    "code": "BXR3A3",
+    "screenState": "ended",
+    "timer": "15:00",
+    "server": {
+      "status": "active",
+      "startedAt": "2026-09-09T07:27:28Z",
+      "endReason": null,
+      "candidateName": "QA Candidate",
+      "assessment": {
+        "title": "QA BUG-05 screen disconnect while start response is pending does not pause assessment",
+        "durationSeconds": 900,
+        "gateFields": {
+          "linkedin": false,
+          "upwork": false,
+          "cv": false,
+          "portfolio": false
+        },
+        "brief": "QA assigned brief: explain the tradeoffs."
+      }
+    }
+  },
+  {
+    "test": "BUG-06 two browsers starting the same single-use code both run under first candidate identity",
+    "code": "77FNU2",
+    "bothBrowsersShowSuccess": true,
+    "storedCandidate": "QA First Candidate",
+    "submittedFrom": "QA Second Candidate",
+    "storedTranscript": [
+      {
+        "type": "voice",
+        "text": "Second browser answer.",
+        "t": 0
+      }
+    ]
+  },
+  {
+    "test": "BUG-07 frame upload failure discards recording batch permanently",
+    "code": "SR9BSU",
+    "permanentlyMissingFrames": [
+      "f_1.jpg",
+      "f_2.jpg"
+    ],
+    "savedFrames": [
+      "f_16.jpg",
+      "f_17.jpg",
+      "f_18.jpg"
+    ]
+  },
+  {
+    "test": "BUG-08 closing tab discards unflushed recording and leaves transcript absent from admin",
+    "code": "PWKNMH",
+    "localTranscript": [
+      {
+        "type": "voice",
+        "text": "Only saved in this browser.",
+        "t": 0
+      }
+    ],
+    "adminPayload": null,
+    "adminFrames": [],
+    "status": "active"
+  },
+  {
+    "test": "BUG-07 closing after success cancels outstanding final recording upload",
+    "code": "QDHYPY",
+    "displayedSuccess": true,
+    "finalBatchBytes": 9255,
+    "submitted": "submitted",
+    "savedFrames": []
+  },
+  {
+    "test": "BUG-09 homepage blocks working Assembly transcription when browser speech service fails",
+    "code": "M28SF4",
+    "homeBlocked": true,
+    "reason": "Homepage exclusively tests browser speech, while assessment uses AssemblyAI."
+  },
+  {
+    "test": "BUG-10 editing duration while candidate works expires their assessment on reload",
+    "code": "MJA9NB",
+    "promisedDurationSeconds": 900,
+    "timerBeforeReload": "13:50",
+    "server": {
+      "status": "submitted",
+      "startedAt": "2026-09-09T07:27:45Z",
+      "endReason": "expired",
+      "candidateName": "QA Candidate",
+      "assessment": {
+        "title": "QA BUG-10 editing duration while candidate works expires their assessment on reload",
+        "durationSeconds": 60,
+        "gateFields": {
+          "linkedin": false,
+          "upwork": false,
+          "cv": false,
+          "portfolio": false
+        }
+      }
+    },
+    "reason": "expired"
+  },
+  {
+    "test": "BUG-11 late screen permission after pause expiry restarts capture on submitted screen",
+    "code": "329J48",
+    "status": "submitted",
+    "screenLiveAfterDone": true,
+    "speechRecognizerLiveAfterDone": true
+  }
+]

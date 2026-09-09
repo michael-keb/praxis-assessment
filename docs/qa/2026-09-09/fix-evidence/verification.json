@@ -1,0 +1,78 @@
+{
+  "completedAt": "2026-09-09T08:47:36.745723+00:00",
+  "checks": [
+    {
+      "command": "npm test",
+      "passed": 27,
+      "failed": 0,
+      "detail": "18 engine lifecycle and 9 disposable real-HTTP server checks"
+    },
+    {
+      "command": "npm run test:experience",
+      "passed": 35,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0,
+      "artifact": "browser-results.json"
+    },
+    {
+      "command": "npm run test:briefs",
+      "passed": 6,
+      "failed": 0
+    },
+    {
+      "detail": "HTTP 503 regression after retry-button width adjustment",
+      "passed": 1,
+      "failed": 0,
+      "artifact": "visual-results.json"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "environment": "Local disposable SQLite/HTTP servers; Chromium; synthetic candidates, screen frames, microphone streams and recognition events.",
+  "limits": [
+    "Physical microphone hardware and native Chrome permission dialogs were not tested.",
+    "Live transcription accuracy and the deployed site were not tested.",
+    "No production data changes or deployment."
+  ],
+  "sourcesSha256": {
+    "client/src/api.js": "1a39e5f8dcc4ebe66dfe6b6d26d06eef6a57f72c0386f7aedb491ec6e0aa29e3",
+    "client/src/chrome.js": "3cf1fb4f8de5bb6e22df8c33d8e580af23f3920ab8fef60fc97cdcf64adfa873",
+    "client/src/components/BriefContent.jsx": "73aef544c67af1dedb866566d87ed4f7cc312e04da6b56164a7774b8242105d4",
+    "client/src/components/BriefEditor.jsx": "827e9f9f014315288932527d1e26fa30126320dd3b4a6e86958297a5a0f46089",
+    "client/src/components/ChromeMicSetup.jsx": "783167617721753c67f276ed2809f7f3158b6b4efef05e027f7be51d0c1644dc",
+    "client/src/engine.js": "ed5af629d519435a90dd5ba2189e359b08e1c139543dfd7827c3632da9235364",
+    "client/src/main.jsx": "9dd0a141507544cc1975a8f2273d5768c923ea7f38dd05c9b472ee564e4963fe",
+    "client/src/pages/AdminPage.jsx": "02845a4272530aabeeca0a7d0e8b32539a958d8ff1f9b4922e61d4657ddbc71f",
+    "client/src/pages/AssessmentPage.jsx": "0072df64853385c35c98c58ee9b06e7415e76684b6728f110462b3e35bae63b2",
+    "client/src/pages/AuthPage.jsx": "91c8ed429262dbe00c91f5503ac86bb701fcab235a791b543a94bdafe1ca3eb8",
+    "client/src/pages/CaseReviewPage.jsx": "8526a6fe8295bdb59da50ec8161989f3293bad0fb34e0dc151cd620a84c31f59",
+    "client/src/recording-store.js": "fd73123c40b5d8bf76bf6e7e0cd3105ed3bcea5e39ea68d1d8123eba56c92f07",
+    "client/src/styles.css": "6d9c8f0a58e4a2a0bc349f4a1198f47427173f5a8a227a207452076d8187317f",
+    "docs/qa/2026-09-09/experience.spec.js": "b76e3b6e0756a23a6839043957807f79d18cdea60be4b0e23182fee30dbc1eb5",
+    "docs/qa/2026-09-09/playwright.config.js": "fcb59f0a7332bd9504e196b2498caeea3b1155bdc72165a786dd05bd742f2f93",
+    "docs/qa/2026-09-09/start-server.mjs": "7a959cfbedcb18e1d56849a2d458e5153b048150c86d80e13b5da56f8236cf0d",
+    "package.json": "72ca9de606d0e9a552af66e9975f6d0c58b86de87a46dab85d79f3ce97dcb35b",
+    "playwright.config.js": "a0e9f5e60e41095d17646f37ee07c31cf8e150d0086172a0e29f2189c85649e5",
+    "server/admin.js": "919b71707bd993428cf44429248e74089bc00f7d072b65f05f7a09d526dcb4d3",
+    "server/assessment-session.js": "fc380e69ee8988bfcab4403ce919eed1d9599598a08e8ca818bc1ba291605e4b",
+    "server/assessment.js": "2297962b637925a41f0f39912ba2aff7e25b42f76608a0d3b99c5bffc4ba73bb",
+    "server/auth.js": "e5e22f30422b092af4355f9dbd595fc9aff76e921ba97dfd785c00aa3eaa8b22",
+    "server/config.js": "19a1fe89a068173460328e150cba3b52e6b87d64ac5cec2cf483a6f1cc0ad64a",
+    "server/db.js": "87c8d70c4b8bca25f24e199739035407226df74bc6fc09f59ef82512728da1ce",
+    "server/index.js": "28666810ac329d13c17dbeb88ce87d0cc2cb223b17909d498f74517d85946c6c",
+    "server/integrations.js": "c71d2e5f06e306184801413ff9610429caf7ef27025b90e1318b335f6add5e11",
+    "server/openapi.js": "d592dc61ddfd6dc0b7f2468d966afe0e258fdfa5b9c3c37299f6a8f678a76e33",
+    "tests/browser/brief-formatting.spec.js": "517553278b08e8f44573c0380b565b551cfd2ec9a1a1f0eeceb79258b448fc45",
+    "tests/microphone-gate.test.mjs": "03f96d327ba061ff625dea486e3a49abe470600853a25593d65aa360b6ec4e0c",
+    "tests/server-sessions.test.mjs": "aeb562cb2e75555b37844f9bc5712b785325a69f80bc136681afd90614065c45",
+    "tests/start-brief-server.mjs": "b5a44981e9d5d9f42f216fd9010fd9ed5710fdba61ea3e2f6646d6e7f4ef45dd",
+    "vite.config.js": "2e6336312d9cd2e98b1b994cc72941c1a00821f2fb6185cfcacfebffa5dc1a0f"
+  }
+}

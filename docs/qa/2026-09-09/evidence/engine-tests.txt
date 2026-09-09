@@ -1,0 +1,94 @@
+
+> praxis-assessment@2.0.0 test
+> node --test tests/*.test.mjs
+
+TAP version 13
+# Subtest: browser startup and empty results do not start; spoken words unlock using the same recognizer
+ok 1 - browser startup and empty results do not start; spoken words unlock using the same recognizer
+  ---
+  duration_ms: 2.908583
+  ...
+# Subtest: silent microphone times out without consuming the code, releases resources, and can retry
+ok 2 - silent microphone times out without consuming the code, releases resources, and can retry
+  ---
+  duration_ms: 1.368542
+  ...
+# Subtest: browser audio-capture failure fails promptly and cleans up
+ok 3 - browser audio-capture failure fails promptly and cleans up
+  ---
+  duration_ms: 0.931917
+  ...
+# Subtest: screen disconnected during the voice check cannot start the assessment
+ok 4 - screen disconnected during the voice check cannot start the assessment
+  ---
+  duration_ms: 0.54975
+  ...
+# Subtest: AssemblyAI socket opening is insufficient; actual transcription is required
+ok 5 - AssemblyAI socket opening is insufficient; actual transcription is required
+  ---
+  duration_ms: 1.307833
+  ...
+# Subtest: microphone permission denial does not consume the code
+ok 6 - microphone permission denial does not consume the code
+  ---
+  duration_ms: 0.661625
+  ...
+# Subtest: late permission grant after timeout releases the mic and cannot start
+ok 7 - late permission grant after timeout releases the mic and cannot start
+  ---
+  duration_ms: 0.886875
+  ...
+# Subtest: destroy during check cancels startup
+ok 8 - destroy during check cancels startup
+  ---
+  duration_ms: 0.573792
+  ...
+# Subtest: resuming requires a fresh spoken check before unpausing
+ok 9 - resuming requires a fresh spoken check before unpausing
+  ---
+  duration_ms: 1.223625
+  ...
+# Subtest: AssemblyAI open but silent times out and stops the mic and socket
+ok 10 - AssemblyAI open but silent times out and stops the mic and socket
+  ---
+  duration_ms: 0.739792
+  ...
+# Subtest: disconnected microphone fails the check promptly
+ok 11 - disconnected microphone fails the check promptly
+  ---
+  duration_ms: 0.335708
+  ...
+# Subtest: muted input cannot pass using a delayed transcription response
+ok 12 - muted input cannot pass using a delayed transcription response
+  ---
+  duration_ms: 0.376417
+  ...
+# Subtest: no microphone device fails fast with a specific message, even on the browser engine path
+ok 13 - no microphone device fails fast with a specific message, even on the browser engine path
+  ---
+  duration_ms: 0.314208
+  ...
+# Subtest: microphone in use by another app is reported as such
+ok 14 - microphone in use by another app is reported as such
+  ---
+  duration_ms: 0.263834
+  ...
+# Subtest: AssemblyAI socket drop reconnects without pausing or stopping the mic
+ok 15 - AssemblyAI socket drop reconnects without pausing or stopping the mic
+  ---
+  duration_ms: 0.941625
+  ...
+# Subtest: microphone lost mid-session pauses the assessment; recovery re-checks the mic without a new screen pick
+ok 16 - microphone lost mid-session pauses the assessment; recovery re-checks the mic without a new screen pick
+  ---
+  duration_ms: 0.597417
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 104.052959

@@ -13,7 +13,9 @@ export default function CaseReviewPage() {
 
   if (error) return <main className="page"><div className="error-box">{error}</div></main>;
   if (!data) return null;
-  const { payload, candidate, frames, audio = [], portfolio = [] } = data;
+  const { candidate, frames, audio = [], portfolio = [] } = data;
+  const payload = data.payload || data.checkpoint;
+  const draft = !data.payload && !!data.checkpoint;
 
   return (
     <main className="page wide review">
@@ -53,8 +55,10 @@ export default function CaseReviewPage() {
       )}
       {payload ? (
         <>
+          {draft && <p role="status"><b>Saved session in progress.</b> This is the latest recovered draft. The final result will appear after submission or the pause limit.</p>}
           <p>
-            <b>Received:</b> {payload._receivedAt}<br />
+            <b>{draft ? 'Last saved' : 'Received'}:</b>{' '}
+            {draft ? new Date(payload.lastSavedAt).toLocaleString() : payload._receivedAt}<br />
             <b>Paused total:</b> {Math.round((payload.pausedTotal || 0) / 1000)}s
           </p>
           {(payload.log || []).some((ev) => ev.type === "voice") && (
@@ -74,6 +78,9 @@ export default function CaseReviewPage() {
               </div>
             </>
           )}
+          {draft && payload.pendingTranscript && (
+            <p><b>Last words awaiting recognition:</b> {payload.pendingTranscript}</p>
+          )}
           <h3>Event log ({(payload.log || []).length})</h3>
           <table className="log-table">
             <thead><tr><th>t</th><th>type</th><th>detail</th></tr></thead>
@@ -91,7 +98,7 @@ export default function CaseReviewPage() {
           </table>
         </>
       ) : (
-        <p><i>No payload yet (in progress, or lost before submit).</i></p>
+        <p><i>No session has been saved yet.</i></p>
       )}
       <h3>Voice ({audio.length})</h3>
       <div className="audio-list">

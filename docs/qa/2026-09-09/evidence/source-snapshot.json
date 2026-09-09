@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-09T07:26:06.816755+00:00",
+  "files": {
+    "client/index.html": "de161a97f2bac437f96a829b7388c4ab604c859494feb1d5176634bb882758eb",
+    "client/src/styles.css": "6d9c8f0a58e4a2a0bc349f4a1198f47427173f5a8a227a207452076d8187317f",
+    "client/src/chrome.js": "3cf1fb4f8de5bb6e22df8c33d8e580af23f3920ab8fef60fc97cdcf64adfa873",
+    "client/src/main.jsx": "3639a8394ea9b9699425b96c512dad72ced0714d7e7df92c0bb4b351c9ace975",
+    "client/src/engine.js": "efba5ab80ba98e1248e3860e0926fa4edec4010d4784152fa889652b786504b0",
+    "client/src/api.js": "1a39e5f8dcc4ebe66dfe6b6d26d06eef6a57f72c0386f7aedb491ec6e0aa29e3",
+    "client/src/components/ChromeMicSetup.jsx": "51cbd93e8573b2c702462a220ddb29d082b0bee50024ca18c073caa5b6e6bc25",
+    "client/src/components/BriefEditor.jsx": "827e9f9f014315288932527d1e26fa30126320dd3b4a6e86958297a5a0f46089",
+    "client/src/components/BriefContent.jsx": "73aef544c67af1dedb866566d87ed4f7cc312e04da6b56164a7774b8242105d4",
+    "client/src/pages/AssessmentPage.jsx": "de0a305291eb7b9dac7dd94c5c04b2aa53fe78979f6b975eaf32a6af53f33202",
+    "client/src/pages/AdminPage.jsx": "02845a4272530aabeeca0a7d0e8b32539a958d8ff1f9b4922e61d4657ddbc71f",
+    "client/src/pages/CaseReviewPage.jsx": "d916b87fe26d1f6f337bccbfc1a3583c4f5f3773e8f939d9c227159aa3b1d48b",
+    "client/src/pages/AuthPage.jsx": "91c8ed429262dbe00c91f5503ac86bb701fcab235a791b543a94bdafe1ca3eb8",
+    "server/openapi.js": "2331f8e038ca9644e29ac1a7968e6df30feb406e4ae364d4b788ea35229b5912",
+    "server/db.js": "14b64c2317b30a00b01c4d214a7f8c0a036ac55e38dc9de5ddb9c4737ca86bfd",
+    "server/auth.js": "e5e22f30422b092af4355f9dbd595fc9aff76e921ba97dfd785c00aa3eaa8b22",
+    "server/assessment.js": "c88c97a1c85106ed41e13458dcd59dbda31b884b7fb575c35d68535b81bb46b6",
+    "server/index.js": "1059f85139605bc9a20221bbd3e0f1599b498d6d4fb6e07163929acc4debbfbe",
+    "server/config.js": "19a1fe89a068173460328e150cba3b52e6b87d64ac5cec2cf483a6f1cc0ad64a",
+    "server/integrations.js": "0228ed2deae6df9423c5be18749829440a24f0200afbe4ecfd6a36e73fed5df4",
+    "server/admin.js": "286d27f1f8590293e2a2e22c3cce08a39ce352eb455e4a92e8ad85f261e250fc"
+  }
+}

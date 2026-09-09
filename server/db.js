@@ -59,6 +59,39 @@ for (const [col, def] of [
   try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} INTEGER NOT NULL DEFAULT ${def}`); } catch { /* exists */ }
 }
 try { db.exec(`ALTER TABLE codes ADD COLUMN candidate_portfolio TEXT`); } catch { /* exists */ }
+/* Candidate-session ownership and the assessment snapshot are nullable on
+   purpose. Pre-existing active/submitted rows cannot be assigned a trustworthy
+   owner during migration, so candidate writes to those rows are refused. */
+for (const [col, type] of [
+  ["session_owner_id", "TEXT"],
+  ["assessment_snapshot", "TEXT"],
+  ["started_at_ms", "INTEGER"],
+  ["final_revision", "INTEGER"],
+]) {
+  try { db.exec(`ALTER TABLE codes ADD COLUMN ${col} ${type}`); } catch { /* exists */ }
+}
+
+/* The full browser state is retained in checkpoint_json for forward
+   compatibility. Timing and revision fields are duplicated as typed columns so
+   expiry sweeps never need to trust ad-hoc JSON queries. received_at_ms is the
+   server clock for the last accepted checkpoint and survives restarts. */
+db.exec(`
+  CREATE TABLE IF NOT EXISTS session_checkpoints (
+    code                 TEXT PRIMARY KEY REFERENCES codes(code),
+    owner_id             TEXT NOT NULL,
+    checkpoint_json      TEXT NOT NULL,
+    revision             INTEGER NOT NULL,
+    started_at_ms        INTEGER NOT NULL,
+    paused_total_ms      INTEGER NOT NULL,
+    pause_started_at_ms  INTEGER,
+    last_saved_at_ms     INTEGER NOT NULL,
+    elapsed_ms           INTEGER NOT NULL,
+    phase                 TEXT NOT NULL CHECK (phase IN ('running', 'blocked', 'submitting')),
+    received_at_ms       INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_session_checkpoints_received
+    ON session_checkpoints(received_at_ms);
+`);
 
 export const DEFAULT_DURATION_MINUTES = 15;
 export const DEFAULT_GATE_FIELDS = {

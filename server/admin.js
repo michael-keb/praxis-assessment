@@ -7,6 +7,7 @@ import {
   listAssessments, getAssessment, createAssessment, updateAssessment, deleteAssessment
 } from "./db.js";
 import { requireAdmin } from "./auth.js";
+import { checkpointRow, checkpointValue, sweepExpiredSessions } from "./assessment-session.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
@@ -14,6 +15,15 @@ const PORTFOLIO_RE = /^\d{2}\.(jpe?g|png|webp)$/i;
 
 export const adminRouter = Router();
 adminRouter.use(requireAdmin);
+adminRouter.use((_req, res, next) => {
+  try {
+    sweepExpiredSessions();
+    next();
+  } catch (error) {
+    console.error(`assessment session sweep failed: ${error.message}`);
+    res.status(500).json({ error: "Could not verify assessment session state." });
+  }
+});
 
 /* ---------------- assessments ---------------- */
 adminRouter.get("/assessments", (req, res) => {
@@ -131,6 +141,7 @@ adminRouter.post("/codes/:code/void", (req, res) => {
 adminRouter.get("/sessions/:code", (req, res) => {
   const row = getCode(String(req.params.code || "").toUpperCase());
   if (!row) return res.status(404).json({ error: "unknown code" });
+  const checkpoint = checkpointValue(checkpointRow(row.code), { redactToken: true });
   let payload = null;
   try {
     payload = JSON.parse(fs.readFileSync(path.join(SUBMISSIONS_DIR, row.code, "payload.json"), "utf-8"));
@@ -165,7 +176,7 @@ adminRouter.get("/sessions/:code", (req, res) => {
         portfolio: portfolioNames,
       }
     : null;
-  res.json({ code: row, candidate, payload, frames, audio, portfolio });
+  res.json({ code: row, candidate, payload, checkpoint, frames, audio, portfolio });
 });
 
 adminRouter.get("/sessions/:code/portfolio/:name", (req, res) => {
@@ -213,6 +224,10 @@ adminRouter.get("/sessions/:code/zip", (req, res) => {
   archive.pipe(res);
   const root = path.join(SUBMISSIONS_DIR, row.code);
   if (fs.existsSync(root)) archive.directory(root, row.code);
+  const checkpoint = checkpointValue(checkpointRow(row.code), { redactToken: true });
+  if (checkpoint) {
+    archive.append(JSON.stringify(checkpoint, null, 2), { name: `${row.code}/checkpoint.json` });
+  }
   archive.append(JSON.stringify(row, null, 2), { name: `${row.code}/code-record.json` });
   archive.finalize();
 });

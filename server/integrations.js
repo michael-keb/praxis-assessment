@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { newCodes, getCode, getAssessment, listAssessments } from "./db.js";
 import { requireApiKey } from "./auth.js";
+import { sweepExpiredSessions } from "./assessment-session.js";
 
 /* Machine-to-machine surface for external tools (currently: the Upwork
    candidate-management Chrome extension) to issue and check single-use
@@ -9,6 +10,15 @@ import { requireApiKey } from "./auth.js";
    layering a second auth scheme onto those routes. */
 export const integrationsRouter = Router();
 integrationsRouter.use(requireApiKey);
+integrationsRouter.use((_req, res, next) => {
+  try {
+    sweepExpiredSessions();
+    next();
+  } catch (error) {
+    console.error(`assessment session sweep failed: ${error.message}`);
+    res.status(500).json({ error: "Could not verify assessment session state." });
+  }
+});
 
 integrationsRouter.get("/ping", (req, res) => {
   res.json({ ok: true });

@@ -64,19 +64,28 @@ async function openCandidate(page, assessment) {
   const issued = await page.request.post("/api/admin/codes", { data: { count: 1, assessmentId: assessment.id } });
   const { codes } = await issued.json();
   const code = codes[0];
-  const before = await (await page.request.get(`/api/assessment/session?case=${code}`)).json();
+  const beforeResponse = await page.request.get(`/api/assessment/session?case=${code}`);
+  expect(beforeResponse.ok()).toBeTruthy();
+  const before = await beforeResponse.json();
   expect(before.assessment).not.toHaveProperty("brief");
-  const start = await page.request.post("/api/assessment/start", { data: { caseId: code, name: "Brief browser test" } });
+  expect(before.sessionToken).toMatch(/\S+/);
+  const sessionToken = before.sessionToken;
+  const start = await page.request.post("/api/assessment/start", {
+    headers: { "X-Assessment-Session": sessionToken },
+    data: { caseId: code, name: "Brief browser test", sessionToken },
+  });
   expect(start.ok()).toBeTruthy();
+  const started = await start.json();
   // Resume a local test session. No real screen/audio capture is needed to
   // verify the candidate document underneath the existing resume overlay.
-  await page.evaluate((code) => {
+  await page.evaluate(({ code, sessionToken, startedAt }) => {
+    localStorage.setItem(`praxis_owner_${code}`, sessionToken);
     localStorage.setItem(`praxis_assess_${code}`, JSON.stringify({
-      startedAt: Date.now(), lastSavedAt: Date.now(), pausedTotal: 0,
+      startedAt, lastSavedAt: Date.now(), pausedTotal: 0,
       pauseStartedAt: null, zones: {}, confidence: null, log: [], done: false,
-      candidate: { name: "Brief browser test" },
+      candidate: { name: "Brief browser test" }, sessionToken,
     }));
-  }, code);
+  }, { code, sessionToken, startedAt: started.startedAt });
   await page.goto(`/assess?case=${code}`);
   await expect(page.locator(".open-brief .brief-content")).toBeVisible();
   return page.locator(".open-brief .brief-content");
@@ -171,8 +180,15 @@ test("plain text briefs keep paragraphs and single line breaks after editing", a
   const input = page.locator("#a-brief");
   await expect(input.locator("br")).toHaveCount(1);
   await expect(input.locator("p")).toHaveCount(2);
-  await input.press("ControlOrMeta+a");
-  await input.press("ArrowRight");
+  await input.click();
+  await input.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
   await input.pressSequentially(" Updated.");
   await save(page, assessment.id);
   await editAssessment(page, assessment);

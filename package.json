@@ -10,6 +10,7 @@
     "start": "node server/index.js",
     "test": "node --test tests/*.test.mjs",
     "test:briefs": "npm run build && playwright test",
+    "test:experience": "playwright test --config docs/qa/2026-09-09/playwright.config.js",
     "sync:interior-designers": "node scripts/sync-interior-designers.mjs",
     "scrape:public-portfolios": "node scripts/scrape-public-portfolios.mjs"
   },

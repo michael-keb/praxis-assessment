@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "reac
 import { useSearchParams } from "react-router-dom";
 import { createEngine } from "../engine.js";
 import BriefContent from "../components/BriefContent.jsx";
+import { ChromeMicSetup } from "../components/ChromeMicSetup.jsx";
+import { isGoogleChrome } from "../chrome.js";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
@@ -19,20 +21,32 @@ export default function AssessmentPage() {
   }, [engine]);
 
   if (snap.phase === "loading") return null;
-  if (snap.phase === "fatal") return <CenterScreen mark="⚠" title={snap.fatal.title} text={snap.fatal.text} />;
+  if (snap.phase === "fatal") return <CenterScreen mark="⚠" title={snap.fatal.title} text={snap.fatal.text}
+    action={snap.fatal.retryable && <button className="btn-accent" onClick={() => engine.boot()}>Retry connection</button>} />;
+  if (snap.phase === 'submitting') return <SavingScreen engine={engine} snap={snap} />;
   if (snap.phase === "done") return <DoneScreen reason={snap.doneReason} />;
   if (snap.phase === "gate") return <Gate engine={engine} snap={snap} />;
   return <Task engine={engine} snap={snap} />;
 }
 
-function CenterScreen({ mark, title, text }) {
+function CenterScreen({ mark, title, text, action }) {
   return (
     <div className="center-screen">
       <div className="mark">{mark}</div>
       <h1>{title}</h1>
       <p style={{ maxWidth: 480, margin: "0 auto" }}>{text}</p>
+      {action && <div style={{ maxWidth: 480, margin: '24px auto 0', padding: '0 20px' }}>{action}</div>}
     </div>
   );
+}
+
+function SavingScreen({ engine, snap }) {
+  return <CenterScreen mark="…" title="Saving your session"
+    text={snap.submissionError || 'Your screen and microphone are stopped. Keep this tab open while your transcript and recording finish saving.'}
+    action={<>
+      {snap.pendingFrames > 0 && <p role="status">Your recording is still uploading.</p>}
+      {snap.submissionError && <button className="btn-accent" onClick={() => engine.retrySubmit()}>Retry saving</button>}
+    </>} />;
 }
 
 function DoneScreen({ reason }) {
@@ -95,31 +109,35 @@ function Gate({ engine, snap }) {
           <div className="gate-mark">praxis</div>
           <h1>Before you start</h1>
           <p className="lede">
-            First, connect your screen and microphone and say a sentence so we can
-            check that your voice is being transcribed. Only after that check passes
-            will the brief appear and the clock start.
+            First you will share your entire screen, then we will confirm live
+            transcription. After the checks pass and your start is confirmed, the brief will appear and
+            the clock start. Stay in Google Chrome and do not unplug or switch
+            your microphone once you begin.
           </p>
           <div className="gate-warning">
             <ul>
-              <li><b>The timer starts after the microphone check passes.</b> You will have {fmt(snap.duration)},
+              <li><b>The timer starts when your brief appears.</b> You will have {fmt(snap.duration)},
                 with a hard stop at 0:00 — your session submits automatically, finished or not.</li>
               <li><b>This code is single-use.</b> Once started there is no restart and no
                 fresh timer. Only begin when you are ready to spend the full time now.</li>
               <li><b>Your entire screen is recorded and your voice is transcribed
                 live</b> for the whole session — the transcript appears on screen as
                 you speak. Think out loud the entire time.</li>
+              <li><b>Do not reconnect, mute, or switch your microphone</b> during the
+                test. That locks the page, pauses the timer, and spends pause budget.</li>
               <li><b>Stopping the share pauses and locks the page</b> — not the assessment.
                 Total pause time is limited; when the limit is reached your session
                 submits as-is. If interrupted, reopening this link resumes it.</li>
             </ul>
           </div>
-          <button className="btn-accent" disabled={busy} onClick={begin}>
+          <button className="btn-accent" disabled={busy || !isGoogleChrome()} onClick={begin}>
             {busy ? (snap.micCheck === "checking" ? "Listening — say a sentence now…" : "Connecting…") : "Check microphone and start"}
           </button>
           {busy && snap.micCheck === "checking" && (
             <div className="gate-warning" role="status" aria-live="polite">
               <b>Say: “My microphone is working and I am ready to begin.”</b>
-              <p>Keep speaking until we hear you. The timer has not started and your code has not been used. Allow microphone access if prompted.</p>
+              <p>Keep speaking until your words appear below. The timer has not started and your code has not been used. Allow microphone access if prompted.</p>
+              <p className="mic-heard"><span>Heard:</span> {[...(snap.transcript?.tail || []), snap.transcript?.interim].filter(Boolean).join(" ") || "…"}</p>
             </div>
           )}
           {!busy && (
@@ -128,6 +146,9 @@ function Gate({ engine, snap }) {
             </button>
           )}
           {error && <div className="error-box">{error}</div>}
+          {!isGoogleChrome() && (
+            <div className="error-box">Open this page in Google Chrome on a computer. Other browsers cannot complete the microphone check.</div>
+          )}
           <p className="fine">
             Your browser will ask to share your screen — choose <b>Entire Screen</b> —
             then for microphone access. Speak the test sentence when prompted.
@@ -144,9 +165,11 @@ function Gate({ engine, snap }) {
         <div className="gate-mark">praxis</div>
         <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
         <p className="lede">
-          Fill in your details below to unlock the assessment. The brief stays
-          hidden until you start — the timer begins the moment it is revealed.
+          Fill in your details below to unlock the assessment. Use{" "}
+          <b>Google Chrome</b> on a computer. The brief stays hidden until you
+          start — the timer begins after the checks pass and your start is confirmed.
         </p>
+        <ChromeMicSetup caseId={snap.caseId} />
         <div className="gate-facts">
           <div><dt>Case ID</dt><dd>{snap.caseId}</dd></div>
           <div><dt>Duration</dt><dd>{fmt(snap.duration)}</dd></div>
@@ -217,10 +240,13 @@ function Gate({ engine, snap }) {
             retained no longer than the hiring process requires.
           </span>
         </label>
-        <button className="btn-accent" disabled={!consent || !detailsComplete}
+        <button className="btn-accent" disabled={!consent || !detailsComplete || !isGoogleChrome()}
           onClick={() => setStep("confirm")}>
           Start
         </button>
+        {!isGoogleChrome() && (
+          <div className="error-box">Open this page in Google Chrome on a computer before you start.</div>
+        )}
         <p className="fine">
           Next you will see exactly what happens when the session begins — nothing
           starts and nothing is recorded until you confirm on the following step.
@@ -256,7 +282,8 @@ function Task({ engine, snap }) {
           <div className="wordmark">praxis</div>
           <div className="case-chip">{snap.caseId}</div>
           <div className="spacer" />
-          {snap.micLive && !snap.micSilent && <div className="mic-chip" title="Live transcription running">● TRANSCRIBING</div>}
+          {snap.reconnecting && <div className="mic-chip mic-warn" role="status">Reconnecting transcript…</div>}
+          {snap.micLive && !snap.micSilent && !snap.reconnecting && <div className="mic-chip" title="Live transcription running">● TRANSCRIBING</div>}
           {snap.micLive && snap.micSilent && <div className="mic-chip mic-warn" title="Nothing heard recently">⚠ CAN'T HEAR YOU</div>}
           <div className={`timer ${timerClass}`}>
             {snap.phase === "blocked" ? "PAUSED" : fmt(snap.remaining)}
@@ -317,15 +344,24 @@ function BlockedOverlay({ engine, snap }) {
         <div className="mark">■</div>
         <h1>{snap.blockedTitle}</h1>
         <p>
-          {snap.screenLive
-            ? <>The assessment is locked and the timer is paused until your <b>microphone</b> is reconnected and passes the spoken check.</>
-            : <>The assessment is locked and the timer is paused until you share your <b>entire screen</b> and pass the microphone check.</>}
+          {snap.blockedTitle === 'Recording storage interrupted'
+            ? <>Your recording could not be saved. Check your available device storage, then reconnect to continue. Your timer is paused.</>
+            : snap.blockedTitle === 'Transcription disconnected'
+            ? <>Live transcription could not reconnect. Check your internet connection, then reconnect and speak the test sentence. Your timer is paused.</>
+            : snap.screenLive
+            ? <>The assessment is locked and the timer is paused until your <b>microphone</b> is connected and we hear you through live transcription. Stay in Google Chrome. Do not keep unplugging or switching the mic — that spends pause budget.</>
+            : <>The assessment is locked and the timer is paused until you share your <b>entire screen</b> and pass the microphone check. Stay in Google Chrome.</>}
         </p>
         <p className="pause-budget">Pause budget remaining: {fmt(snap.pauseBudgetLeft)}</p>
         <button className="btn-light" disabled={busy} onClick={reshare}>
-          {busy ? "Connecting…" : snap.screenLive ? "Check microphone and continue" : "Share screen and check microphone"}
+          {busy ? (snap.micCheck === "checking" ? "Listening — say a sentence now…" : "Connecting…") : snap.screenLive ? "Check microphone and continue" : "Share screen and check microphone"}
         </button>
-        {busy && snap.micCheck === "checking" && <p role="status">Say: “My microphone is working and I am ready to continue.” Keep speaking until the assessment resumes.</p>}
+        {busy && snap.micCheck === "checking" && (
+          <p role="status">
+            Say: “My microphone is working and I am ready to continue.” Keep speaking until your words appear:{" "}
+            <b>{[...(snap.transcript?.tail || []), snap.transcript?.interim].filter(Boolean).join(" ") || "…"}</b>
+          </p>
+        )}
         {error && <div className="blocked-err">{error}</div>}
       </div>
     </div>

@@ -10,6 +10,7 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
+import { startSessionSweeper } from "./assessment-session.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
@@ -17,6 +18,7 @@ const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
 const CAREERS_DIR = path.join(ROOT, "static", "careers");
 
 seedAdmin();
+startSessionSweeper();
 
 const app = express();
 app.disable("x-powered-by");

@@ -206,6 +206,27 @@ textarea:focus { border-color: var(--cold); box-shadow: 4px 4px 0 var(--warm); }
 .gate-warning li { padding: 8px 0; }
 .gate-warning li + li { border-top: 1px solid var(--line); }
 .gate-warning b { color: var(--cold); }
+.chrome-setup { margin-bottom: 24px; }
+.chrome-steps ol {
+  margin: 12px 0 0; padding-left: 20px; color: var(--cold-dim);
+}
+.chrome-steps li { padding: 4px 0; }
+.chrome-steps li + li { border-top: none; }
+.chrome-reconnect {
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line);
+  color: var(--cold); font-weight: 600;
+}
+.mic-preflight { margin-top: 12px; }
+.mic-preflight .btn-ghost { margin-top: 0; }
+.mic-heard {
+  margin-top: 10px; font-size: 14px; color: var(--cold);
+  background: var(--raised); border: 1px solid var(--line); padding: 10px 12px;
+}
+.mic-heard span {
+  font-family: var(--mono); font-size: 11px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--cold-faint);
+  margin-right: 8px;
+}
 
 /* ---------- live transcript captions ---------- */
 .caption-bar {

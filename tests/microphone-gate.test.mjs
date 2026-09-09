@@ -55,11 +55,15 @@ async function harness(t, { assembly = false, micDenied = false, pendingMic = fa
   put('clearInterval', () => {});
   put('fetch', async (url) => {
     requests.push(url);
-    if (url.includes('/session?')) return { json: async () => ({ status: 'unused' }) };
+    if (url.includes('/session?')) return { ok: true, json: async () => ({ status: 'unused', sessionToken: 'unit-test-owner' }) };
     if (url.endsWith('/transcribe-token')) return { ok: assembly, json: async () => ({ token: 'test' }) };
-    return { ok: true, json: async () => ({ assessment: { title: 'Hidden brief', durationSeconds: 900 } }) };
+    return { ok: true, json: async () => ({ ok: true, startedAt: Date.now(), assessment: { title: 'Hidden brief', durationSeconds: 900 } }) };
   });
-  const engine = createEngine('TEST01');
+  // These tests isolate microphone lifecycle; browser regressions exercise
+  // the real IndexedDB recording store and HTTP ownership protocol.
+  const engine = createEngine('TEST01', { recordingStore: {
+    list: async () => [], put: async () => {}, remove: async () => {},
+  } });
   t.after(() => {
     engine.destroy();
     for (const [key, original] of originals) {
@@ -72,7 +76,9 @@ async function harness(t, { assembly = false, micDenied = false, pendingMic = fa
   return { engine, recognizers, sockets, screens, micTrack, store,
     releaseMic: () => releaseMic(),
     starts: () => requests.filter(url => url.endsWith('/start')).length,
-    timeout: () => [...deadlines.values()].find(timer => timer.ms === 30000).fn() };
+    timeout: () => [...deadlines.values()].find(timer => timer.ms === 30000).fn(),
+    speechRestartTimeout: () => [...deadlines.values()].find(timer => timer.ms === 8000)?.fn(),
+    reconnectTick: () => [...deadlines.values()].find(timer => timer.ms === 2500)?.fn() };
 }
 
 test('browser startup and empty results do not start; spoken words unlock using the same recognizer', async t => {
@@ -195,6 +201,56 @@ test('resuming requires a fresh spoken check before unpausing', async t => {
   assert.equal(h.starts(), 1);
 });
 
+test('a silent browser speech restart pauses the session and permits a fresh spoken retry', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].say('Ready');
+  await begin;
+  h.recognizers[0].start = () => {}; // service accepts restart but never connects
+  h.recognizers[0].onend();
+  assert.equal(h.engine.snapshot().micLive, false);
+  h.speechRestartTimeout();
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  assert.equal(h.engine.snapshot().blockedTitle, 'Transcription disconnected');
+  assert.equal(h.recognizers[0].stopped, true);
+  const resume = h.engine.reshare();
+  await flush();
+  h.recognizers[1].say('Ready again');
+  assert.equal((await resume).ok, true);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.starts(), 1);
+});
+
+test('reopening a server-finalized session saves newer local words before showing completion', async t => {
+  const h = await harness(t);
+  const begin = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].say('Ready');
+  await begin;
+  const checkpoint = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  const partial = [{ transcript: 'The final offline recommendation' }];
+  partial.isFinal = false;
+  h.recognizers[0].onresult({ resultIndex: 0, results: [partial] });
+  const finalBodies = [];
+  globalThis.fetch = async (url, options) => {
+    if (url.includes('/session?')) return { ok: true, json: async () => ({
+      status: 'submitted', owned: true, endReason: 'pause_limit', checkpoint,
+      assessment: { title: 'Hidden brief', durationSeconds: 900 },
+    }) };
+    if (url === '/api/assessment') finalBodies.push(JSON.parse(options.body));
+    return { ok: true, json: async () => ({ ok: true, status: 'submitted', endReason: 'pause_limit' }) };
+  };
+  await h.engine.boot();
+  await flush();
+  assert.equal(finalBodies.length, 1);
+  assert.ok(finalBodies[0].log.some(event => event.type === 'voice' && event.text === 'The final offline recommendation'));
+  assert.equal(h.engine.snapshot().phase, 'done');
+  assert.equal(h.engine.snapshot().doneReason, 'pause_limit');
+  assert.equal(h.screens[0].readyState, 'ended');
+  assert.equal(h.recognizers[0].stopped, true);
+});
+
 test('AssemblyAI open but silent times out and stops the mic and socket', async t => {
   const h = await harness(t, { assembly: true });
   const begin = h.engine.begin(details);
@@ -248,6 +304,29 @@ test('microphone in use by another app is reported as such', async t => {
   assert.equal(result.ok, false);
   assert.match(result.message, /another app/);
   assert.equal(h.starts(), 0);
+});
+
+test('AssemblyAI socket drop reconnects without pausing or stopping the mic', async t => {
+  const h = await harness(t, { assembly: true });
+  const begin = h.engine.begin(details);
+  await flush();
+  h.sockets[0].onopen();
+  await flush();
+  h.sockets[0].say('My microphone is working');
+  assert.equal((await begin).ok, true);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  h.sockets[0].onclose();
+  await flush();
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.micTrack.readyState, 'live');
+  const pending = h.reconnectTick();
+  await flush();
+  assert.equal(h.sockets.length, 2);
+  h.sockets[1].onopen();
+  await pending;
+  await flush();
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.micTrack.readyState, 'live');
 });
 
 test('microphone lost mid-session pauses the assessment; recovery re-checks the mic without a new screen pick', async t => {

@@ -13,7 +13,7 @@ export const openapiSpec = {
     description:
       "Assessment platform API.\n\n" +
       "Three surfaces, three auth schemes:\n" +
-      "- **`/api/assessment/*`** — public. The candidate holds a single-use code; there are no candidate accounts.\n" +
+      "- **`/api/assessment/*`** — candidate-facing. An unused code issues a signed browser-owner token; protected calls send it in `X-Assessment-Session` or the documented body field.\n" +
       "- **`/api/admin/*`** — admin session cookie (`praxis_session`), issued by `POST /api/auth/login`.\n" +
       "- **`/api/integrations/*`** — machine-to-machine, `Authorization: Bearer <EXTENSION_API_KEY>`.\n\n" +
       `The server listens on port ${PORT}, locked to this app by the port registry. ` +
@@ -33,6 +33,12 @@ export const openapiSpec = {
   components: {
     securitySchemes: {
       sessionCookie: { type: "apiKey", in: "cookie", name: "praxis_session" },
+      assessmentSession: {
+        type: "apiKey",
+        in: "header",
+        name: "X-Assessment-Session",
+        description: "Signed candidate-browser owner token returned by GET /api/assessment/session while a code is unused. JSON and multipart routes also accept the same value in a sessionToken body field."
+      },
       apiKey: {
         type: "http",
         scheme: "bearer",
@@ -42,7 +48,11 @@ export const openapiSpec = {
     schemas: {
       Error: {
         type: "object",
-        properties: { error: { type: "string" } },
+        properties: {
+          error: { type: "string" },
+          code: { type: "string", description: "Stable machine-readable error code when supplied." },
+          recovery: { type: "string", description: "Admin recovery guidance for legacy sessions when supplied." }
+        },
         required: ["error"],
         example: { error: "unknown code" }
       },
@@ -76,6 +86,48 @@ export const openapiSpec = {
           cv: { type: "boolean" },
           portfolio: { type: "boolean" }
         }
+      },
+      CandidateAssessment: {
+        type: "object",
+        required: ["title", "brief", "durationSeconds", "gateFields"],
+        properties: {
+          title: { type: "string" },
+          brief: { type: "string", description: "Frozen Markdown brief. Withheld until the caller proves ownership after start." },
+          durationSeconds: { type: "integer", minimum: 60 },
+          gateFields: { $ref: "#/components/schemas/GateFields" }
+        },
+        description: "Immutable copy bound at the first successful start. Unassigned codes use Assessment, an empty brief, 900 seconds, and LinkedIn-only gate defaults."
+      },
+      CandidateAssessmentMetadata: {
+        type: "object",
+        required: ["title", "durationSeconds", "gateFields"],
+        properties: {
+          title: { type: "string" },
+          durationSeconds: { type: "integer", minimum: 60 },
+          gateFields: { $ref: "#/components/schemas/GateFields" }
+        },
+        description: "Public assessment metadata. The brief is deliberately absent."
+      },
+      AssessmentCheckpoint: {
+        type: "object",
+        required: [
+          "caseId", "sessionToken", "startedAt", "pausedTotal", "pauseStartedAt",
+          "lastSavedAt", "log", "revision", "phase", "elapsedMs"
+        ],
+        properties: {
+          caseId: { $ref: "#/components/schemas/Code" },
+          sessionToken: { type: "string", description: "Signed browser-owner token. Removed from the admin representation." },
+          startedAt: { type: "integer", format: "int64", description: "Server-issued Unix time in milliseconds; must exactly match the start response." },
+          pausedTotal: { type: "integer", format: "int64", minimum: 0, description: "Completed cumulative pause time in milliseconds." },
+          pauseStartedAt: { type: "integer", format: "int64", minimum: 0, nullable: true },
+          lastSavedAt: { type: "integer", format: "int64", minimum: 0, description: "Browser save time in milliseconds. Expiry also uses a separate server receipt time." },
+          log: { type: "array", items: { type: "object", additionalProperties: true } },
+          revision: { type: "integer", minimum: 0, description: "Strictly increasing browser-state revision. Revision 0 is the server-created initial checkpoint." },
+          phase: { type: "string", enum: ["running", "blocked", "submitting"], description: "submitting remains active until the final endpoint acknowledges it." },
+          elapsedMs: { type: "integer", format: "int64", minimum: 0, description: "Completed assessment time excluding pauses. Reaching the frozen duration finalizes with expired." },
+          pendingTranscript: { type: "string", description: "Current interim speech, retained if the server must finalize the session." }
+        },
+        additionalProperties: true
       },
       Assessment: {
         type: "object",
@@ -117,6 +169,10 @@ export const openapiSpec = {
           started_at: { type: "string", nullable: true },
           submitted_at: { type: "string", nullable: true },
           end_reason: { type: "string", nullable: true },
+          started_at_ms: { type: "integer", format: "int64", nullable: true },
+          final_revision: { type: "integer", nullable: true },
+          assessment_snapshot: { type: "string", nullable: true, description: "Internal JSON snapshot frozen at start." },
+          session_owner_id: { type: "string", nullable: true, description: "Opaque signed-token owner identifier; null on pre-migration rows." },
           candidate_name: { type: "string", nullable: true },
           candidate_linkedin: { type: "string", nullable: true },
           candidate_email: { type: "string", nullable: true, description: "Legacy — sessions captured before the gate switched to LinkedIn." },
@@ -236,33 +292,43 @@ export const openapiSpec = {
     "/api/assessment/session": {
       get: {
         tags: ["assessment"],
-        summary: "Check a code before anything starts",
-        description: "Public. Returns `{ status: \"unknown\" }` for codes that do not exist — deliberately indistinguishable from a malformed code.",
+        summary: "Issue an owner token or restore its session",
+        description:
+          "Public code lookup. Every lookup of an unused code returns a fresh signed `sessionToken` and assessment metadata without the brief. The first successful start atomically binds one token. For active/submitted codes, send that token in `X-Assessment-Session`: the owner receives the frozen assessment and latest checkpoint; a missing or competing token receives `owned: false` with no brief, checkpoint, or candidate identity. Legacy active rows without an owner cannot be claimed and include admin recovery guidance. Unknown and malformed codes both return `{ status: \"unknown\" }`.",
         security: [],
         parameters: [
-          { name: "case", in: "query", required: true, schema: { $ref: "#/components/schemas/Code" } }
+          { name: "case", in: "query", required: true, schema: { $ref: "#/components/schemas/Code" } },
+          { name: "X-Assessment-Session", in: "header", required: false, schema: { type: "string" }, description: "Previously issued owner token when restoring an active/submitted session." }
         ],
         responses: {
           200: {
-            description: "Code state and assessment title/duration. The brief itself is only included once the code is `active` — an unused code never leaks the task.",
+            description: "Code state, server timing, and data appropriate to the caller's ownership.",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
                     status: { oneOf: [{ $ref: "#/components/schemas/CodeStatus" }, { type: "string", enum: ["unknown"] }] },
-                    startedAt: { type: "string", nullable: true },
+                    owned: { type: "boolean", description: "Present for active/submitted states." },
+                    sessionToken: { type: "string", description: "Fresh contender token; present only while unused." },
+                    startedAt: { type: "integer", format: "int64", nullable: true },
                     endReason: { type: "string", nullable: true },
-                    candidateName: { type: "string", nullable: true },
+                    finalRevision: { type: "integer", nullable: true, description: "Highest final/reconciled payload revision for the owner." },
+                    candidateName: { type: "string", nullable: true, description: "Owner only." },
+                    serverNow: { type: "integer", format: "int64" },
+                    checkpointReceivedAt: { type: "integer", format: "int64", nullable: true },
+                    pauseDeadlineAt: { type: "integer", format: "int64", nullable: true },
+                    checkpoint: { allOf: [{ $ref: "#/components/schemas/AssessmentCheckpoint" }], nullable: true, description: "Owner only." },
+                    error: { type: "string", description: "Legacy-session explanation when applicable." },
+                    errorCode: { type: "string", enum: ["legacy_owner_unavailable"] },
+                    recovery: { type: "string" },
                     assessment: {
-                      type: "object",
                       nullable: true,
-                      properties: {
-                        title: { type: "string" },
-                        brief: { type: "string", description: "Only present while the code is active." },
-                        durationSeconds: { type: "integer" },
-                        gateFields: { $ref: "#/components/schemas/GateFields" }
-                      }
+                      oneOf: [
+                        { $ref: "#/components/schemas/CandidateAssessmentMetadata" },
+                        { $ref: "#/components/schemas/CandidateAssessment" }
+                      ],
+                      description: "Public metadata for unused/non-owner calls; the full frozen assessment for an owner."
                     }
                   }
                 }
@@ -277,8 +343,11 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Unlock a code and bind the candidate's details to it",
         description:
-          "First call flips the code to `active` and stores the identity. Calling again while active is a no-op resume — the stored details are never overwritten. The response carries the full assessment (including the brief) — this is where the brief is first released to the candidate. Which fields are required is configured per assessment (`gateFields` on `/session`); send JSON when no uploads are required, or `multipart/form-data` when a CV and/or image portfolio is required.",
-        security: [],
+          "Requires the signed contender token from `/session` in the body or `X-Assessment-Session`. The first successful call atomically binds that owner, candidate identity, a server `startedAt`, the immutable assessment, and revision-0 checkpoint. Same-token retries return those exact values; another token gets 409. Which fields are required comes from the pre-start `gateFields`; send multipart when a CV or portfolio is required.",
+        security: [{ assessmentSession: [] }],
+        parameters: [
+          { name: "X-Assessment-Session", in: "header", required: false, schema: { type: "string" }, description: "May be supplied here, in sessionToken, or identically in both places." }
+        ],
         requestBody: {
           required: true,
           content: {
@@ -288,6 +357,7 @@ export const openapiSpec = {
                 required: ["caseId", "name"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
+                  sessionToken: { type: "string" },
                   name: { type: "string", maxLength: 120 },
                   linkedin: { type: "string", description: "Required when the assessment's gateFields.linkedin is true." },
                   upwork: { type: "string", description: "Required when the assessment's gateFields.upwork is true." }
@@ -300,6 +370,7 @@ export const openapiSpec = {
                 required: ["caseId", "name"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
+                  sessionToken: { type: "string" },
                   name: { type: "string", maxLength: 120 },
                   linkedin: { type: "string" },
                   upwork: { type: "string" },
@@ -315,45 +386,117 @@ export const openapiSpec = {
           }
         },
         responses: {
-          200: { description: "Started (or resumed)", content: { "application/json": { schema: { $ref: "#/components/schemas/Ok" } } } },
+          200: {
+            description: "Started or idempotently restored",
+            content: { "application/json": { schema: {
+              type: "object",
+              properties: {
+                ok: { type: "boolean" },
+                status: { type: "string", enum: ["active"] },
+                owned: { type: "boolean", enum: [true] },
+                startedAt: { type: "integer", format: "int64" },
+                assessment: { $ref: "#/components/schemas/CandidateAssessment" },
+                checkpoint: { $ref: "#/components/schemas/AssessmentCheckpoint" },
+                serverNow: { type: "integer", format: "int64" },
+                checkpointReceivedAt: { type: "integer", format: "int64" },
+                pauseDeadlineAt: { type: "integer", format: "int64" }
+              }
+            } } }
+          },
           400: { $ref: "#/components/responses/BadRequest" },
-          403: { $ref: "#/components/responses/Forbidden" }
+          403: { $ref: "#/components/responses/Forbidden" },
+          409: { description: "Another browser owns the code, the row is legacy, or the assessment is already submitted.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
         }
       }
     },
-    "/api/assessment/": {
+    "/api/assessment/checkpoint": {
+      post: {
+        tags: ["assessment"],
+        summary: "Persist the latest candidate state",
+        description:
+          "Owner-only durable checkpoint. Revisions must increase; equal/older deliveries are acknowledged with `accepted: false`, while newer revisions cannot move elapsed, paused, or save timing backward. The server stores its own receipt time, finalizes at the remaining five-minute pause budget even after restart, and finalizes immediately as `expired` when elapsedMs reaches the frozen duration. A submitting checkpoint does not itself complete a manual submission.",
+        security: [{ assessmentSession: [] }],
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/AssessmentCheckpoint" } } } },
+        responses: {
+          200: {
+            description: "Checkpoint accepted/ignored, or deadline finalization completed",
+            content: { "application/json": { schema: {
+              type: "object",
+              properties: {
+                ok: { type: "boolean" },
+                status: { $ref: "#/components/schemas/CodeStatus" },
+                accepted: { type: "boolean" },
+                revision: { type: "integer", nullable: true },
+                startedAt: { type: "integer", format: "int64" },
+                endReason: { type: "string", nullable: true },
+                serverNow: { type: "integer", format: "int64" },
+                checkpointReceivedAt: { type: "integer", format: "int64", nullable: true },
+                pauseDeadlineAt: { type: "integer", format: "int64", nullable: true }
+              }
+            } } }
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          409: { description: "Not started, wrong owner, or legacy owner unavailable.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/assessment/transcribe-token": {
+      post: {
+        tags: ["assessment"],
+        summary: "Mint a short-lived AssemblyAI streaming token",
+        description: "Requires a valid contender token while unused (for microphone preflight) and the bound owner token once active. Returns 404 when AssemblyAI is not configured.",
+        security: [{ assessmentSession: [] }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["caseId"],
+            properties: { caseId: { $ref: "#/components/schemas/Code" }, sessionToken: { type: "string" } }
+          } } }
+        },
+        responses: {
+          200: { description: "Streaming token", content: { "application/json": { schema: { type: "object", properties: { token: { type: "string" } } } } } },
+          403: { $ref: "#/components/responses/Forbidden" },
+          409: { description: "A different browser owns the active code, or legacy ownership is unavailable.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          404: { description: "Transcription service is not configured", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          502: { description: "Transcription provider unavailable", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/assessment": {
       post: {
         tags: ["assessment"],
         summary: "Submit the final payload",
         description:
-          "First submission wins; a second returns 409. Candidate identity is taken from what the server stored at `/start` — anything in the body claiming otherwise is ignored. Stored as `payload.json` under the code's directory.",
-        security: [],
+          "Requires an active bound owner; unused codes are rejected. Candidate identity and startedAt come from the server. A same-owner retry after a normal submission is acknowledged without rewriting payload.json. If the server already finalized a deadline from a checkpoint, a higher-revision final may add evidence marked late while the server cutoff/endReason remains authoritative; equal/older evidence returns 409 unless it is an idempotent retry of an already reconciled revision.",
+        security: [{ assessmentSession: [] }],
         requestBody: {
           required: true,
           content: {
             "application/json": {
-              schema: {
-                type: "object",
-                required: ["caseId"],
-                properties: {
-                  caseId: { $ref: "#/components/schemas/Code" },
-                  log: {
-                    type: "array",
-                    description: "Event log. The last `end` event supplies the code's end_reason.",
-                    items: { type: "object", properties: { type: { type: "string" }, reason: { type: "string" } } }
-                  }
-                },
-                additionalProperties: true
-              }
+              schema: { $ref: "#/components/schemas/AssessmentCheckpoint" }
             }
           }
         },
         responses: {
-          200: { description: "Stored", content: { "application/json": { schema: { $ref: "#/components/schemas/Ok" } } } },
+          200: { description: "Durably stored, reconciled, or idempotently acknowledged", content: { "application/json": { schema: {
+            type: "object",
+            properties: {
+              ok: { type: "boolean" },
+              acknowledged: { type: "boolean" },
+              duplicate: { type: "boolean" },
+              reconciled: { type: "boolean" },
+              status: { type: "string", enum: ["submitted"] },
+              endReason: { type: "string" },
+              revision: { type: "integer" },
+              lateEvidenceEvents: { type: "integer" }
+            }
+          } } } },
           400: { $ref: "#/components/responses/BadRequest" },
           403: { $ref: "#/components/responses/Forbidden" },
           409: {
-            description: "Already submitted",
+            description: "Not started, wrong/legacy owner, or non-newer evidence after server deadline finalization",
             content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } }
           }
         }
@@ -363,8 +506,8 @@ export const openapiSpec = {
       post: {
         tags: ["assessment"],
         summary: "Upload a batch of 1fps screen frames",
-        description: "Max 120 files per request, 4 MB each. Filenames must match `[A-Za-z0-9._-]{1,64}.(jpg|jpeg|png)`; anything else is silently skipped, so check `saved`.",
-        security: [],
+        description: "Owner-only for active and submitted sessions, so an acknowledged submission may still drain queued recordings. Max 120 files per request, 4 MB each. Filenames must match `[A-Za-z0-9._-]{1,64}.(jpg|jpeg|png)`; anything else is skipped, so check `saved`.",
+        security: [{ assessmentSession: [] }],
         requestBody: {
           required: true,
           content: {
@@ -374,6 +517,7 @@ export const openapiSpec = {
                 required: ["caseId", "frames"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
+                  sessionToken: { type: "string" },
                   frames: { type: "array", items: { type: "string", format: "binary" } }
                 }
               }
@@ -383,9 +527,10 @@ export const openapiSpec = {
         responses: {
           200: {
             description: "Accepted",
-            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" }, saved: { type: "integer" } } } } }
+            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" }, saved: { type: "integer" }, status: { type: "string", enum: ["active", "submitted"] } } } } }
           },
-          403: { $ref: "#/components/responses/Forbidden" }
+          403: { $ref: "#/components/responses/Forbidden" },
+          409: { description: "A different browser owns the session, or legacy ownership is unavailable.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
         }
       }
     },
@@ -393,8 +538,8 @@ export const openapiSpec = {
       post: {
         tags: ["assessment"],
         summary: "Upload voice-over chunks",
-        description: "Max 8 files per request, 16 MB each. Filenames must match `[A-Za-z0-9._-]{1,80}.(webm|ogg|m4a|mp4|mp3)`.",
-        security: [],
+        description: "Owner-only for active and submitted sessions. Max 8 files per request, 16 MB each. Filenames must match `[A-Za-z0-9._-]{1,80}.(webm|ogg|m4a|mp4|mp3)`.",
+        security: [{ assessmentSession: [] }],
         requestBody: {
           required: true,
           content: {
@@ -404,6 +549,7 @@ export const openapiSpec = {
                 required: ["caseId", "audio"],
                 properties: {
                   caseId: { $ref: "#/components/schemas/Code" },
+                  sessionToken: { type: "string" },
                   audio: { type: "array", items: { type: "string", format: "binary" } }
                 }
               }
@@ -413,9 +559,10 @@ export const openapiSpec = {
         responses: {
           200: {
             description: "Accepted",
-            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" }, saved: { type: "integer" } } } } }
+            content: { "application/json": { schema: { type: "object", properties: { ok: { type: "boolean" }, saved: { type: "integer" }, status: { type: "string", enum: ["active", "submitted"] } } } } }
           },
-          403: { $ref: "#/components/responses/Forbidden" }
+          403: { $ref: "#/components/responses/Forbidden" },
+          409: { description: "A different browser owns the session, or legacy ownership is unavailable.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
         }
       }
     },
@@ -529,7 +676,7 @@ export const openapiSpec = {
       get: {
         tags: ["admin"],
         summary: "Full captured session",
-        description: "Code record, candidate details, submitted payload, and the frame/audio filenames (frames sorted by their `f_<n>` index).",
+        description: "Code record, candidate details, latest redacted checkpoint (including the in-progress transcript), submitted/server-finalized payload when present, and capture filenames. The checkpoint never includes its bearer sessionToken.",
         responses: {
           200: {
             description: "Session",
@@ -545,6 +692,12 @@ export const openapiSpec = {
                       properties: { name: { type: "string" }, linkedin: { type: "string" }, email: { type: "string", description: "Legacy sessions only." }, upwork: { type: "string" } }
                     },
                     payload: { type: "object", nullable: true, additionalProperties: true },
+                    checkpoint: {
+                      type: "object",
+                      nullable: true,
+                      description: "Latest AssessmentCheckpoint with sessionToken removed.",
+                      additionalProperties: true
+                    },
                     frames: { type: "array", items: { type: "string" } },
                     audio: { type: "array", items: { type: "string" } }
                   }
