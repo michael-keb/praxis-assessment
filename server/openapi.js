@@ -233,6 +233,20 @@ export const openapiSpec = {
     }
   },
   paths: {
+    "/sendasweet": {
+      get: {
+        tags: ["system"], summary: "Send a Sweet gallery", security: [],
+        description: "Public standalone gifting concept. Assets and maker stores are scoped to /sendasweet.",
+        responses: { 200: { description: "Gallery HTML", content: { "text/html": { schema: { type: "string" } } } } }
+      }
+    },
+    "/sendasweet/makers/{slug}": {
+      get: {
+        tags: ["system"], summary: "Send a Sweet maker storefront", security: [],
+        parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string", enum: ["cocoa-and-crumb", "butter-and-fold", "sunday-sweet"] } }],
+        responses: { 200: { description: "Storefront HTML or React navigation payload" }, 404: { description: "Unknown maker" } }
+      }
+    },
     "/healthz": {
       get: {
         tags: ["system"],

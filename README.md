@@ -166,3 +166,18 @@ Rotate the key by changing `EXTENSION_API_KEY` on Render and in the
 extension's Options page together (see `render.yaml`).
 
 The previous zero-dependency Python implementation is kept in `legacy/`.
+
+## Send a Sweet
+
+`/sendasweet` serves the public Send a Sweet gallery, with maker stores at
+`/sendasweet/makers/{slug}`. The concept includes personalised gift-note previews;
+it does not accept orders or write assessment data.
+
+`server/sendasweet.js` serves the standalone HTML, images, fonts, JavaScript and
+React navigation payloads in `static/sendasweet/`. Unknown paths return 404
+instead of entering the assessment app. Docker already includes `static/`.
+
+To update the site, run `npm run export:praxis` in the Send a Sweet source project,
+then replace `static/sendasweet/` with that project's `out-praxis/` contents. The
+export uses `/sendasweet` for all links and assets. Run `npm test` and
+`npm run build` before publishing this repository. Render deploys commits to main.

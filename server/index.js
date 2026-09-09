@@ -10,12 +10,14 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
+import { createSendASweetRouter } from "./sendasweet.js";
 import { startSessionSweeper } from "./assessment-session.js";
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
 const CAREERS_DIR = path.join(ROOT, "static", "careers");
+const SENDASWEET_DIR = path.join(ROOT, "static", "sendasweet");
 
 seedAdmin();
 startSessionSweeper();
@@ -67,6 +69,11 @@ if (fs.existsSync(CAREERS_DIR)) {
   );
 }
 
+/* Send a Sweet gallery and maker stores (public standalone export). */
+if (fs.existsSync(SENDASWEET_DIR)) {
+  app.use("/sendasweet", createSendASweetRouter(SENDASWEET_DIR));
+}
+
 /* Built React app + SPA fallback. */
 if (fs.existsSync(DIST)) {
   app.use(express.static(DIST));
@@ -74,6 +81,7 @@ if (fs.existsSync(DIST)) {
     if (req.path.startsWith("/api/")) return next();
     if (req.path.startsWith("/interior-designers")) return next();
     if (req.path.startsWith("/careers")) return next();
+    if (req.path === "/sendasweet" || req.path.startsWith("/sendasweet/")) return next();
     res.sendFile(path.join(DIST, "index.html"));
   });
 } else {
