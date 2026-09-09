@@ -289,7 +289,14 @@ function Task({ engine, snap }) {
       return;
     }
     clearTimeout(confirmTimer.current);
-    engine.submit();
+    // A native confirmation is a second, independent user gesture. It also
+    // prevents a delayed click/Enter event from the screen or microphone
+    // permission flow from submitting the newly revealed task.
+    if (window.confirm("Submit this assessment now? You will not be able to continue after submission.")) {
+      engine.submit();
+    } else {
+      setConfirming(false);
+    }
   }
 
   const timerClass = snap.phase === "blocked" ? "paused"

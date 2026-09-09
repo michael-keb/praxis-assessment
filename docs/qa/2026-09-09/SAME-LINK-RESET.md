@@ -8,7 +8,7 @@ Each reset increments `sessionGeneration`. Older owner tokens can no longer writ
 
 **Verification**
 
-- 41/41 browser experience scenarios passed, including full same-link start/submit/reset/start, persisted page restore, legacy local state, old-frame isolation and profile validation.
+- 42/42 browser experience scenarios passed, including full same-link start/submit/reset/start, persisted page restore, legacy local state, old-frame isolation, profile validation and cancelled-submit protection.
 - 35/35 engine/server tests passed, including late asynchronous responses, valid reset-generation reloads with clock skew, evidence preservation, rollback, old-token rejection and idempotent retries after a fresh owner starts.
 - 6/6 brief-formatting browser tests and the production build passed.
 - Independent client review found no actionable blockers.

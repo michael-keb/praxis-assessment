@@ -1481,7 +1481,12 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   return {
     boot, destroy, snapshot, begin, reshare, finalize, observeBrief, testMicrophone, retrySubmit,
     setZone, zoneFocus, zoneBlur, zonePaste, zoneCut, setConfidence,
-    submit: () => finalize("submitted"),
+    submit: () => {
+      if (finalized || !running || !state.startedAt) return false;
+      logEvent({ type: "submit_requested" });
+      finalize("submitted");
+      return true;
+    },
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
   };
 }

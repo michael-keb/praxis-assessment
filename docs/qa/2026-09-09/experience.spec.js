@@ -266,7 +266,10 @@ async function media(page, options = {}) {
       return route.fulfill({ json: { token: 'synthetic-local-token' } });
     });
   }
-  page.on('dialog', (dialog) => dialog.accept());
+  page.on('dialog', (dialog) => {
+    if (options.submitConfirm === 'dismiss' && dialog.type() === 'confirm') return dialog.dismiss();
+    return dialog.accept();
+  });
 }
 
 async function prepareGate(page, code, name = 'QA Candidate') {
@@ -328,6 +331,15 @@ test('PASS full candidate flow preserves transcript, screen frames, identity and
   await page.request.post('/api/auth/login', { data: { email: 'qa@example.test', password: 'qa-local-only' } });
   await page.goto('/admin/case/' + code);
   await expect(page.getByRole('heading', { name: 'Spoken transcript' })).toBeVisible();
+});
+
+test('PASS cancelling the final submit confirmation keeps the assessment active', async ({ page, request }) => {
+  const fixture = await begin(page, request, { submitConfirm: 'dismiss' });
+  await page.getByRole('button', { name: 'Submit session', exact: true }).click();
+  await page.getByRole('button', { name: /Click again to confirm/ }).click();
+  await expect(page.getByRole('heading', { name: 'Session submitted', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Submit session', exact: true })).toBeVisible();
+  expect((await status(request, fixture.code)).status).toBe('active');
 });
 
 for (const screen of ['denied', 'window', 'browser']) {

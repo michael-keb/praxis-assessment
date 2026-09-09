@@ -1,8 +1,8 @@
 {
-  "verifiedAt": "2026-09-09T09:30:58.696Z",
+  "verifiedAt": "2026-09-09T10:36:46.297Z",
   "suites": {
     "experience": {
-      "passed": 41,
+      "passed": 42,
       "failed": 0,
       "skipped": 0,
       "flaky": 0
@@ -29,8 +29,8 @@
     "briefExposed": 0
   },
   "sha256": {
-    "client/src/engine.js": "f5346bd31dd058a6ae0606958d8be0e0a1800b7a28bea76ebfad6be983b1bec1",
-    "client/src/pages/AssessmentPage.jsx": "8c7e3d11e7513c3088645646f1f3aeb0bbacc7b41cd114e87628052cf6ad5e54",
+    "client/src/engine.js": "dce14d8dac0525bbe0de160b8ef7c983b1fe8828e3ca954e4a035222a68b2f1c",
+    "client/src/pages/AssessmentPage.jsx": "37d31a667c8148fa7c73721f158cd30d8b2ae9284428235b0474c03450c42e6b",
     "client/src/profile-url.js": "3685d6ec87c9c3d5b4f3505ee63307113022f9874f43f2822375ba464c294f74",
     "server/admin.js": "d8eac58528cd17a79dc15c80a9b18fb9fa8a66d3c665b2a697ebe51e6c209cb6",
     "server/assessment-session.js": "454e5e0dc82c2af0a57791da4aa0a0be34fd4f9b9103a2bc07008b827019cea3",
@@ -41,6 +41,7 @@
     "server/session-reset.js": "28e2889e901ccfb40893fe2077cf92f4a2704e7d119367de2d358c4267a1e73b",
     "tests/microphone-gate.test.mjs": "4513f0f4f07cb519139ec2fe8120cda06b26d6c6620732d3de94632ae387e549",
     "tests/server-sessions.test.mjs": "25202f768e81065bef758ead3af81e8f446149051dbbb0228415678c900c6524",
-    "docs/qa/2026-09-09/experience.spec.js": "01cfbf6e14f96f4ff9d195453703d198eadc607cd0db5186912b4edc313f4e81"
+    "docs/qa/2026-09-09/experience.spec.js": "54c20b57b1eeffb22be28271a0a35ef9546d8136212e367445e554707b46cc1e",
+    "docs/qa/2026-09-09/SAME-LINK-RESET.md": "1c9297b02eb144efa5a6344f7b5bdb90ea24581bdb8a5c2127cb3e1362eabd1d"
   }
 }
