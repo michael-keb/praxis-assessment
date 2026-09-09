@@ -53,6 +53,12 @@ if (fs.existsSync(CAREERS_DIR)) {
   app.get(["/careers", "/careers/"], (_req, res) => {
     res.sendFile(path.join(CAREERS_DIR, "index.html"));
   });
+  const manualTesterCareers = path.join(CAREERS_DIR, "manual-tester", "index.html");
+  if (fs.existsSync(manualTesterCareers)) {
+    app.get(["/careers/manual-tester", "/careers/manual-tester/"], (_req, res) => {
+      res.sendFile(manualTesterCareers);
+    });
+  }
   app.use(
     "/careers",
     express.static(CAREERS_DIR, { index: false, redirect: false })
