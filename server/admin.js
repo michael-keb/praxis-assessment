@@ -3,11 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import archiver from "archiver";
 import {
-  db, getCode, newCodes, SUBMISSIONS_DIR,
+  ARCHIVES_DIR, db, getCode, newCodes, SUBMISSIONS_DIR,
   listAssessments, getAssessment, createAssessment, updateAssessment, deleteAssessment
 } from "./db.js";
 import { requireAdmin } from "./auth.js";
 import { checkpointRow, checkpointValue, sweepExpiredSessions } from "./assessment-session.js";
+import { listSessionResets, resetAssessmentCode, SessionResetError } from "./session-reset.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
@@ -131,6 +132,23 @@ adminRouter.post("/codes", (req, res) => {
   res.json({ codes: newCodes(count, assessmentId) });
 });
 
+adminRouter.post("/codes/:code/reset", (req, res) => {
+  const code = String(req.params.code || "").trim().toUpperCase();
+  try {
+    const result = resetAssessmentCode(code, req.body);
+    res.json({ ok: true, ...result });
+  } catch (error) {
+    if (error instanceof SessionResetError) {
+      return res.status(error.status).json({ error: error.message, code: error.code, ...error.details });
+    }
+    console.error(`code reset failed ${code}: ${error.message}`);
+    res.status(500).json({
+      error: "The code could not be reset. Its previous state and evidence were retained.",
+      code: "reset_failed",
+    });
+  }
+});
+
 adminRouter.post("/codes/:code/void", (req, res) => {
   const row = getCode(String(req.params.code || "").toUpperCase());
   if (!row) return res.status(404).json({ error: "unknown code" });
@@ -176,7 +194,8 @@ adminRouter.get("/sessions/:code", (req, res) => {
         portfolio: portfolioNames,
       }
     : null;
-  res.json({ code: row, candidate, payload, checkpoint, frames, audio, portfolio });
+  const resets = listSessionResets(row.code);
+  res.json({ code: row, candidate, payload, checkpoint, frames, audio, portfolio, resets });
 });
 
 adminRouter.get("/sessions/:code/portfolio/:name", (req, res) => {
@@ -224,6 +243,8 @@ adminRouter.get("/sessions/:code/zip", (req, res) => {
   archive.pipe(res);
   const root = path.join(SUBMISSIONS_DIR, row.code);
   if (fs.existsSync(root)) archive.directory(root, row.code);
+  const archivesRoot = path.join(ARCHIVES_DIR, row.code);
+  if (fs.existsSync(archivesRoot)) archive.directory(archivesRoot, `${row.code}/archives`);
   const checkpoint = checkpointValue(checkpointRow(row.code), { redactToken: true });
   if (checkpoint) {
     archive.append(JSON.stringify(checkpoint, null, 2), { name: `${row.code}/checkpoint.json` });

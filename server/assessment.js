@@ -4,6 +4,7 @@ import path from "node:path";
 import multer from "multer";
 import { db, getCode, caseDir } from "./db.js";
 import { ASSEMBLYAI_API_KEY } from "./config.js";
+import { normalizeLinkedInUrl, normalizeUpworkUrl } from "./profile-url.js";
 import {
   assessmentSnapshotForStart,
   candidateForPayload,
@@ -20,17 +21,16 @@ import {
   ownershipError,
   publicAssessment,
   saveCheckpoint,
+  sessionGeneration,
   sessionTokenFromRequest,
   startedAtMs,
   sweepExpiredSessions,
-  verifySessionToken,
+  verifySessionTokenDetails,
   writePayload,
 } from "./assessment-session.js";
 
 const FRAME_RE = /^[A-Za-z0-9._-]{1,64}\.(jpg|jpeg|png)$/;
 const AUDIO_RE = /^[A-Za-z0-9._-]{1,80}\.(webm|ogg|m4a|mp4|mp3)$/;
-const LINKEDIN_RE = /^https?:\/\/(www\.)?linkedin\.com\/.+/i;
-const UPWORK_RE = /^https?:\/\/(www\.)?upwork\.com\/.+/i;
 const CV_EXT_RE = /\.(pdf|doc|docx)$/i;
 const IMAGE_EXT_RE = /\.(jpe?g|png|webp)$/i;
 const PORTFOLIO_MAX = 10;
@@ -83,6 +83,7 @@ function ownedSessionBody(row, nowMs = Date.now()) {
   return {
     ok: true,
     status: row.status,
+    sessionGeneration: sessionGeneration(row),
     owned: true,
     startedAt: startedAtMs(row),
     endReason: row.end_reason || null,
@@ -204,6 +205,7 @@ function reconcileLateSubmission(row, incomingBody, ownerId, nowMs) {
     const reconciled = {
       ...incoming,
       caseId: fresh.code,
+      sessionGeneration: sessionGeneration(fresh),
       startedAt: startedAtMs(fresh),
       elapsedMs: existing.elapsedMs,
       pausedTotal: existing.pausedTotal,
@@ -232,15 +234,16 @@ function reconcileLateSubmission(row, incomingBody, ownerId, nowMs) {
 assessmentRouter.get("/session", (req, res) => {
   const nowMs = Date.now();
   const row = getCode(String(req.query.case || "").trim().toUpperCase());
-  if (!row) return res.json({ status: "unknown", serverNow: nowMs });
+  if (!row) return res.json({ status: "unknown", sessionGeneration: null, serverNow: nowMs });
 
   if (row.status === "unused") {
     return res.json({
       status: "unused",
+      sessionGeneration: sessionGeneration(row),
       startedAt: null,
       endReason: null,
       assessment: currentPublicAssessment(row),
-      sessionToken: issueSessionToken(row.code),
+      sessionToken: issueSessionToken(row.code, sessionGeneration(row)),
       serverNow: nowMs,
     });
   }
@@ -251,6 +254,7 @@ assessmentRouter.get("/session", (req, res) => {
     if (!owner.ok) {
       const body = {
         status: row.status,
+        sessionGeneration: sessionGeneration(row),
         owned: false,
         startedAt: startedAtMs(row),
         endReason: row.end_reason || null,
@@ -270,6 +274,7 @@ assessmentRouter.get("/session", (req, res) => {
 
   return res.json({
     status: row.status,
+    sessionGeneration: sessionGeneration(row),
     startedAt: startedAtMs(row),
     endReason: row.end_reason || null,
     assessment: currentPublicAssessment(row),
@@ -280,16 +285,16 @@ assessmentRouter.get("/session", (req, res) => {
 function validateStart(snapshot, req) {
   const gate = snapshot.gateFields;
   const name = String(req.body?.name || "").trim();
-  const linkedin = String(req.body?.linkedin || "").trim();
-  const upwork = String(req.body?.upwork || "").trim();
+  const linkedin = gate.linkedin ? normalizeLinkedInUrl(req.body?.linkedin) : null;
+  const upwork = gate.upwork ? normalizeUpworkUrl(req.body?.upwork) : null;
   const cv = req.files?.cv?.[0];
   const portfolioFiles = req.files?.portfolio || [];
 
   if (!name || name.length > 120) return { error: "Enter your full name." };
-  if (gate.linkedin && !LINKEDIN_RE.test(linkedin)) {
+  if (gate.linkedin && !linkedin) {
     return { error: "Enter a valid LinkedIn profile URL (on linkedin.com)." };
   }
-  if (gate.upwork && !UPWORK_RE.test(upwork)) {
+  if (gate.upwork && !upwork) {
     return { error: "Enter a valid Upwork profile URL (on upwork.com)." };
   }
   if (gate.cv && (!cv || !cv.buffer?.length || !CV_EXT_RE.test(cv.originalname || ""))) {
@@ -354,8 +359,10 @@ assessmentRouter.post("/start", startUpload.fields([
 
   const token = tokenFor(req, res);
   if (!token) return;
-  const tokenOwner = verifySessionToken(token, row.code);
-  if (!tokenOwner) return sendOwnershipError(res, "invalid");
+  const expectedGeneration = sessionGeneration(row);
+  const verified = verifySessionTokenDetails(token, row.code, expectedGeneration);
+  if (!verified.ok) return sendOwnershipError(res, verified.reason);
+  const tokenOwner = verified.ownerId;
 
   if (row.status === "active") {
     const owner = ownership(row, token);
@@ -377,12 +384,13 @@ assessmentRouter.post("/start", startUpload.fields([
   try {
     result = db.transaction(() => {
       const fresh = getCode(row.code);
+      if (sessionGeneration(fresh) !== expectedGeneration) return { generationMismatch: true };
       if (fresh.status !== "unused") return { existing: fresh };
       const updated = db.prepare(`
         UPDATE codes SET
           status = 'active', started_at = ?, started_at_ms = ?, session_owner_id = ?, assessment_snapshot = ?,
           candidate_name = ?, candidate_linkedin = ?, candidate_upwork = ?, candidate_cv = NULL, candidate_portfolio = NULL
-        WHERE code = ? AND status = 'unused' AND session_owner_id IS NULL
+        WHERE code = ? AND status = 'unused' AND session_owner_id IS NULL AND session_generation = ?
       `).run(
         new Date(startedAt).toISOString(),
         startedAt,
@@ -391,7 +399,8 @@ assessmentRouter.post("/start", startUpload.fields([
         details.name,
         snapshot.gateFields.linkedin ? details.linkedin : null,
         snapshot.gateFields.upwork ? details.upwork : null,
-        row.code
+        row.code,
+        expectedGeneration
       );
       if (updated.changes !== 1) return { existing: getCode(row.code) };
 
@@ -402,6 +411,7 @@ assessmentRouter.post("/start", startUpload.fields([
         code: row.code,
         ownerId: tokenOwner,
         sessionToken: token,
+        sessionGeneration: sessionGeneration(row),
         startedAt,
         nowMs: startedAt,
       }));
@@ -420,6 +430,7 @@ assessmentRouter.post("/start", startUpload.fields([
     }
     return res.status(409).json({ error: "This assessment is no longer available.", code: `code_${result.existing.status}` });
   }
+  if (result.generationMismatch) return sendOwnershipError(res, "generation");
 
   console.log(`session started: ${row.code} by ${details.name}`);
   res.json(ownedSessionBody(result.row, startedAt));
@@ -436,7 +447,8 @@ assessmentRouter.post("/transcribe-token", async (req, res) => {
   const token = tokenFor(req, res);
   if (!token) return;
   if (row.status === "unused") {
-    if (!verifySessionToken(token, row.code)) return sendOwnershipError(res, "invalid");
+    const verified = verifySessionTokenDetails(token, row.code, sessionGeneration(row));
+    if (!verified.ok) return sendOwnershipError(res, verified.reason);
   } else {
     const owner = ownership(row, token);
     if (!owner.ok) return sendOwnershipError(res, owner.reason);
@@ -465,7 +477,8 @@ assessmentRouter.post("/checkpoint", (req, res) => {
   if (!row || row.status === "void") return res.status(403).json({ error: "unknown or voided code" });
   const token = tokenFor(req, res);
   if (!token) return;
-  if (!verifySessionToken(token, row.code)) return sendOwnershipError(res, "invalid");
+  const verified = verifySessionTokenDetails(token, row.code, sessionGeneration(row));
+  if (!verified.ok) return sendOwnershipError(res, verified.reason);
   if (row.status === "unused") {
     return res.status(409).json({ error: "The assessment has not started.", code: "session_not_started" });
   }
@@ -476,6 +489,7 @@ assessmentRouter.post("/checkpoint", (req, res) => {
     return res.json({
       ok: true,
       status: "submitted",
+      sessionGeneration: sessionGeneration(row),
       accepted: false,
       revision: current?.revision ?? null,
       startedAt: startedAtMs(row),
@@ -488,6 +502,7 @@ assessmentRouter.post("/checkpoint", (req, res) => {
     code: row.code,
     sessionToken: token,
     expectedStartedAt: startedAtMs(row),
+    expectedGeneration: sessionGeneration(row),
   });
   if (normalized.error) return res.status(400).json({ error: normalized.error });
 
@@ -506,6 +521,7 @@ assessmentRouter.post("/checkpoint", (req, res) => {
   res.json({
     ok: true,
     status: currentCode.status,
+    sessionGeneration: sessionGeneration(currentCode),
     accepted: saved.accepted,
     revision: current?.revision ?? null,
     startedAt: startedAtMs(currentCode),
@@ -525,8 +541,9 @@ assessmentRouter.post("/", (req, res) => {
   if (!row || row.status === "void") return res.status(403).json({ error: "unknown or voided code" });
   const token = tokenFor(req, res);
   if (!token) return;
-  const tokenOwner = verifySessionToken(token, row.code);
-  if (!tokenOwner) return sendOwnershipError(res, "invalid");
+  const verified = verifySessionTokenDetails(token, row.code, sessionGeneration(row));
+  if (!verified.ok) return sendOwnershipError(res, verified.reason);
+  const tokenOwner = verified.ownerId;
   if (row.status === "unused") {
     return res.status(409).json({ error: "The assessment has not started.", code: "session_not_started" });
   }
@@ -568,6 +585,7 @@ assessmentRouter.post("/", (req, res) => {
   const payload = JSON.parse(JSON.stringify(req.body));
   delete payload.sessionToken;
   payload.caseId = row.code;
+  payload.sessionGeneration = sessionGeneration(row);
   payload.startedAt = startedAtMs(row);
   payload.log = Array.isArray(payload.log) ? payload.log : [];
   payload._receivedAt = new Date(receivedAt).toISOString();

@@ -3,6 +3,7 @@
 // speech, and deliberate network failures are synthetic; no real media or
 // candidate data is used.
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
 
 const BRIEF = 'QA assigned brief: explain the tradeoffs.';
 const OWNER_HEADER = 'X-Assessment-Session';
@@ -72,6 +73,62 @@ async function review(request, code) {
   const response = await request.get('/api/admin/sessions/' + code);
   expect(response.ok()).toBeTruthy();
   return response.json();
+}
+
+async function resetCode(request, code, expectedGeneration = 0, expectedStatus = 'submitted') {
+  const response = await request.post('/api/admin/codes/' + code + '/reset', {
+    data: {
+      requestId: 'qa-reset-' + randomUUID(),
+      expectedGeneration,
+      expectedStatus,
+    },
+  });
+  expect(response.ok()).toBeTruthy();
+  const result = await response.json();
+  expect(result.ok).toBe(true);
+  expect(result.reset.toGeneration).toBe(expectedGeneration + 1);
+  return result;
+}
+
+async function storeOldGenerationFrame(page, code) {
+  await page.evaluate((caseId) => new Promise((resolve, reject) => {
+    const opening = indexedDB.open('praxis-recordings', 1);
+    opening.onerror = () => reject(opening.error);
+    opening.onsuccess = () => {
+      const transaction = opening.result.transaction('frames', 'readwrite');
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+      transaction.oncomplete = () => resolve();
+      transaction.objectStore('frames').put({
+        id: `${caseId}:generation-0:f_777.jpg`,
+        caseId,
+        sessionGeneration: 0,
+        t: 777,
+        blob: new Blob(['synthetic old generation frame'], { type: 'image/jpeg' }),
+      });
+    };
+  }), code);
+}
+
+async function fillRequiredCandidate(page, linkedin, name = 'LinkedIn QA Candidate') {
+  await page.locator('#g-name').fill(name);
+  await page.locator('#g-linkedin').fill(linkedin);
+  await page.locator('#g-upwork').fill('https://www.upwork.com/freelancers/~qa-person');
+  await page.locator('#g-cv').setInputFiles({
+    name: 'qa-resume.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4\n% synthetic fixture\n%%EOF'),
+  });
+  await page.locator('#g-portfolio').setInputFiles({
+    name: 'qa-portfolio.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl1sAAAAASUVORK5CYII=',
+      'base64',
+    ),
+  });
+  await page.locator('input[type=checkbox]').check();
+  await page.locator('#g-linkedin').blur();
 }
 
 async function ownerToken(page, code) {
@@ -592,6 +649,142 @@ test('BUG-06 a code binds one owner, rejects a second owner, and permits owner r
   }
 });
 
+test('PASS an admin reset lets BFCache and reload start a clean generation on the same URL', async ({ page, request }) => {
+  const fixture = await begin(page, request);
+  const firstOwner = await ownerToken(page, fixture.code);
+  await speak(page, 'This transcript belongs only to generation zero.');
+  await page.clock.runFor(2200);
+  await expect.poll(async () => (await review(request, fixture.code)).frames.length).toBeGreaterThan(0);
+  await clickSubmit(page);
+  const firstResult = await review(request, fixture.code);
+  expect(firstResult.payload.log.some((event) =>
+    event.type === 'voice' && event.text === 'This transcript belongs only to generation zero.')).toBeTruthy();
+  expect(firstResult.frames.length).toBeGreaterThan(0);
+  await storeOldGenerationFrame(page, fixture.code);
+  const sameUrl = page.url();
+
+  await resetCode(request, fixture.code);
+  const persistedSessionResponse = page.waitForResponse((response) =>
+    response.url().includes('/api/assessment/session?case=') && response.request().method() === 'GET');
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+  });
+  const persistedSession = await (await persistedSessionResponse).json();
+  expect(persistedSession.status).toBe('unused');
+  expect(persistedSession.sessionGeneration).toBe(1);
+  expect(page.url()).toBe(sameUrl);
+  await expect(page.getByRole('heading', { name: fixture.assessment.title })).toBeVisible();
+
+  const freshSessionResponse = page.waitForResponse((response) =>
+    response.url().includes('/api/assessment/session?case=') && response.request().method() === 'GET');
+  await page.reload();
+  const freshSession = await (await freshSessionResponse).json();
+  expect(page.url()).toBe(sameUrl);
+  expect(freshSession.status).toBe('unused');
+  expect(freshSession.sessionGeneration).toBe(1);
+  await expect(page.getByRole('heading', { name: fixture.assessment.title })).toBeVisible();
+  await expect(page.locator('.gate-facts')).toContainText('15:00');
+
+  const cleared = await page.evaluate(({ stateKey, ownerKey }) => ({
+    state: localStorage.getItem(stateKey),
+    owner: localStorage.getItem(ownerKey),
+  }), {
+    stateKey: 'praxis_assess_' + fixture.code,
+    ownerKey: 'praxis_owner_' + fixture.code,
+  });
+  expect(cleared.state).toBeNull();
+  expect(cleared.owner).not.toBe(firstOwner);
+
+  await page.locator('#g-name').fill('QA Generation One Candidate');
+  await page.locator('input[type=checkbox]').check();
+  await page.getByRole('button', { name: 'Start', exact: true }).click();
+  await startFromGate(page);
+  await expect(page.locator('.timer')).toHaveText('15:00');
+  const secondOwner = await ownerToken(page, fixture.code);
+  expect(secondOwner).not.toBe(firstOwner);
+  const secondState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)),
+    'praxis_assess_' + fixture.code);
+  expect(secondState.sessionGeneration).toBe(1);
+  await expect(page.locator('.caption-bar')).not.toContainText('generation zero');
+
+  await speak(page, 'Only the fresh generation answer is submitted.');
+  await clickSubmit(page);
+  const secondResult = await review(request, fixture.code);
+  expect(secondResult.candidate.name).toBe('QA Generation One Candidate');
+  expect(secondResult.payload.log.filter((event) => event.type === 'voice').map((event) => event.text))
+    .toEqual(['Only the fresh generation answer is submitted.']);
+  expect(secondResult.frames).not.toContain('f_777.jpg');
+});
+
+test('PASS reset ignores a legacy completed local state with no owner token', async ({ page, request }) => {
+  const fixture = await begin(page, request);
+  await clickSubmit(page);
+  await resetCode(request, fixture.code);
+  await page.evaluate((code) => {
+    localStorage.removeItem('praxis_owner_' + code);
+    localStorage.setItem('praxis_assess_' + code, JSON.stringify({
+      startedAt: Date.now() - 60_000,
+      lastSavedAt: Date.now(),
+      pausedTotal: 0,
+      pauseStartedAt: null,
+      zones: {},
+      confidence: null,
+      log: [{ t: 1, type: 'voice', text: 'Legacy stale transcript.' }],
+      done: true,
+      pendingSubmission: false,
+      startPending: true,
+    }));
+  }, fixture.code);
+
+  const freshSessionResponse = page.waitForResponse((response) =>
+    response.url().includes('/api/assessment/session?case=') && response.request().method() === 'GET');
+  await page.reload();
+  const freshSession = await (await freshSessionResponse).json();
+  expect(freshSession.status).toBe('unused');
+  expect(freshSession.sessionGeneration).toBe(1);
+  await expect(page.getByRole('heading', { name: fixture.assessment.title })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Saving your session' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Session submitted' })).toHaveCount(0);
+  expect(await page.evaluate((key) => localStorage.getItem(key),
+    'praxis_assess_' + fixture.code)).toBeNull();
+  await page.locator('#g-name').fill('Fresh legacy-reset candidate');
+  await page.locator('input[type=checkbox]').check();
+  await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeEnabled();
+});
+
+test('PASS an already-open old-generation gate rejects start and reloads fresh', async ({ browser, page, request }) => {
+  const fixture = await seed(request);
+  const staleContext = await browser.newContext();
+  const staleGate = await staleContext.newPage();
+  await media(staleGate);
+  try {
+    await prepareGate(staleGate, fixture.code, 'Stale Generation Candidate');
+    await begin(page, request, { fixture });
+    await clickSubmit(page);
+    await resetCode(request, fixture.code);
+
+    await startFromGate(staleGate);
+    await expect(staleGate.locator('.error-box')).toContainText(/reset|reload|reopen|updated/i);
+    await expect(staleGate.locator('.timer')).toHaveCount(0);
+    const staleOwner = await ownerToken(staleGate, fixture.code);
+
+    const freshSessionResponse = staleGate.waitForResponse((response) =>
+      response.url().includes('/api/assessment/session?case=') && response.request().method() === 'GET');
+    await staleGate.reload();
+    const freshSession = await (await freshSessionResponse).json();
+    expect(freshSession.status).toBe('unused');
+    expect(freshSession.sessionGeneration).toBe(1);
+    await expect(staleGate.getByRole('heading', { name: fixture.assessment.title })).toBeVisible();
+    await expect(staleGate.locator('#g-name')).toHaveValue('');
+    await expect(staleGate.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
+    expect(await staleGate.evaluate((key) => localStorage.getItem(key),
+      'praxis_owner_' + fixture.code)).not.toBe(staleOwner);
+  } finally {
+    await staleContext.close();
+  }
+});
+
 test('BUG-07 failed frame batch survives reload and is retried', async ({ page, request }) => {
   const { code } = await begin(page, request);
   let failedBody = '';
@@ -729,6 +922,46 @@ test('PASS required files, profile fields and review downloads', async ({ page, 
   expect((await request.get('/api/admin/sessions/' + code + '/cv')).ok()).toBeTruthy();
   expect((await request.get('/api/admin/sessions/' + code + '/portfolio/01.png')).ok()).toBeTruthy();
 });
+
+test('PASS bare LinkedIn profile is normalized before the required-fields start', async ({ page, request }) => {
+  const { code } = await seed(request, {
+    requireLinkedin: true, requireUpwork: true, requireCv: true, requirePortfolio: true,
+  });
+  await media(page);
+  await page.goto('/assess?case=' + code);
+  await fillRequiredCandidate(page, 'www.linkedin.com/in/qa-person');
+
+  await expect(page.locator('#g-linkedin')).toHaveValue('https://www.linkedin.com/in/qa-person');
+  const start = page.getByRole('button', { name: 'Start', exact: true });
+  await expect(start).toBeEnabled();
+  await start.click();
+  await startFromGate(page);
+  await speak(page, 'Canonical LinkedIn profile submitted.');
+  await clickSubmit(page);
+
+  const result = await review(request, code);
+  expect(result.candidate.linkedin).toBe('https://www.linkedin.com/in/qa-person');
+  expect(result.candidate.upwork).toBe('https://www.upwork.com/freelancers/~qa-person');
+});
+
+for (const [label, linkedin] of [
+  ['malformed profile', 'www.linkedin.com'],
+  ['wrong host', 'https://linkedin.example/in/qa-person'],
+]) {
+  test('PASS ' + label + ' LinkedIn value shows a field error and cannot start', async ({ page, request }) => {
+    const { code } = await seed(request, {
+      requireLinkedin: true, requireUpwork: true, requireCv: true, requirePortfolio: true,
+    });
+    await page.goto('/assess?case=' + code);
+    await fillRequiredCandidate(page, linkedin);
+
+    await expect(page.getByRole('button', { name: 'Start', exact: true })).toBeDisabled();
+    const error = page.locator('#g-linkedin-error');
+    await expect(error).toBeVisible();
+    await expect(error).toContainText(/valid LinkedIn profile|linkedin\.com\/in/i);
+    await expect(page.locator('#g-linkedin')).toHaveAttribute('aria-invalid', 'true');
+  });
+}
 
 test('PASS invalid links, void link and admin authentication', async ({ page, request }) => {
   await page.goto('/assess');

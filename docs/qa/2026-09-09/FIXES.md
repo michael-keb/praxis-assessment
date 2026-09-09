@@ -2,6 +2,8 @@
 
 All 11 defects in the [original audit](REPORT.md) have implementation fixes and regression coverage. The original audit evidence is retained separately from the corrected-behavior test results.
 
+The later [same-link reset follow-up](SAME-LINK-RESET.md) adds guarded resets and profile URL normalization, with updated regression results. It supersedes the replacement-code recovery advice below.
+
 | Audit issue | Corrected behavior |
 | --- | --- |
 | BUG-01 · False submission success | Stopping capture enters **Saving your session**. Completion requires acknowledgement of both recordings and the final result. Network/HTTP failures remain pending, expose **Retry saving**, and recover on reconnect or reload. |

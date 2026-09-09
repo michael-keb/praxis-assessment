@@ -76,10 +76,15 @@ export function startedAtMs(codeRow) {
   return Number.isFinite(legacy) ? legacy : null;
 }
 
-export function issueSessionToken(code) {
+export function sessionGeneration(codeRow) {
+  const generation = Number(codeRow?.session_generation);
+  return Number.isSafeInteger(generation) && generation >= 0 ? generation : 0;
+}
+
+export function issueSessionToken(code, generation = 0) {
   const ownerId = crypto.randomBytes(24).toString("base64url");
   return jwt.sign(
-    { kind: SESSION_TOKEN_KIND, caseId: code, ownerId },
+    { kind: SESSION_TOKEN_KIND, caseId: code, ownerId, sessionGeneration: generation },
     SESSION_SECRET,
     { algorithm: "HS256", jwtid: ownerId }
   );
@@ -96,27 +101,38 @@ export function sessionTokenFromRequest(req) {
   return { token: header || body || null, error: null };
 }
 
-export function verifySessionToken(token, code) {
-  if (!token) return null;
+export function verifySessionTokenDetails(token, code, expectedGeneration = 0) {
+  if (!token) return { ok: false, reason: "invalid" };
   try {
     const claims = jwt.verify(token, SESSION_SECRET, { algorithms: ["HS256"] });
+    const tokenGeneration = claims?.sessionGeneration === undefined ? 0 : claims.sessionGeneration;
     if (
       claims?.kind !== SESSION_TOKEN_KIND ||
       claims?.caseId !== code ||
+      !Number.isSafeInteger(tokenGeneration) ||
       typeof claims?.ownerId !== "string" ||
       claims.ownerId.length < 16 ||
       (claims.jti && claims.jti !== claims.ownerId)
-    ) return null;
-    return claims.ownerId;
+    ) return { ok: false, reason: "invalid" };
+    if (tokenGeneration !== expectedGeneration) {
+      return { ok: false, reason: "generation", tokenGeneration };
+    }
+    return { ok: true, ownerId: claims.ownerId, tokenGeneration };
   } catch {
-    return null;
+    return { ok: false, reason: "invalid" };
   }
+}
+
+export function verifySessionToken(token, code, expectedGeneration = 0) {
+  const result = verifySessionTokenDetails(token, code, expectedGeneration);
+  return result.ok ? result.ownerId : null;
 }
 
 export function ownership(codeRow, token) {
   if (!codeRow?.session_owner_id) return { ok: false, reason: "legacy" };
-  const ownerId = verifySessionToken(token, codeRow?.code);
-  if (!ownerId) return { ok: false, reason: "invalid" };
+  const verified = verifySessionTokenDetails(token, codeRow?.code, sessionGeneration(codeRow));
+  if (!verified.ok) return { ok: false, reason: verified.reason };
+  const ownerId = verified.ownerId;
   if (!safeEqual(ownerId, codeRow.session_owner_id)) {
     return { ok: false, reason: "mismatch", ownerId };
   }
@@ -133,6 +149,16 @@ export function legacySessionError() {
 
 export function ownershipError(reason) {
   if (reason === "legacy") return { status: 409, body: legacySessionError() };
+  if (reason === "generation") {
+    return {
+      status: 409,
+      body: {
+        error: "This assessment link was reset. Reload this same link to begin the current session.",
+        code: "session_generation_mismatch",
+        recovery: "Reload this same assessment link before continuing.",
+      },
+    };
+  }
   if (reason === "mismatch") {
     return {
       status: 409,
@@ -159,10 +185,11 @@ export function checkpointValue(row, { redactToken = false } = {}) {
   return value;
 }
 
-export function initialCheckpoint({ code, ownerId, sessionToken, startedAt, nowMs = Date.now() }) {
+export function initialCheckpoint({ code, ownerId, sessionToken, sessionGeneration: generation = 0, startedAt, nowMs = Date.now() }) {
   return {
     caseId: code,
     sessionToken,
+    sessionGeneration: generation,
     startedAt,
     pausedTotal: 0,
     pauseStartedAt: null,
@@ -211,7 +238,7 @@ function validMs(value) {
   return Number.isSafeInteger(value) && value >= 0;
 }
 
-export function normalizeCheckpoint(input, { code, sessionToken, expectedStartedAt }) {
+export function normalizeCheckpoint(input, { code, sessionToken, expectedStartedAt, expectedGeneration = 0 }) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return { error: "Checkpoint must be a JSON object." };
   }
@@ -266,6 +293,7 @@ export function normalizeCheckpoint(input, { code, sessionToken, expectedStarted
   const checkpoint = clone(input);
   checkpoint.caseId = code;
   checkpoint.sessionToken = sessionToken;
+  checkpoint.sessionGeneration = expectedGeneration;
   checkpoint.startedAt = expectedStartedAt;
   checkpoint.pendingTranscript = String(checkpoint.pendingTranscript || "");
   return { checkpoint };
@@ -405,6 +433,7 @@ function payloadFromCheckpoint(codeRow, row, reason, nowMs) {
   }
   log.push({ type: "end", reason, t: Math.floor(elapsedMs / 1000) });
   payload.caseId = codeRow.code;
+  payload.sessionGeneration = sessionGeneration(codeRow);
   payload.startedAt = startedAtMs(codeRow);
   payload.elapsedMs = elapsedMs;
   payload.pausedTotal = reason === "pause_limit"

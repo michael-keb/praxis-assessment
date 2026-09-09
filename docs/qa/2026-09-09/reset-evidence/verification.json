@@ -1,0 +1,46 @@
+{
+  "verifiedAt": "2026-09-09T09:30:58.696Z",
+  "suites": {
+    "experience": {
+      "passed": 41,
+      "failed": 0,
+      "skipped": 0,
+      "flaky": 0
+    },
+    "engineAndServer": {
+      "passed": 35,
+      "failed": 0
+    },
+    "briefFormatting": {
+      "passed": 6,
+      "failed": 0
+    }
+  },
+  "build": "passed",
+  "independentClientReview": "no actionable blockers",
+  "liveBeforeDeployment": {
+    "checked": 15,
+    "statuses": {
+      "unused": 5,
+      "submitted": 5,
+      "active": 4,
+      "void": 1
+    },
+    "briefExposed": 0
+  },
+  "sha256": {
+    "client/src/engine.js": "f5346bd31dd058a6ae0606958d8be0e0a1800b7a28bea76ebfad6be983b1bec1",
+    "client/src/pages/AssessmentPage.jsx": "8c7e3d11e7513c3088645646f1f3aeb0bbacc7b41cd114e87628052cf6ad5e54",
+    "client/src/profile-url.js": "3685d6ec87c9c3d5b4f3505ee63307113022f9874f43f2822375ba464c294f74",
+    "server/admin.js": "d8eac58528cd17a79dc15c80a9b18fb9fa8a66d3c665b2a697ebe51e6c209cb6",
+    "server/assessment-session.js": "454e5e0dc82c2af0a57791da4aa0a0be34fd4f9b9103a2bc07008b827019cea3",
+    "server/assessment.js": "9676b8cdb62090ad02070bdb5f11d8db20ffd25170f91f42a4d272f10fcfb021",
+    "server/db.js": "bd1349d4561ffc89b88f6d6d5a83e0fdae07c3f83824a391e3becc96c001b07a",
+    "server/openapi.js": "37ebe0120be57f1cc61ab336510750fb5d71ad19835d0999924f45e7c131861f",
+    "server/profile-url.js": "6ba0fcb4972b7bec16b512f5c39e22d54fa60a9881b500ca00c673cadf16f7fe",
+    "server/session-reset.js": "28e2889e901ccfb40893fe2077cf92f4a2704e7d119367de2d358c4267a1e73b",
+    "tests/microphone-gate.test.mjs": "4513f0f4f07cb519139ec2fe8120cda06b26d6c6620732d3de94632ae387e549",
+    "tests/server-sessions.test.mjs": "25202f768e81065bef758ead3af81e8f446149051dbbb0228415678c900c6524",
+    "docs/qa/2026-09-09/experience.spec.js": "01cfbf6e14f96f4ff9d195453703d198eadc607cd0db5186912b4edc313f4e81"
+  }
+}

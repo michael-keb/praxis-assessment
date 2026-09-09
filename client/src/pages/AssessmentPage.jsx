@@ -4,6 +4,7 @@ import { createEngine } from "../engine.js";
 import BriefContent from "../components/BriefContent.jsx";
 import { ChromeMicSetup } from "../components/ChromeMicSetup.jsx";
 import { isGoogleChrome } from "../chrome.js";
+import { normalizeProfileUrl } from "../profile-url.js";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
@@ -70,7 +71,17 @@ function Gate({ engine, snap }) {
   const [portfolioFiles, setPortfolioFiles] = useState([]);
 
   const gate = snap.assessment?.gateFields || { linkedin: true, upwork: false, cv: false, portfolio: false };
-  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const set = (key) => (e) => {
+    const value = e.target.value;
+    setForm(previous => ({ ...previous, [key]: value }));
+  };
+  const linkedin = normalizeProfileUrl(form.linkedin.trim(), 'linkedin');
+  const upwork = normalizeProfileUrl(form.upwork.trim(), 'upwork');
+  const linkedinInvalid = !!form.linkedin.trim() && !linkedin;
+  const upworkInvalid = !!form.upwork.trim() && !upwork;
+  const normalizeOnBlur = (key) => () => setForm(previous => ({
+    ...previous, [key]: normalizeProfileUrl(previous[key].trim(), key) || previous[key],
+  }));
 
   const cvOk = !gate.cv || (cvFile && /\.(pdf|doc|docx)$/i.test(cvFile.name) && cvFile.size <= 8 * 1024 * 1024);
   const IMAGE_OK = /\.(jpe?g|png|webp)$/i;
@@ -81,8 +92,8 @@ function Gate({ engine, snap }) {
   );
   const detailsComplete =
     form.name.trim() &&
-    (!gate.linkedin || /^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(form.linkedin.trim())) &&
-    (!gate.upwork || /^https?:\/\/(www\.)?upwork\.com\/.+/i.test(form.upwork.trim())) &&
+    (!gate.linkedin || linkedin) &&
+    (!gate.upwork || upwork) &&
     cvOk &&
     portfolioOk;
 
@@ -91,8 +102,8 @@ function Gate({ engine, snap }) {
     setError("");
     const result = await engine.begin({
       name: form.name.trim(),
-      linkedin: gate.linkedin ? form.linkedin.trim() : "",
-      upwork: gate.upwork ? form.upwork.trim() : "",
+      linkedin: gate.linkedin ? linkedin : "",
+      upwork: gate.upwork ? upwork : "",
       cvFile: gate.cv ? cvFile : null,
       portfolioFiles: gate.portfolio ? portfolioFiles : [],
     });
@@ -189,14 +200,24 @@ function Gate({ engine, snap }) {
           <div className="field">
             <label htmlFor="g-linkedin">LinkedIn profile URL</label>
             <input id="g-linkedin" type="url" value={form.linkedin} onChange={set("linkedin")}
+              onBlur={normalizeOnBlur('linkedin')} aria-invalid={linkedinInvalid}
+              aria-describedby={linkedinInvalid ? 'g-linkedin-error' : undefined}
               placeholder="https://www.linkedin.com/in/…" spellCheck="false" />
+            {linkedinInvalid && <p id="g-linkedin-error" style={{ fontSize: 12.5, color: 'var(--danger)', marginTop: 6 }}>
+              Enter a valid LinkedIn profile URL, such as linkedin.com/in/your-name.
+            </p>}
           </div>
         )}
         {gate.upwork && (
           <div className="field">
             <label htmlFor="g-upwork">Upwork profile URL</label>
             <input id="g-upwork" type="url" value={form.upwork} onChange={set("upwork")}
+              onBlur={normalizeOnBlur('upwork')} aria-invalid={upworkInvalid}
+              aria-describedby={upworkInvalid ? 'g-upwork-error' : undefined}
               placeholder="https://www.upwork.com/freelancers/~01…" spellCheck="false" />
+            {upworkInvalid && <p id="g-upwork-error" style={{ fontSize: 12.5, color: 'var(--danger)', marginTop: 6 }}>
+              Enter a valid Upwork profile URL, such as upwork.com/freelancers/~your-id.
+            </p>}
           </div>
         )}
         {gate.cv && (

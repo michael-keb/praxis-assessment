@@ -18,7 +18,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   const recordings = recordingStore || createRecordingStore(caseId);
   let duration = DEFAULT_DURATION;        // overridden from the assessment's duration once /session resolves
 
-  let state = {
+  const freshState = () => ({
     startedAt: null,
     candidate: null,        // {name, linkedin} captured at the gate
     pausedTotal: 0,
@@ -30,13 +30,15 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     done: false,
     doneReason: null,
     sessionToken: null,
+    sessionGeneration: 0,
     revision: 0,
     pendingSubmission: false,
     startPending: false,
     pendingTranscript: "",
     finishedAt: null,
     clockOffsetMs: 0,
-  };
+  });
+  let state = freshState();
 
   let phase = "loading";  // loading | gate | running | blocked | submitting | done | fatal
   let fatalInfo = null;   // {title, text}
@@ -65,6 +67,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   let destroyed = false;
   let captureGeneration = 0;
   let bootGeneration = 0;
+  let attemptEpoch = 0;
   let reconnecting = false;
   let reconnectTimer = null;
   let reconnectDeadline = null;
@@ -110,6 +113,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     if (preflightOnly) return;
     if (!state.startedAt && !state.startPending) return;
     const stored = load();
+    if (Number(stored?.sessionGeneration || 0) > state.sessionGeneration) return;
     if (stored?.sessionToken && stored.sessionToken !== state.sessionToken && (stored.startedAt || stored.startPending)) return;
     state.lastSavedAt = now();
     state.clockOffsetMs = clockOffsetMs;
@@ -139,6 +143,9 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   }
   function rememberOwner(token) {
     const stored = load();
+    if (Number(stored?.sessionGeneration || 0) > state.sessionGeneration) {
+      throw new Error('This assessment was reset. Reload this same link to start your fresh attempt.');
+    }
     if (stored?.sessionToken && stored.sessionToken !== token && (stored.startedAt || stored.startPending)) {
       throw new Error('This assessment is already being started in another tab. Return to that tab or reload this link to resume it.');
     }
@@ -163,6 +170,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     if (preflightOnly || !state.startedAt || !state.sessionToken || state.done) return;
     if (checkpointPromise && !keepalive) { checkpointDirty = true; return checkpointPromise; }
     checkpointDirty = false;
+    const epoch = attemptEpoch;
     const body = JSON.stringify(checkpointPayload());
     const send = async () => {
       try {
@@ -172,6 +180,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         });
         if (!res.ok) return;
         const info = await res.json().catch(() => ({}));
+        if (epoch !== attemptEpoch) return;
         if (info.status === 'submitted' && running && !finalized && !destroyed) finalize(info.endReason || 'pause_limit');
       } catch { /* The next checkpoint or final retry sends the full durable draft. */ }
     };
@@ -179,8 +188,10 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     checkpointPromise = send();
     try { await checkpointPromise; }
     finally {
-      checkpointPromise = null;
-      if (checkpointDirty) scheduleCheckpoint();
+      if (epoch === attemptEpoch) {
+        checkpointPromise = null;
+        if (checkpointDirty) scheduleCheckpoint();
+      }
     }
   }
   function commitPendingVoice() {
@@ -201,6 +212,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
       fatal: fatalInfo,
       blockedTitle,
       caseId,
+      sessionGeneration: state.sessionGeneration,
       remaining: remaining(),
       pauseBudgetLeft: PAUSE_LIMIT - Math.floor(pausedMsTotal() / 1000),
       zones: { ...state.zones },
@@ -770,6 +782,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         return { ok: false, message: 'This access code is not available for a microphone test. Check your code or reopen the assessment you already started.' };
       }
       state.sessionToken = session.sessionToken;
+      state.sessionGeneration = session.sessionGeneration || 0;
       const result = await checkMicrophone();
       const heard = [...transcriptTail, interim].filter(Boolean);
       stopTranscription();
@@ -864,22 +877,28 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   async function begin(details) {
     if (connecting || phase !== "gate" || destroyed) return { ok: false, message: "A connection check is already in progress." };
     connecting = true;
+    const epoch = attemptEpoch;
     try { return await beginChecked(details); }
-    finally { connecting = false; }
+    finally { if (epoch === attemptEpoch) connecting = false; }
   }
 
   async function beginChecked(details) {
+    const epoch = attemptEpoch;
     // Screen + mic first: the code must only bind once capture is actually live,
     // otherwise a declined share would burn the code with no session.
     const screen = await startCapture();
+    if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
     if (!screen.ok) return screen;
     if (destroyed) { stopSharing(); return { ok: false }; }
     try { await restoreFrames(); }
     catch {
+      if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
       stopSharing();
       return { ok: false, message: 'Could not save recordings in this browser. Enable site storage in Chrome and make sure your device has free space, then retry.' };
     }
+    if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
     const mic = await checkMicrophone();
+    if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
     if (!mic.ok) {
       stopSharing();
       stopTranscription();
@@ -922,12 +941,14 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
         stopSharing();
         stopTranscription();
         return { ok: false, reason: "rejected", message: body?.error || "The code was rejected by the server." };
       }
       // The brief is withheld until start — it arrives with this response.
       const body = await res.json().catch(() => null);
+      if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
       if (!body?.ok || !body.assessment) throw new Error('The start was not acknowledged.');
       if (destroyed || finalized) { stopSharing(); stopTranscription(); return { ok: false, reason: 'cancelled' }; }
       syncClock(body.serverNow);
@@ -940,11 +961,12 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
       state.pausedTotal = Math.max(0, now() - state.startedAt);
       state.revision = Math.max(state.revision || 0, body.checkpoint?.revision || 0);
     } catch (error) {
+      if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
       stopSharing();
       stopTranscription();
       micCheck = 'idle';
       emit();
-      return { ok: false, reason: 'connection', message: error.message?.includes('another tab') ? error.message : "Couldn't start your assessment. Check your connection and try again. Your brief and timer have not started." };
+      return { ok: false, reason: 'connection', message: /another tab|assessment was reset/.test(error.message) ? error.message : "Couldn't start your assessment. Check your connection and try again. Your brief and timer have not started." };
     }
     // Persist only what serializes — the File object stays out of localStorage.
     state.candidate = {
@@ -971,15 +993,19 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   async function reshare() {
     if (connecting || destroyed || finalized || phase !== 'blocked') return { ok: false, message: "This session cannot reconnect right now." };
     connecting = true;
+    const epoch = attemptEpoch;
     try { return await reshareChecked(); }
-    finally { connecting = false; }
+    finally { if (epoch === attemptEpoch) connecting = false; }
   }
 
   async function reshareChecked() {
+    const epoch = attemptEpoch;
     const result = screenLive() ? { ok: true } : await startCapture();
+    if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
     if (result.ok) {
       if (destroyed || finalized || phase !== 'blocked') { stopSharing(); return { ok: false, reason: 'cancelled' }; }
       const mic = await checkMicrophone();
+      if (epoch !== attemptEpoch) return { ok: false, reason: 'cancelled' };
       if (destroyed || finalized || phase !== 'blocked') { stopSharing(); stopTranscription(); return { ok: false, reason: 'cancelled' }; }
       if (!mic.ok) {
         stopSharing();
@@ -1023,21 +1049,25 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   async function retrySubmit() {
     if (submissionPromise || destroyed || !state.pendingSubmission || state.done) return submissionPromise;
     submissionError = '';
+    const epoch = attemptEpoch;
     emit();
     submissionPromise = (async () => {
       try {
         await restoreFrames();
         await Promise.all([...frameWrites]);
+        if (epoch !== attemptEpoch) return;
         // A durable server draft protects the transcript even if large image
         // uploads are interrupted. Only final acknowledgement enables Done.
         await checkpoint();
+        if (epoch !== attemptEpoch) return;
         if (!(await flushFrames())) throw new Error('Your recording has not finished uploading.');
+        if (epoch !== attemptEpoch) return;
         const res = await request(ENDPOINT, {
           method: 'POST', headers: headers(true), body: JSON.stringify(checkpointPayload()),
         });
         const out = await res.json().catch(() => ({}));
         if (!res.ok || out.ok !== true) throw new Error(out.error || 'The server has not confirmed your submission.');
-        if (destroyed) return;
+        if (destroyed || epoch !== attemptEpoch) return;
         state.done = true;
         state.doneReason = out.endReason || state.doneReason;
         state.pendingSubmission = false;
@@ -1046,23 +1076,27 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         save();
         setPhase('done');
       } catch (error) {
-        if (!destroyed) {
+        if (!destroyed && epoch === attemptEpoch) {
           submissionError = `${error.message || 'Your session could not be saved.'} Keep this tab open and retry when your connection is back.`;
           save();
           emit();
         }
-      } finally { submissionPromise = null; }
+      } finally { if (epoch === attemptEpoch) submissionPromise = null; }
     })();
     return submissionPromise;
   }
 
   /* ---------------- frames ---------------- */
   function restoreFrames() {
+    const epoch = attemptEpoch;
+    const sessionGeneration = state.sessionGeneration;
     if (!frameRestore) frameRestore = recordings.list().then(saved => {
+      if (epoch !== attemptEpoch) return;
       const existing = new Set(frameQueue.map(frame => frame.id));
-      frameQueue.push(...saved.filter(frame => !existing.has(frame.id)).map(frame => ({ ...frame, persisted: true })));
+      frameQueue.push(...saved.filter(frame => Number(frame.sessionGeneration || 0) === sessionGeneration && !existing.has(frame.id))
+        .map(frame => ({ ...frame, persisted: true })));
       frameQueue.sort((a, b) => a.t - b.t);
-    }).catch(error => { frameRestore = null; throw error; });
+    }).catch(error => { if (epoch === attemptEpoch) frameRestore = null; throw error; });
     return frameRestore;
   }
   function grabFrame() {
@@ -1072,39 +1106,47 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     captureCanvas.height = Math.round(captureVideo.videoHeight * scale);
     captureCanvas.getContext("2d").drawImage(captureVideo, 0, 0, captureCanvas.width, captureCanvas.height);
     const t = tSec();
+    const epoch = attemptEpoch;
+    const sessionGeneration = state.sessionGeneration;
     const saving = new Promise(resolve => captureCanvas.toBlob(resolve, 'image/jpeg', 0.55)).then(async blob => {
       if (!blob) return;
-      const frame = { id: `${caseId}:f_${t}.jpg`, t, blob, persisted: false };
+      const frame = { id: `${caseId}:${sessionGeneration}:f_${t}.jpg`, sessionGeneration, t, blob, persisted: false };
       if (frameQueue.some(existing => existing.id === frame.id)) return;
-      frameQueue.push(frame);
+      if (epoch === attemptEpoch) frameQueue.push(frame);
       try { await recordings.put(frame); frame.persisted = true; }
       catch {
-        if (!finalized && !destroyed) block('Recording storage interrupted');
+        if (!finalized && !destroyed && epoch === attemptEpoch) block('Recording storage interrupted');
       }
-      emit();
+      if (epoch === attemptEpoch) emit();
     });
     frameWrites.add(saving);
-    void saving.finally(() => { frameWrites.delete(saving); if (!destroyed) void flushFrames(); });
+    void saving.finally(() => {
+      frameWrites.delete(saving);
+      if (!destroyed && epoch === attemptEpoch) void flushFrames();
+    });
   }
   async function flushFrames() {
     if (frameUpload) return frameUpload;
     if (destroyed) return false;
+    const epoch = attemptEpoch;
     frameUpload = (async () => {
       try {
         await restoreFrames();
         await Promise.all([...frameWrites]);
         while (frameQueue.length) {
-          if (destroyed) return false;
+          if (destroyed || epoch !== attemptEpoch) return false;
           const batch = frameQueue.slice(0, 30);
           for (const frame of batch) {
             if (!frame.persisted) { await recordings.put(frame); frame.persisted = true; }
           }
+          if (epoch !== attemptEpoch) return false;
           const fd = new FormData();
           fd.append('caseId', caseId);
           fd.append('sessionToken', state.sessionToken || '');
           batch.forEach(frame => fd.append('frames', frame.blob, `f_${frame.t}.jpg`));
           const res = await request(ENDPOINT + '/frames', { method: 'POST', headers: headers(), body: fd });
           const out = await res.json().catch(() => ({}));
+          if (epoch !== attemptEpoch) return false;
           if (!res.ok || out.ok !== true || out.saved !== batch.length) return false;
           const acknowledged = new Set(batch.map(frame => frame.id));
           frameQueue = frameQueue.filter(frame => !acknowledged.has(frame.id));
@@ -1116,7 +1158,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         }
         return true;
       } catch { return false; }
-      finally { frameUpload = null; }
+      finally { if (epoch === attemptEpoch) frameUpload = null; }
     })();
     return frameUpload;
   }
@@ -1266,6 +1308,46 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   function readOwner() {
     try { return localStorage.getItem(OWNER_KEY) || load()?.sessionToken || null; } catch { return null; }
   }
+
+  function resetLocalAttempt(sessionGeneration, { owner = null, clearStored = false } = {}) {
+    // A reset reuses the URL, but none of the prior attempt's asynchronous
+    // work, saved completion flag, owner or recording queue belongs to it.
+    attemptEpoch++;
+    requests.forEach(controller => controller.abort());
+    stopLoops();
+    running = false;
+    stopTranscription();
+    stopSharing();
+    state = { ...freshState(), sessionGeneration, sessionToken: owner };
+    finalized = false;
+    connecting = false;
+    submissionError = '';
+    submissionPromise = null;
+    checkpointPromise = null;
+    checkpointDirty = false;
+    frameUpload = null;
+    frameRestore = null;
+    frameWrites.clear();
+    frameQueue = [];
+    interim = '';
+    transcriptTail = [];
+    micCheck = 'idle';
+    silentLogged = false;
+    tabAway = false;
+    currentZone = null;
+    idleSince = null;
+    briefWasHidden = false;
+    anyZoneTouched = false;
+    clockOffsetMs = 0;
+    if (clearStored) {
+      localStorage.removeItem(STORE_KEY);
+      localStorage.removeItem(OWNER_KEY);
+      if (owner) localStorage.setItem(OWNER_KEY, owner);
+    }
+    // Old unacknowledged images stay in their own generation in IndexedDB.
+    // They cannot be uploaded as part of this fresh attempt.
+  }
+
   async function boot() {
     if (preflightOnly) return;
     destroyed = false;
@@ -1284,7 +1366,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         "The link is missing its access code. Please use the exact link you were sent.");
       return;
     }
-    const local = load();
+    let local = load();
     clockOffsetMs = Number.isFinite(local?.clockOffsetMs) ? local.clockOffsetMs : 0;
     state.sessionToken = readOwner();
     try {
@@ -1292,6 +1374,19 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         if (!res.ok) throw new Error('Session status is unavailable.');
         const info = await res.json();
         if (destroyed || generation !== bootGeneration) return;
+        const sessionGeneration = Number.isSafeInteger(info.sessionGeneration) && info.sessionGeneration >= 0
+          ? info.sessionGeneration : 0;
+        const staleLocal = !!local && Number(local.sessionGeneration || 0) !== sessionGeneration;
+        if (staleLocal || state.sessionGeneration !== sessionGeneration) {
+          const owner = info.owned === true || (!staleLocal && local?.startPending) ? state.sessionToken : null;
+          if (staleLocal) local = null;
+          resetLocalAttempt(sessionGeneration, {
+            owner,
+            clearStored: staleLocal || (!local && info.owned !== true),
+          });
+        }
+        state.sessionGeneration = sessionGeneration;
+        if (local?.startedAt && Number.isFinite(local.clockOffsetMs)) clockOffsetMs = local.clockOffsetMs;
         // Once started, retain this browser's established clock basis across
         // reloads so an individual response cannot rewind elapsed time.
         if (!local?.startedAt) syncClock(info.serverNow);
@@ -1305,7 +1400,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
             "This assessment code is no longer active. Contact the person who invited you for a new link.");
         } else if (info.status === "submitted") {
           if (info.owned && state.sessionToken) {
-            state = { ...state, ...(info.checkpoint || {}), ...(local || {}), sessionToken: state.sessionToken };
+            state = { ...state, ...(info.checkpoint || {}), ...(local || {}), sessionToken: state.sessionToken, sessionGeneration };
             state.revision = Math.max(Number(state.revision || 0), Number(info.finalRevision || 0));
             state.doneReason = info.endReason || state.doneReason || 'submitted';
             await restoreFrames();
@@ -1350,7 +1445,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
             fatal('Could not restore this session', 'Your saved session could not be loaded. Please retry or contact the person who invited you.');
             return;
           }
-          proceedLocally({ ...saved, sessionToken: state.sessionToken });
+          proceedLocally({ ...saved, sessionToken: state.sessionToken, sessionGeneration });
         } else if (info.status === 'unused' && info.sessionToken) {
           // Do not overwrite another tab's active local draft until this
           // attempt actually owns a start. Keep this token in memory for now.

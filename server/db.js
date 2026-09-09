@@ -8,8 +8,10 @@ import { fileURLToPath } from "node:url";
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 export const SUBMISSIONS_DIR = path.join(DATA_DIR, "submissions");
+export const ARCHIVES_DIR = path.join(DATA_DIR, "submission-archives");
 
 fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
+fs.mkdirSync(ARCHIVES_DIR, { recursive: true });
 
 export const db = new Database(path.join(DATA_DIR, "assessment.db"));
 db.pragma("journal_mode = WAL");
@@ -67,6 +69,9 @@ for (const [col, type] of [
   ["assessment_snapshot", "TEXT"],
   ["started_at_ms", "INTEGER"],
   ["final_revision", "INTEGER"],
+  ["session_generation", "INTEGER NOT NULL DEFAULT 0"],
+  ["last_reset_request_id", "TEXT"],
+  ["reset_at", "TEXT"],
 ]) {
   try { db.exec(`ALTER TABLE codes ADD COLUMN ${col} ${type}`); } catch { /* exists */ }
 }
@@ -91,6 +96,20 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_session_checkpoints_received
     ON session_checkpoints(received_at_ms);
+
+  CREATE TABLE IF NOT EXISTS session_resets (
+    request_id          TEXT PRIMARY KEY,
+    code                TEXT NOT NULL REFERENCES codes(code),
+    from_generation     INTEGER NOT NULL,
+    to_generation       INTEGER NOT NULL,
+    from_status         TEXT NOT NULL,
+    archive_id          TEXT NOT NULL,
+    reset_at            TEXT NOT NULL,
+    code_record_json    TEXT NOT NULL,
+    checkpoint_json     TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_session_resets_code
+    ON session_resets(code, to_generation DESC);
 `);
 
 export const DEFAULT_DURATION_MINUTES = 15;

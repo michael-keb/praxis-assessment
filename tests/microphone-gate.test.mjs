@@ -39,7 +39,7 @@ async function harness(t, { assembly = false, micDenied = false, pendingMic = fa
   }
   put('window', { SpeechRecognition: SR, AudioContext: AC, addEventListener() {}, removeEventListener() {} });
   put('document', { createElement: () => ({ play: () => Promise.resolve() }), addEventListener() {}, removeEventListener() {} });
-  put('localStorage', { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value) });
+  put('localStorage', { getItem: key => store.get(key) || null, setItem: (key, value) => store.set(key, value), removeItem: key => store.delete(key) });
   put('navigator', { mediaDevices: {
     getDisplayMedia: async () => { const tr = track(); screens.push(tr); return { getTracks: () => [tr], getVideoTracks: () => [tr] }; },
     getUserMedia: async () => {
@@ -249,6 +249,105 @@ test('reopening a server-finalized session saves newer local words before showin
   assert.equal(h.engine.snapshot().doneReason, 'pause_limit');
   assert.equal(h.screens[0].readyState, 'ended');
   assert.equal(h.recognizers[0].stopped, true);
+});
+
+test('a delayed final acknowledgement from before reset cannot complete the fresh attempt', async t => {
+  const h = await harness(t);
+  const first = h.engine.begin(details);
+  await flush();
+  h.recognizers[0].say('Ready');
+  await first;
+  h.recognizers[0].say('Evidence from the prior attempt');
+  const originalFetch = globalThis.fetch;
+  let releaseFinal;
+  globalThis.fetch = async (url, options) => {
+    if (url.includes('/session?')) return { ok: true, json: async () => ({
+      status: 'unused', sessionGeneration: 1, sessionToken: 'fresh-owner',
+      assessment: { title: 'Fresh brief', durationSeconds: 900 },
+    }) };
+    if (url === '/api/assessment') return { ok: true, json: () => new Promise(resolve => { releaseFinal = resolve; }) };
+    return originalFetch(url, options);
+  };
+  h.engine.submit();
+  await flush();
+  assert.equal(typeof releaseFinal, 'function');
+  await h.engine.boot();
+  assert.equal(h.engine.snapshot().phase, 'gate');
+  assert.equal(h.engine.snapshot().sessionGeneration, 1);
+  assert.equal(h.store.has('praxis_assess_TEST01'), false);
+  h.micTrack.readyState = 'live';
+  const second = h.engine.begin(details);
+  await flush();
+  h.recognizers.at(-1).say('Ready for the fresh attempt');
+  assert.equal((await second).ok, true);
+  releaseFinal({ ok: true, endReason: 'submitted' });
+  await flush();
+  assert.equal(h.engine.snapshot().phase, 'running');
+  const saved = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  assert.equal(saved.sessionGeneration, 1);
+  assert.equal(saved.sessionToken, 'fresh-owner');
+  assert.equal(saved.done, false);
+  assert.equal(saved.log.some(event => event.text === 'Evidence from the prior attempt'), false);
+});
+
+test('a delayed start response from before reset cannot unlock or replace the fresh attempt', async t => {
+  const h = await harness(t);
+  const originalFetch = globalThis.fetch;
+  let reset = false, releaseStart;
+  globalThis.fetch = async (url, options) => {
+    if (reset && url.includes('/session?')) return { ok: true, json: async () => ({
+      status: 'unused', sessionGeneration: 1, sessionToken: 'fresh-owner',
+      assessment: { title: 'Fresh brief', durationSeconds: 900 },
+    }) };
+    if (!reset && url.endsWith('/start')) return { ok: true, json: () => new Promise(resolve => { releaseStart = resolve; }) };
+    return originalFetch(url, options);
+  };
+  const first = h.engine.begin({ name: 'Prior candidate' });
+  await flush();
+  h.recognizers[0].say('Ready');
+  await flush();
+  assert.equal(typeof releaseStart, 'function');
+  reset = true;
+  await h.engine.boot();
+  assert.equal(h.engine.snapshot().phase, 'gate');
+  h.micTrack.readyState = 'live';
+  const second = h.engine.begin({ name: 'Fresh candidate' });
+  await flush();
+  h.recognizers.at(-1).say('Ready again');
+  assert.equal((await second).ok, true);
+  releaseStart({ ok: true, startedAt: Date.now() - 600000, assessment: { title: 'Old brief', durationSeconds: 60 } });
+  assert.equal((await first).ok, false);
+  assert.equal(h.engine.snapshot().phase, 'running');
+  assert.equal(h.engine.snapshot().duration, 900);
+  const saved = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  assert.equal(saved.candidate.name, 'Fresh candidate');
+  assert.equal(saved.sessionGeneration, 1);
+  assert.equal(saved.sessionToken, 'fresh-owner');
+});
+
+test('reloading a fresh generation keeps its owned draft and established server clock', async t => {
+  const h = await harness(t);
+  const serverNow = Date.now() - 600000;
+  const checkpoint = {
+    sessionGeneration: 1, sessionToken: 'fresh-owner', startedAt: serverNow - 2000,
+    lastSavedAt: serverNow, clockOffsetMs: -600000, pausedTotal: 0, pauseStartedAt: null,
+    revision: 4, candidate: { name: 'Fresh candidate' },
+    log: [{ type: 'voice', t: 1, text: 'Keep this current attempt' }],
+  };
+  h.store.set('praxis_assess_TEST01', JSON.stringify(checkpoint));
+  h.store.set('praxis_owner_TEST01', 'fresh-owner');
+  globalThis.fetch = async url => ({ ok: true, json: async () => url.includes('/session?') ? {
+    status: 'active', owned: true, sessionGeneration: 1, serverNow, checkpoint,
+    assessment: { title: 'Fresh brief', durationSeconds: 900 },
+  } : { ok: true, status: 'active' } });
+  await h.engine.boot();
+  assert.equal(h.engine.snapshot().phase, 'blocked');
+  assert.ok(h.engine.snapshot().remaining >= 897);
+  assert.ok(h.engine.snapshot().pauseBudgetLeft >= 299);
+  const saved = JSON.parse(h.store.get('praxis_assess_TEST01'));
+  assert.equal(saved.sessionGeneration, 1);
+  assert.equal(saved.sessionToken, 'fresh-owner');
+  assert.ok(saved.log.some(event => event.text === 'Keep this current attempt'));
 });
 
 test('AssemblyAI open but silent times out and stops the mic and socket', async t => {

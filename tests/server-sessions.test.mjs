@@ -1,7 +1,16 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import jwt from "jsonwebtoken";
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import net from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -176,6 +185,10 @@ async function review(code) {
   return request(`/api/admin/sessions/${code}`, { admin: true });
 }
 
+async function resetCode(code, body) {
+  return request(`/api/admin/codes/${code}/reset`, { admin: true, method: "POST", body });
+}
+
 before(async () => {
   dataDir = mkdtempSync(path.join(tmpdir(), "praxis-server-sessions-"));
   port = await unusedPort();
@@ -203,6 +216,7 @@ test("unused codes receive unique signed tokens, default metadata, and cannot su
   const second = await session(code);
   assert.equal(first.status, 200);
   assert.equal(first.body.status, "unused");
+  assert.equal(first.body.sessionGeneration, 0);
   assert.deepEqual(first.body.assessment, {
     title: "Assessment",
     durationSeconds: 900,
@@ -233,6 +247,8 @@ test("unused codes receive unique signed tokens, default metadata, and cannot su
   assert.equal(Number.isSafeInteger(started.body.startedAt), true);
   assert.equal(started.body.checkpoint.revision, 0);
   assert.equal(started.body.checkpoint.sessionToken, first.body.sessionToken);
+  assert.equal(started.body.sessionGeneration, 0);
+  assert.equal(started.body.checkpoint.sessionGeneration, 0);
 });
 
 test("protected routes reject a missing token promptly", async () => {
@@ -654,12 +670,277 @@ test("pause-budget expiry uses the persisted receipt time and survives a server 
   assert.equal(ownerView.body.owned, true);
 });
 
-test("OpenAPI documents session ownership, checkpoints, and protected uploads", async () => {
+test("profile gates normalize bare expected hosts and reject ambiguous URLs", async () => {
+  const assessment = await createAssessment({
+    title: "Profile URL test",
+    requireLinkedin: true,
+    requireUpwork: true,
+  });
+  const code = await issueCode(assessment.id);
+  const token = (await session(code)).body.sessionToken;
+  const valid = {
+    linkedin: "linkedin.com/in/example-person",
+    upwork: "www.upwork.com/freelancers/example-person",
+  };
+  const invalid = [
+    { ...valid, linkedin: "linkedin.com" },
+    { ...valid, linkedin: "https://linkedin.com.evil.test/in/example-person" },
+    { ...valid, linkedin: "https://attacker@linkedin.com/in/example-person" },
+    { ...valid, linkedin: " linkedin.com/in/example-person" },
+    { ...valid, linkedin: "ftp://linkedin.com/in/example-person" },
+    { ...valid, upwork: "upwork.com" },
+    { ...valid, upwork: "https://www.upwork.com.evil.test/freelancers/example-person" },
+    { ...valid, upwork: "https://attacker@upwork.com/freelancers/example-person" },
+    { ...valid, upwork: "www.upwork.com/freelancers/example person" },
+  ];
+  for (const details of invalid) {
+    const rejected = await start(code, token, details);
+    assert.equal(rejected.status, 400, `${JSON.stringify(details)}: ${rejected.text}`);
+  }
+
+  const accepted = await start(code, token, valid);
+  assert.equal(accepted.status, 200, accepted.text);
+  const admin = await review(code);
+  assert.equal(admin.body.candidate.linkedin, "https://linkedin.com/in/example-person");
+  assert.equal(admin.body.candidate.upwork, "https://www.upwork.com/freelancers/example-person");
+});
+
+test("guarded reset archives an owned submission, is idempotent, and invalidates old tokens", async () => {
+  const assessment = await createAssessment({ title: "Owned reset test" });
+  const code = await issueCode(assessment.id);
+  const issued = await session(code);
+  const oldToken = issued.body.sessionToken;
+  const started = await start(code, oldToken, { name: "Prior candidate" });
+  const saved = await checkpoint(checkpointBody(code, oldToken, started.body.startedAt, {
+    revision: 4,
+    log: [{ type: "voice", text: "prior durable answer", t: 1 }],
+  }));
+  assert.equal(saved.status, 200, saved.text);
+  const final = await request("/api/assessment", {
+    method: "POST",
+    headers: { "X-Assessment-Session": oldToken },
+    body: {
+      ...checkpointBody(code, oldToken, started.body.startedAt, { revision: 5 }),
+      log: [
+        { type: "voice", text: "prior final answer", t: 1 },
+        { type: "end", reason: "submitted", t: 2 },
+      ],
+    },
+  });
+  assert.equal(final.status, 200, final.text);
+  const frame = new FormData();
+  frame.append("caseId", code);
+  frame.append("sessionToken", oldToken);
+  frame.append("frames", new Blob(["prior frame"], { type: "image/jpeg" }), "f_9.jpg");
+  assert.equal((await request("/api/assessment/frames", {
+    method: "POST",
+    headers: { "X-Assessment-Session": oldToken },
+    body: frame,
+  })).status, 200);
+
+  const before = await review(code);
+  assert.equal(before.body.code.status, "submitted");
+  assert.equal(before.body.code.session_generation, 0);
+  assert.equal(before.body.checkpoint.revision, 4);
+
+  const badGeneration = await resetCode(code, {
+    requestId: `wrong-generation-${code}`,
+    expectedGeneration: 1,
+    expectedStatus: "submitted",
+  });
+  assert.equal(badGeneration.status, 409);
+  assert.equal(badGeneration.body.code, "reset_generation_conflict");
+  const badStatus = await resetCode(code, {
+    requestId: `wrong-status-${code}`,
+    expectedGeneration: 0,
+    expectedStatus: "active",
+  });
+  assert.equal(badStatus.status, 409);
+  assert.equal(badStatus.body.code, "reset_status_conflict");
+  assert.equal((await review(code)).body.code.status, "submitted");
+
+  const requestId = `owned-reset-${code}`;
+  const resetRequest = { requestId, expectedGeneration: 0, expectedStatus: "submitted" };
+  const reset = await resetCode(code, resetRequest);
+  assert.equal(reset.status, 200, reset.text);
+  assert.equal(reset.body.idempotent, false);
+  assert.equal(reset.body.code.code, code);
+  assert.equal(reset.body.code.assessment_id, assessment.id);
+  assert.equal(reset.body.code.created_at, before.body.code.created_at);
+  assert.equal(reset.body.code.status, "unused");
+  assert.equal(reset.body.code.session_generation, 1);
+  assert.equal(reset.body.code.session_owner_id, null);
+  assert.equal(reset.body.code.assessment_snapshot, null);
+  assert.equal(reset.body.code.final_revision, null);
+  assert.equal(reset.body.code.candidate_name, null);
+
+  const archiveDir = path.join(dataDir, "submission-archives", code, reset.body.reset.archiveId);
+  assert.equal(existsSync(path.join(archiveDir, "payload.json")), true);
+  assert.equal(existsSync(path.join(archiveDir, "frames", "f_9.jpg")), true);
+  assert.equal(existsSync(path.join(archiveDir, "_reset", "code-record.json")), true);
+  assert.equal(existsSync(path.join(archiveDir, "_reset", "checkpoint-record.json")), true);
+  const archivedCode = JSON.parse(readFileSync(path.join(archiveDir, "_reset", "code-record.json"), "utf8"));
+  const archivedCheckpoint = JSON.parse(readFileSync(path.join(archiveDir, "_reset", "checkpoint-record.json"), "utf8"));
+  assert.equal(archivedCode.candidate_name, "Prior candidate");
+  assert.equal(JSON.parse(archivedCheckpoint.checkpoint_json).log[0].text, "prior durable answer");
+  assert.deepEqual(readdirSync(path.join(dataDir, "submissions", code)), []);
+
+  const after = await review(code);
+  assert.equal(after.body.candidate, null);
+  assert.equal(after.body.payload, null);
+  assert.equal(after.body.checkpoint, null);
+  assert.deepEqual(after.body.frames, []);
+  assert.equal(after.body.resets[0].requestId, requestId);
+
+  const retry = await resetCode(code, resetRequest);
+  assert.equal(retry.status, 200, retry.text);
+  assert.equal(retry.body.idempotent, true);
+  assert.equal(retry.body.reset.archiveId, reset.body.reset.archiveId);
+  assert.equal(readdirSync(path.join(dataDir, "submission-archives", code)).length, 1);
+
+  const staleStart = await start(code, oldToken);
+  assert.equal(staleStart.status, 409);
+  assert.equal(staleStart.body.code, "session_generation_mismatch");
+  assert.match(`${staleStart.body.error} ${staleStart.body.recovery}`, /reload.*same.*link/i);
+
+  const refreshed = await session(code, oldToken);
+  assert.equal(refreshed.body.status, "unused");
+  assert.equal(refreshed.body.sessionGeneration, 1);
+  assert.notEqual(refreshed.body.sessionToken, oldToken);
+  const restarted = await start(code, refreshed.body.sessionToken, { name: "New candidate" });
+  assert.equal(restarted.status, 200, restarted.text);
+  assert.equal(restarted.body.sessionGeneration, 1);
+  assert.equal(restarted.body.checkpoint.sessionGeneration, 1);
+  assert.equal((await session(code, oldToken)).body.owned, false);
+  assert.equal(existsSync(path.join(archiveDir, "payload.json")), true);
+
+  const retryAfterRestart = await resetCode(code, resetRequest);
+  assert.equal(retryAfterRestart.status, 200, retryAfterRestart.text);
+  assert.equal(retryAfterRestart.body.idempotent, true);
+  assert.equal(retryAfterRestart.body.code.status, "active");
+  assert.equal(retryAfterRestart.body.code.session_generation, 1);
+  assert.equal((await session(code, refreshed.body.sessionToken)).body.owned, true);
+
+  const anotherCode = await issueCode(assessment.id);
+  const reusedRequestId = await resetCode(anotherCode, {
+    requestId,
+    expectedGeneration: 0,
+    expectedStatus: "unused",
+  });
+  assert.equal(reusedRequestId.status, 409);
+  assert.equal(reusedRequestId.body.code, "reset_request_id_conflict");
+});
+
+test("reset preserves a legacy submission archive while reusing the same code", async () => {
+  const assessment = await createAssessment({ title: "Legacy submitted reset" });
+  const code = await issueCode(assessment.id);
+  const startedAt = new Date(Date.now() - 9_000).toISOString();
+  db.prepare(`
+    UPDATE codes SET status = 'submitted', started_at = ?, submitted_at = ?, end_reason = 'submitted',
+      candidate_name = 'Legacy candidate', candidate_linkedin = 'https://linkedin.com/in/legacy'
+    WHERE code = ?
+  `).run(startedAt, new Date().toISOString(), code);
+  const legacyDir = path.join(dataDir, "submissions", code);
+  mkdirSync(path.join(legacyDir, "audio"), { recursive: true });
+  writeFileSync(path.join(legacyDir, "payload.json"), JSON.stringify({
+    caseId: code,
+    log: [{ type: "voice", text: "legacy evidence" }],
+  }));
+  writeFileSync(path.join(legacyDir, "audio", "voice_1.webm"), "legacy audio");
+
+  const reset = await resetCode(code, {
+    requestId: `legacy-reset-${code}`,
+    expectedGeneration: 0,
+    expectedStatus: "submitted",
+  });
+  assert.equal(reset.status, 200, reset.text);
+  assert.equal(reset.body.code.code, code);
+  assert.equal(reset.body.code.assessment_id, assessment.id);
+  assert.equal(reset.body.code.status, "unused");
+  assert.equal(reset.body.code.session_generation, 1);
+  const archiveDir = path.join(dataDir, "submission-archives", code, reset.body.reset.archiveId);
+  assert.equal(JSON.parse(readFileSync(path.join(archiveDir, "payload.json"), "utf8")).log[0].text, "legacy evidence");
+  assert.equal(readFileSync(path.join(archiveDir, "audio", "voice_1.webm"), "utf8"), "legacy audio");
+  assert.equal(JSON.parse(readFileSync(path.join(archiveDir, "_reset", "code-record.json"), "utf8")).candidate_name, "Legacy candidate");
+  assert.equal(JSON.parse(readFileSync(path.join(archiveDir, "_reset", "checkpoint-record.json"), "utf8")), null);
+  const next = await session(code);
+  assert.equal(next.body.status, "unused");
+  assert.equal(next.body.sessionGeneration, 1);
+});
+
+test("deployed generation-less tokens work at generation zero and expire after reset", async () => {
+  const assessment = await createAssessment({ title: "Legacy token compatibility" });
+  const code = await issueCode(assessment.id);
+  const ownerId = `deployed-owner-${code}-1234567890`;
+  const legacyToken = jwt.sign(
+    { kind: "assessment-session-v1", caseId: code, ownerId },
+    "sessions-local-jwt-only",
+    { algorithm: "HS256", jwtid: ownerId }
+  );
+  const started = await start(code, legacyToken, { name: "Generation zero owner" });
+  assert.equal(started.status, 200, started.text);
+  assert.equal(started.body.sessionGeneration, 0);
+  assert.equal((await session(code, legacyToken)).body.owned, true);
+
+  const reset = await resetCode(code, {
+    requestId: `legacy-token-reset-${code}`,
+    expectedGeneration: 0,
+    expectedStatus: "active",
+  });
+  assert.equal(reset.status, 200, reset.text);
+  assert.equal(reset.body.code.session_generation, 1);
+  const stale = await start(code, legacyToken);
+  assert.equal(stale.status, 409);
+  assert.equal(stale.body.code, "session_generation_mismatch");
+});
+
+test("a failed reset rolls database and filesystem evidence back together", async () => {
+  const assessment = await createAssessment({ title: "Reset rollback test" });
+  const code = await issueCode(assessment.id);
+  const token = (await session(code)).body.sessionToken;
+  const started = await start(code, token);
+  await checkpoint(checkpointBody(code, token, started.body.startedAt, {
+    revision: 3,
+    log: [{ type: "voice", text: "must survive reset failure", t: 1 }],
+  }));
+  const evidence = path.join(dataDir, "submissions", code, "frames", "f_1.jpg");
+  mkdirSync(path.dirname(evidence), { recursive: true });
+  writeFileSync(evidence, "rollback frame");
+
+  db.exec(`
+    CREATE TRIGGER fail_guarded_reset
+    BEFORE UPDATE OF status ON codes
+    WHEN OLD.code = '${code}' AND NEW.status = 'unused'
+    BEGIN SELECT RAISE(ABORT, 'forced reset failure'); END;
+  `);
+  let failed;
+  try {
+    failed = await resetCode(code, {
+      requestId: `rollback-reset-${code}`,
+      expectedGeneration: 0,
+      expectedStatus: "active",
+    });
+  } finally {
+    db.exec("DROP TRIGGER IF EXISTS fail_guarded_reset");
+  }
+  assert.equal(failed.status, 500, failed.text);
+  assert.equal(failed.body.code, "reset_failed");
+  assert.equal(db.prepare("SELECT status FROM codes WHERE code = ?").get(code).status, "active");
+  assert.equal(db.prepare("SELECT session_generation FROM codes WHERE code = ?").get(code).session_generation, 0);
+  assert.equal(db.prepare("SELECT revision FROM session_checkpoints WHERE code = ?").get(code).revision, 3);
+  assert.equal(readFileSync(evidence, "utf8"), "rollback frame");
+  assert.equal(existsSync(path.join(dataDir, "submissions", code, "_reset")), false);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM session_resets WHERE code = ?").get(code).n, 0);
+  assert.equal((await session(code, token)).body.owned, true);
+});
+
+test("OpenAPI documents session ownership, generation reset, checkpoints, and protected uploads", async () => {
   const spec = await request("/api/openapi.json");
   assert.equal(spec.status, 200, spec.text);
   assert.ok(spec.body.components.securitySchemes.assessmentSession);
   assert.ok(spec.body.components.schemas.AssessmentCheckpoint);
   assert.ok(spec.body.paths["/api/assessment/checkpoint"]?.post);
+  assert.ok(spec.body.paths["/api/admin/codes/{code}/reset"]?.post);
   assert.match(spec.body.paths["/api/assessment/session"].get.description, /owner/i);
   assert.match(spec.body.paths["/api/assessment/frames"].post.description, /submitted/i);
 });

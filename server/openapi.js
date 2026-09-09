@@ -37,7 +37,7 @@ export const openapiSpec = {
         type: "apiKey",
         in: "header",
         name: "X-Assessment-Session",
-        description: "Signed candidate-browser owner token returned by GET /api/assessment/session while a code is unused. JSON and multipart routes also accept the same value in a sessionToken body field."
+        description: "Signed candidate-browser owner token returned by GET /api/assessment/session while a code is unused. It is scoped to the code's current sessionGeneration, so an admin reset immediately invalidates earlier tokens. JSON and multipart routes also accept the same value in a sessionToken body field."
       },
       apiKey: {
         type: "http",
@@ -111,12 +111,13 @@ export const openapiSpec = {
       AssessmentCheckpoint: {
         type: "object",
         required: [
-          "caseId", "sessionToken", "startedAt", "pausedTotal", "pauseStartedAt",
+          "caseId", "sessionToken", "sessionGeneration", "startedAt", "pausedTotal", "pauseStartedAt",
           "lastSavedAt", "log", "revision", "phase", "elapsedMs"
         ],
         properties: {
           caseId: { $ref: "#/components/schemas/Code" },
           sessionToken: { type: "string", description: "Signed browser-owner token. Removed from the admin representation." },
+          sessionGeneration: { type: "integer", minimum: 0, description: "Server generation for this use of the code. The server clamps persisted checkpoints to the token's current generation." },
           startedAt: { type: "integer", format: "int64", description: "Server-issued Unix time in milliseconds; must exactly match the start response." },
           pausedTotal: { type: "integer", format: "int64", minimum: 0, description: "Completed cumulative pause time in milliseconds." },
           pauseStartedAt: { type: "integer", format: "int64", minimum: 0, nullable: true },
@@ -171,6 +172,9 @@ export const openapiSpec = {
           end_reason: { type: "string", nullable: true },
           started_at_ms: { type: "integer", format: "int64", nullable: true },
           final_revision: { type: "integer", nullable: true },
+          session_generation: { type: "integer", minimum: 0, description: "Increments on every guarded reset; tokens from earlier generations are rejected." },
+          last_reset_request_id: { type: "string", nullable: true },
+          reset_at: { type: "string", format: "date-time", nullable: true },
           assessment_snapshot: { type: "string", nullable: true, description: "Internal JSON snapshot frozen at start." },
           session_owner_id: { type: "string", nullable: true, description: "Opaque signed-token owner identifier; null on pre-migration rows." },
           candidate_name: { type: "string", nullable: true },
@@ -179,6 +183,18 @@ export const openapiSpec = {
           candidate_upwork: { type: "string", nullable: true },
           frames: { type: "integer", description: "Frame files captured on disk." },
           audio: { type: "integer", description: "Voice-over chunks captured on disk." }
+        }
+      },
+      SessionReset: {
+        type: "object",
+        required: ["requestId", "fromGeneration", "toGeneration", "fromStatus", "archiveId", "resetAt"],
+        properties: {
+          requestId: { type: "string" },
+          fromGeneration: { type: "integer", minimum: 0 },
+          toGeneration: { type: "integer", minimum: 1 },
+          fromStatus: { $ref: "#/components/schemas/CodeStatus" },
+          archiveId: { type: "string", description: "Directory identifier under the code's persistent evidence archive." },
+          resetAt: { type: "string", format: "date-time" }
         }
       }
     },
@@ -294,7 +310,7 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Issue an owner token or restore its session",
         description:
-          "Public code lookup. Every lookup of an unused code returns a fresh signed `sessionToken` and assessment metadata without the brief. The first successful start atomically binds one token. For active/submitted codes, send that token in `X-Assessment-Session`: the owner receives the frozen assessment and latest checkpoint; a missing or competing token receives `owned: false` with no brief, checkpoint, or candidate identity. Legacy active rows without an owner cannot be claimed and include admin recovery guidance. Unknown and malformed codes both return `{ status: \"unknown\" }`.",
+          "Public code lookup. Every response includes `sessionGeneration` (`null` for an unknown code). Every lookup of an unused code returns a fresh signed token for that generation and assessment metadata without the brief. The first successful start atomically binds one token. For active/submitted codes, send that token in `X-Assessment-Session`: the owner receives the frozen assessment and latest checkpoint; a missing, competing, or pre-reset token receives `owned: false` with no brief, checkpoint, or candidate identity. Legacy active rows without an owner cannot be claimed and include admin recovery guidance. Unknown and malformed codes both return `{ status: \"unknown\" }`.",
         security: [],
         parameters: [
           { name: "case", in: "query", required: true, schema: { $ref: "#/components/schemas/Code" } },
@@ -309,6 +325,7 @@ export const openapiSpec = {
                   type: "object",
                   properties: {
                     status: { oneOf: [{ $ref: "#/components/schemas/CodeStatus" }, { type: "string", enum: ["unknown"] }] },
+                    sessionGeneration: { type: "integer", minimum: 0, nullable: true },
                     owned: { type: "boolean", description: "Present for active/submitted states." },
                     sessionToken: { type: "string", description: "Fresh contender token; present only while unused." },
                     startedAt: { type: "integer", format: "int64", nullable: true },
@@ -343,7 +360,7 @@ export const openapiSpec = {
         tags: ["assessment"],
         summary: "Unlock a code and bind the candidate's details to it",
         description:
-          "Requires the signed contender token from `/session` in the body or `X-Assessment-Session`. The first successful call atomically binds that owner, candidate identity, a server `startedAt`, the immutable assessment, and revision-0 checkpoint. Same-token retries return those exact values; another token gets 409. Which fields are required comes from the pre-start `gateFields`; send multipart when a CV or portfolio is required.",
+          "Requires the signed contender token from `/session` in the body or `X-Assessment-Session`. The first successful call atomically binds that owner, candidate identity, a server `startedAt`, the immutable assessment, and revision-0 checkpoint. Same-token retries return those exact values; another token gets 409. Tokens from a prior reset generation get `session_generation_mismatch` and must reload the same link. LinkedIn/Upwork accept HTTP(S) URLs on the exact bare or www host, or the same host without a scheme (normalized to HTTPS); authinfo, whitespace, wrong hosts, malformed URLs, and empty paths are rejected. Which fields are required comes from the pre-start `gateFields`; send multipart when a CV or portfolio is required.",
         security: [{ assessmentSession: [] }],
         parameters: [
           { name: "X-Assessment-Session", in: "header", required: false, schema: { type: "string" }, description: "May be supplied here, in sessionToken, or identically in both places." }
@@ -359,8 +376,8 @@ export const openapiSpec = {
                   caseId: { $ref: "#/components/schemas/Code" },
                   sessionToken: { type: "string" },
                   name: { type: "string", maxLength: 120 },
-                  linkedin: { type: "string", description: "Required when the assessment's gateFields.linkedin is true." },
-                  upwork: { type: "string", description: "Required when the assessment's gateFields.upwork is true." }
+                  linkedin: { type: "string", description: "Required when gateFields.linkedin is true. Bare linkedin.com/www.linkedin.com profile paths are normalized to HTTPS." },
+                  upwork: { type: "string", description: "Required when gateFields.upwork is true. Bare upwork.com/www.upwork.com profile paths are normalized to HTTPS." }
                 }
               }
             },
@@ -393,6 +410,7 @@ export const openapiSpec = {
               properties: {
                 ok: { type: "boolean" },
                 status: { type: "string", enum: ["active"] },
+                sessionGeneration: { type: "integer", minimum: 0 },
                 owned: { type: "boolean", enum: [true] },
                 startedAt: { type: "integer", format: "int64" },
                 assessment: { $ref: "#/components/schemas/CandidateAssessment" },
@@ -425,6 +443,7 @@ export const openapiSpec = {
               properties: {
                 ok: { type: "boolean" },
                 status: { $ref: "#/components/schemas/CodeStatus" },
+                sessionGeneration: { type: "integer", minimum: 0 },
                 accepted: { type: "boolean" },
                 revision: { type: "integer", nullable: true },
                 startedAt: { type: "integer", format: "int64" },
@@ -671,12 +690,50 @@ export const openapiSpec = {
         }
       }
     },
+    "/api/admin/codes/{code}/reset": {
+      parameters: [{ $ref: "#/components/parameters/CodePath" }],
+      post: {
+        tags: ["admin"],
+        summary: "Archive a session and reuse its code",
+        description:
+          "Moves all current files into a persistent, generation-stamped archive and stores the prior code/checkpoint metadata there before clearing candidate, timing, ownership, snapshot, final-revision, and checkpoint state. The code and assessment_id are preserved and status becomes unused. `expectedGeneration` is required and `expectedStatus` can guard the reviewed status. A globally unique `requestId` makes a lost-response retry idempotent; a reused ID for another code, stale generation, or changed status returns 409 without changing evidence.",
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: {
+            type: "object",
+            required: ["requestId", "expectedGeneration"],
+            properties: {
+              requestId: { type: "string", minLength: 1, maxLength: 128, pattern: "^[A-Za-z0-9][A-Za-z0-9._:-]*$" },
+              expectedGeneration: { type: "integer", minimum: 0 },
+              expectedStatus: { $ref: "#/components/schemas/CodeStatus" }
+            }
+          } } }
+        },
+        responses: {
+          200: { description: "Reset applied or idempotently replayed", content: { "application/json": { schema: {
+            type: "object",
+            required: ["ok", "idempotent", "code", "reset"],
+            properties: {
+              ok: { type: "boolean", enum: [true] },
+              idempotent: { type: "boolean" },
+              code: { $ref: "#/components/schemas/CodeRecord" },
+              reset: { $ref: "#/components/schemas/SessionReset" }
+            }
+          } } } },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+          409: { description: "Generation/status changed, archive path exists, or requestId belongs to another code.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } },
+          500: { description: "Reset/archive failed and prior state was retained.", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
     "/api/admin/sessions/{code}": {
       parameters: [{ $ref: "#/components/parameters/CodePath" }],
       get: {
         tags: ["admin"],
         summary: "Full captured session",
-        description: "Code record, candidate details, latest redacted checkpoint (including the in-progress transcript), submitted/server-finalized payload when present, and capture filenames. The checkpoint never includes its bearer sessionToken.",
+        description: "Code record, candidate details, latest redacted checkpoint (including the in-progress transcript), submitted/server-finalized payload when present, capture filenames, and reset history. The checkpoint never includes its bearer sessionToken.",
         responses: {
           200: {
             description: "Session",
@@ -699,7 +756,8 @@ export const openapiSpec = {
                       additionalProperties: true
                     },
                     frames: { type: "array", items: { type: "string" } },
-                    audio: { type: "array", items: { type: "string" } }
+                    audio: { type: "array", items: { type: "string" } },
+                    resets: { type: "array", items: { $ref: "#/components/schemas/SessionReset" } }
                   }
                 }
               }
@@ -745,7 +803,7 @@ export const openapiSpec = {
       get: {
         tags: ["admin"],
         summary: "Download the whole session as a zip",
-        description: "Everything on disk for the code, plus `code-record.json`.",
+        description: "The current files and metadata plus every retained reset archive for this code.",
         responses: {
           200: { description: "Zip archive", content: { "application/zip": { schema: { type: "string", format: "binary" } } } },
           403: { $ref: "#/components/responses/Forbidden" },
