@@ -927,7 +927,7 @@
     }
 
     async function loginWithPassword(password) {
-      const res = await fetch(apiUrl("/api/login"), {
+      const res = await fetch(apiUrl("/login"), {
         method: "POST",
         headers: { "content-type": "application/json" },
         credentials: "same-origin",
@@ -939,7 +939,7 @@
     }
 
     async function ensureAuthenticated() {
-      const res = await fetch(apiUrl("/api/me"), fetchOpts);
+      const res = await fetch(apiUrl("/me"), fetchOpts);
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.authenticated) {
         showAuthModal();
