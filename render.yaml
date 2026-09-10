@@ -45,5 +45,6 @@ services:
         sync: false
       - key: REQOPS_NFINY_PASSWORD  # client portal at /reqops/nfiny/
         sync: false
-      - key: RECRUITMENT_MANAGER_API_URL  # e.g. https://your-rm-host or http://127.0.0.1:8125 locally
+      # Optional: set REQOPS_PORTAL_LIVE=true and RECRUITMENT_MANAGER_API_URL when RM runs beside this service.
+      - key: RECRUITMENT_MANAGER_API_URL
         sync: false
