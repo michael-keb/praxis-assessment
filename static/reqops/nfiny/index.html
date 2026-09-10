@@ -1153,7 +1153,7 @@
         }
 
         const url = apiUrl(
-          `/api/command-center?platform=seek_email&jobId=${encodeURIComponent(JOB_ID)}&limit=5000`
+          `/command-center?platform=seek_email&jobId=${encodeURIComponent(JOB_ID)}&limit=5000`
         );
         const res = await fetch(url, fetchOpts);
         if (res.status === 401) {
