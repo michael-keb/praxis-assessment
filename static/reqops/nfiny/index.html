@@ -653,6 +653,79 @@
       transform: none;
     }
 
+    .auth-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(11, 12, 15, 0.72);
+      backdrop-filter: blur(6px);
+    }
+
+    .auth-modal[hidden] {
+      display: none;
+    }
+
+    .auth-modal__panel {
+      width: min(100%, 380px);
+      padding: 28px 28px 24px;
+      border: 1px solid var(--line2);
+      border-radius: var(--r-lg);
+      background:
+        radial-gradient(420px 180px at 100% 0%, rgba(var(--warm-rgb), 0.08), transparent 55%),
+        var(--surface);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    }
+
+    .auth-modal__brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .auth-modal__title {
+      margin: 0 0 6px;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-modal__sub {
+      margin: 0 0 20px;
+      color: var(--slate);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .auth-modal__error {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: var(--r-sm);
+      background: rgba(var(--bad-rgb), 0.12);
+      border: 1px solid rgba(var(--bad-rgb), 0.25);
+      color: #f0b0a6;
+      font-size: 0.88rem;
+    }
+
+    .auth-modal__error[hidden] {
+      display: none;
+    }
+
+    .auth-modal__field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .auth-modal__actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
     @media (max-width: 740px) {
       .page { padding-inline: 18px; }
       .topbar { padding-inline: 18px; }
@@ -777,6 +850,36 @@
 
   <div class="dot-tip" id="dotTip" hidden></div>
 
+  <div id="authModal" class="auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <div class="auth-modal__panel">
+      <div class="auth-modal__brand">
+        <svg class="rq-svg" width="34" height="34" viewBox="0 0 100 100" aria-hidden="true">
+          <path class="rq-ghost" d="M 33.04 22.86 A 32 32 0 1 0 66.96 22.86" pathLength="100" stroke-width="7.5"></path>
+          <path class="rq-trail" d="M 33.04 22.86 A 32 32 0 1 0 66.96 22.86" pathLength="100" stroke-width="7.5"></path>
+          <path class="rq-comet" d="M 33.04 22.86 A 32 32 0 1 0 66.96 22.86" pathLength="100" stroke-width="7.5"></path>
+          <circle class="rq-anchor" cx="33.04" cy="22.86" r="5.4"></circle>
+          <circle class="rq-head" cx="66.96" cy="22.86" r="8"></circle>
+        </svg>
+        <span class="brand__text">
+          <span class="brand__name">ReqOps</span>
+          <span class="brand__sub">Governance</span>
+        </span>
+      </div>
+      <h2 class="auth-modal__title" id="authModalTitle">Client access</h2>
+      <p class="auth-modal__sub">Enter the portal password to view candidate progress.</p>
+      <p id="authError" class="auth-modal__error" hidden></p>
+      <form id="authForm">
+        <div class="auth-modal__field">
+          <label class="field__label" for="authPassword">Password</label>
+          <input type="password" id="authPassword" class="input" autocomplete="current-password" required>
+        </div>
+        <div class="auth-modal__actions">
+          <button type="submit" class="btn btn--commit" id="authSubmit">Continue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     const JOB_ID = "94319799";
     const API = new URLSearchParams(location.search).get("api") || "/reqops/nfiny/api";
@@ -799,6 +902,50 @@
 
     function apiUrl(path) {
       return `${API || ""}${path}`;
+    }
+
+    const fetchOpts = { credentials: "same-origin" };
+
+    function showAuthModal(message) {
+      const modal = document.getElementById("authModal");
+      const err = document.getElementById("authError");
+      modal.hidden = false;
+      if (message) {
+        err.textContent = message;
+        err.hidden = false;
+      } else {
+        err.hidden = true;
+        err.textContent = "";
+      }
+      document.getElementById("authPassword").focus();
+    }
+
+    function hideAuthModal() {
+      document.getElementById("authModal").hidden = true;
+      document.getElementById("authError").hidden = true;
+      document.getElementById("authPassword").value = "";
+    }
+
+    async function loginWithPassword(password) {
+      const res = await fetch(apiUrl("/api/login"), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Incorrect password.");
+      hideAuthModal();
+    }
+
+    async function ensureAuthenticated() {
+      const res = await fetch(apiUrl("/api/me"), fetchOpts);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.authenticated) {
+        showAuthModal();
+        return false;
+      }
+      return true;
     }
 
     function clientStage(c) {
@@ -996,10 +1143,27 @@
       content.hidden = true;
 
       try {
+        const authed = await ensureAuthenticated();
+        if (!authed) {
+          loading.hidden = true;
+          content.hidden = false;
+          liveDot.classList.add("live-dot--off");
+          meta.textContent = "Sign in required";
+          return;
+        }
+
         const url = apiUrl(
           `/api/command-center?platform=seek_email&jobId=${encodeURIComponent(JOB_ID)}&limit=5000`
         );
-        const res = await fetch(url);
+        const res = await fetch(url, fetchOpts);
+        if (res.status === 401) {
+          showAuthModal();
+          loading.hidden = true;
+          content.hidden = false;
+          liveDot.classList.add("live-dot--off");
+          meta.textContent = "Sign in required";
+          return;
+        }
         if (!res.ok) throw new Error(`API returned ${res.status}`);
         const data = await res.json();
         if (!data.ok) throw new Error(data.error || "API error");
@@ -1022,6 +1186,21 @@
         meta.textContent = "Offline";
       }
     }
+
+    document.getElementById("authForm").addEventListener("submit", async (ev) => {
+      ev.preventDefault();
+      const btn = document.getElementById("authSubmit");
+      const password = document.getElementById("authPassword").value;
+      btn.disabled = true;
+      try {
+        await loginWithPassword(password);
+        await load();
+      } catch (err) {
+        showAuthModal(err.message || "Incorrect password.");
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     document.getElementById("refreshBtn").addEventListener("click", load);
     document.getElementById("search").addEventListener("input", () => {
