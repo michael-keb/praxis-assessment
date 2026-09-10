@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "exportedAt": "2026-09-10T00:45:29.388Z",
+  "exportedAt": "2026-09-10T23:02:05.949Z",
   "jobId": "94319799",
   "platform": "seek_email",
   "candidateCount": 149,
@@ -9,1274 +9,102 @@
     "shown": 149,
     "byStage": [
       {
+        "stage": "assessment_pending",
+        "n": 16
+      },
+      {
+        "stage": "assessment_sent",
+        "n": 1
+      },
+      {
+        "stage": "new",
+        "n": 94
+      },
+      {
         "stage": "rapport_in_progress",
-        "n": 149
+        "n": 38
       }
     ],
-    "needsReview": 25
+    "needsReview": 19
   },
   "candidates": [
     {
+      "id": "email:f52dffcd01fdd5d72ba6c8fa5762733d",
+      "displayName": "Peter Bowey",
+      "stage": "assessment_sent",
+      "stageLabel": "Assessment sent",
+      "updatedAt": 1789048275888,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "assessment_sent",
+      "emailCampaignStatusLabel": "Assessment sent",
+      "fit": {
+        "responseQuality": 68,
+        "jobRisk": 54,
+        "graphStep": "sent"
+      },
+      "assessment": null
+    },
+    {
       "id": "email:fc279e4395b607aa660b641fa8accdaa",
       "displayName": "Haider Sana",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997927957,
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047988379,
       "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 49,
+        "responseQuality": 46,
         "jobRisk": 50,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:dc201f9aef1b16d5eb6eb4c52d084469",
-      "displayName": "DIVYA DSOUZA",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997927941,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 41,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0bc9d6ddaae2555853a2fcab1ec6d378",
-      "displayName": "Eddie Lim",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997927938,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 38,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:04696caab0461f60a35a89b693bec38d",
-      "displayName": "Ryan Ren",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997927928,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 45,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0a14c3276865caac0d4930f0318105cf",
-      "displayName": "Xrysto Wood",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997236223,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:77218f3e1f5cd86d4b210cb789f77d7f",
-      "displayName": "Nicholas Milsom",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788997112971,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2c4839ab33fa28f5be71bb5e80381ab0",
-      "displayName": "Muhammed Aslan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996889977,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:877541ae1343f9ea40b4b896ccfe6900",
-      "displayName": "Vincent  Uba",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996774086,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:bee52882c94798b739589149d5c25df1",
-      "displayName": "wenbin zhou",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996655349,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:9eef423230680b4c86f526663e646bad",
-      "displayName": "Deepti Sharma",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996512277,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:1b9a8566180c6c2f983c4da7cc26c8f3",
-      "displayName": "Sigmund Howe",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996366765,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2c8089e70b6f1b4384cb8890750b6c2d",
-      "displayName": "Haley Tran",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788996239110,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:590b20d5d58cf924dfd4db7aac42fbd4",
-      "displayName": "Advait Krishna Karumathil",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788995888952,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:c32895b9dbe3ee73af05472e883cdb1b",
-      "displayName": "Sakshi Shinde",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788995751108,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:abfd63f4b85443193d494fb030536c2c",
-      "displayName": "Dinuka Hettiarachchi",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992721256,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:ce6bde60679f911a217770386e2e6319",
-      "displayName": "Rajan sharma",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992591240,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:e2d64135caebd37f525d972d304bc876",
-      "displayName": "Sameera Khatoon",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992438189,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0f2a3f2a432ce27be644d99891aee718",
-      "displayName": "Jake Osborne-Smith",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992354797,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 41,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2d933254092990bf0bb2f6f47c64f0be",
-      "displayName": "DHARMVEER KAUR",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992354792,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 57,
-        "jobRisk": 50,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:7e88854892fd9049a702a1961c93f8d4",
-      "displayName": "Xavier Verdianto Tandova",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992354789,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
       "id": "email:eecb5bd98172da16f1f0e9663e205aea",
       "displayName": "Muhammed Ibrahim Raja",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992210666,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:8bac2b10d58fa0eab056b523df7a8a31",
-      "displayName": "Bruno Hoxha",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992210664,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d68a84d4b8b17fbb32cfacf17b8b4b03",
-      "displayName": "Irwin Alcover",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788992043917,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:9828eeb0517770667dd6fd90ef3b67f2",
-      "displayName": "Leo Bosgiraud",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991962128,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:c6d5f3a896b63a37931eda28fc123dff",
-      "displayName": "Ivan Aung",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991711263,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0d2041b372a1f1bc374d83f63e200b93",
-      "displayName": "Athul Thampan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991612430,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:a0fd9c78d7ed26771ab98619987f91df",
-      "displayName": "Stuti Nainwal",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991447456,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0145f1340d59e20978ed681e8d8dff4c",
-      "displayName": "Igor Chuvochin",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991373541,
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047978412,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 46,
+        "responseQuality": 35,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:da56f2d42e2e345b8f7c89d26a8fde15",
-      "displayName": "Sathika Jaheer Hussain",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991301132,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d5e5db7739c9734711ffb46c08ce25a7",
-      "displayName": "Maanaav Anil Motiramani",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991224739,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:6b28c72f19f541f6b1bcc47990803bd1",
-      "displayName": "Sean Moldovan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788991074600,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:8afe4512700edbe8970111cd6e6853f4",
-      "displayName": "Nuduja Mapa",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990930121,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:21bbb0d4d94a95b46bc8c6790d81754f",
-      "displayName": "Adnan Ali",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990790206,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:a11e938aa891cfd42fed5adf6384858a",
-      "displayName": "Javi Romero",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990646458,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:991a49ba1f4645ac60fc082cc2d37e74",
-      "displayName": "Abhimanyu Saini",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990548382,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2882feb3747c94fcf9ffae0f4961b5fc",
-      "displayName": "Regina Hao",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990388546,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:8608a951fd12a5301f7b87239ff896b4",
-      "displayName": "Ferdinand Sangap",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990203432,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:06ef34926627197e94e76f21d25a89c4",
-      "displayName": "Sai Chaitanya Gaddam",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788990105174,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2c7f32492307348ae2b648b35c734269",
-      "displayName": "Amarjit Singh",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788989387013,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 49,
-        "jobRisk": 74,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:bd5b8d0132dc47330a7aad2fb4956b0e",
-      "displayName": "kazi ahsan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788989377614,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 74,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:cdeb15a56cbd20048ad5845a010e8e48",
-      "displayName": "Scott Cheung",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788989364840,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 58,
-        "jobRisk": 50,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:b409067203c96a432cb72390ad85ad2d",
-      "displayName": "Lily Go Yao",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788962062335,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 47,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:4aad2ee28ce0b204ab24dca71bfb43d3",
-      "displayName": "Junjing Yu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958945795,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 38,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:281c52c241a9f52e2d468da14ae5fdcd",
-      "displayName": "Shailesh Mohan Bhattarai",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958875974,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:9e522a1b8c3ec1763472ff2295c83412",
-      "displayName": "Jiao Liu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958868830,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 34,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:3c7109cdcdeb5e70f9b045303132560c",
-      "displayName": "Oleksii Voitiuk",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958861512,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 38,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d3666ceb45a43fe6bda1b989245c63f0",
-      "displayName": "Alex Deng",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958857516,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 40,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:04a07fb288c61dcddf98a49c6376943a",
-      "displayName": "Minh Pham",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958841169,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 49,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:c259ee8010d79bba455d95cb493af03b",
-      "displayName": "Aleksei Protopopov",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958827357,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:12388b9533eadabe537edb25937801bd",
-      "displayName": "Bing Yan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958822602,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 47,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:78bdbbf261e203318431a23e159d1374",
-      "displayName": "kiran k",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958818620,
-      "waitingOn": "us",
-      "emailCampaignStatus": "permission_pending",
-      "emailCampaignStatusLabel": "Permission pending",
-      "fit": {
-        "responseQuality": 44,
-        "jobRisk": 58,
-        "graphStep": "reply_2"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:fb61b541ed1b059e0a63b80bd7c2c4e3",
-      "displayName": "Michal Sivak",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958813124,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 21,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:791f6719f712b6669ccd201b0cc5282b",
-      "displayName": "Stefan Anthony",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958805567,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 40,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:e1440abe144d417fb9d9f3cb696b3f7d",
-      "displayName": "Andrew Chernyshov",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958797748,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 45,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:4dba2430348ef2a3f2c146bf9444012f",
-      "displayName": "Nic Ashton",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958790165,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 40,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:a148401548e68ae7caa6d5ad6e2eeeee",
-      "displayName": "Amin Bamavadat",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958786029,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 34,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:ab3f98d5d6ae711e483ad5813b1eaf89",
-      "displayName": "Vinh Nguyen",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958781913,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d192cc32d12ededd47fd47565e4382dd",
-      "displayName": "TONY QIAO",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958773751,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:c20de5c3fca2fae6d1c5c9fb2700e7d9",
-      "displayName": "Salvador Estidola Jr.",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958759200,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 52,
-        "jobRisk": 64,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:f52dffcd01fdd5d72ba6c8fa5762733d",
-      "displayName": "Peter Bowey",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958754712,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 46,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:a22386f7070b4126d809478099548104",
-      "displayName": "Daniel(Okseok) Kim",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958746309,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 41,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:3f44f50327314374525aa70df77e362e",
-      "displayName": "Mattias Bowa",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958741796,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 40,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:acc05578a5f97e096931f97643b95c7f",
-      "displayName": "Yijun Liu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958734067,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 49,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:77fdc1c4f0c091ca55356af1acea7809",
-      "displayName": "Jade Edwards",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958726053,
-      "waitingOn": "us",
-      "emailCampaignStatus": "needs_reply",
-      "emailCampaignStatusLabel": "Needs reply",
-      "fit": {
-        "responseQuality": 58,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:6203973498e2b6069ab5913bb49c098d",
-      "displayName": "Jax Moe El Antaki",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958236770,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 58,
-        "jobRisk": 50,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:e59f15e4fcbd2b4aec39f5b98c50e3b2",
-      "displayName": "Aaron Giles",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958220940,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 41,
-        "jobRisk": 74,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:4768c78eb81e0a89829d285f3a0a338c",
-      "displayName": "Absar Ahmed",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958211510,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 47,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d544eb6201048b1a62aced83f4f22853",
-      "displayName": "keny poudel",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958205319,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0151892c45e7dabb46a8958a56750292",
-      "displayName": "Francisco Gallardo",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958195556,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 58,
-        "jobRisk": 50,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:22526bce4bec5c247c308e6503a606b1",
-      "displayName": "FATIH SEVIM",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958191856,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 34,
-        "jobRisk": 70,
-        "graphStep": "reply_2"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:81b9163ef975b690347cc4081bc73fcb",
-      "displayName": "ryan williams",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958175958,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:7ec870d4419e60b16429c9a9e3f7a461",
-      "displayName": "Changhao Liu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958162704,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 48,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2210c2d8e00508eb95e9c3ce2512d27d",
-      "displayName": "Hakan Gunaydin",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958155920,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:3c1d850ad5bde90a2345662748727bda",
-      "displayName": "Sukhi Singh",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958127719,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 74,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:025e7d500f832bb34d0bffca6cfef260",
-      "displayName": "Augustine Mai",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958112000,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 40,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:6f9b2a6a3032db06d5c4ea1da62269e0",
-      "displayName": "Rizvan Saiyed",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958105579,
+      "id": "email:dc201f9aef1b16d5eb6eb4c52d084469",
+      "displayName": "DIVYA DSOUZA",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047969374,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
         "responseQuality": 53,
-        "jobRisk": 50,
-        "graphStep": "reply_1"
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:01db72dd97704d842977d35639fdd99b",
-      "displayName": "Elijah Hughes",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958086526,
+      "id": "email:a4751f1274fe1079519b97cffa6d5275",
+      "displayName": "Ming Yuan Chen",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047959814,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 33,
+        "responseQuality": 42,
         "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:78cc8ae7bcdfd78ac213f4a2aa5c2cce",
-      "displayName": "Tyrone Johnston",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958056598,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 39,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2a204140d3974b5ad2434fa2384a8bd3",
-      "displayName": "THANG DOAN",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788958049944,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 48,
-        "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "handoff"
       },
       "assessment": null
     },
@@ -1285,814 +113,318 @@
       "displayName": "Bhuvnesh Kumar Senger",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788958025619,
+      "updatedAt": 1789047950929,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 41,
+        "responseQuality": 65,
+        "jobRisk": 58,
+        "graphStep": "reply_2"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0f2a3f2a432ce27be644d99891aee718",
+      "displayName": "Jake Osborne-Smith",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047942245,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
+      "fit": {
+        "responseQuality": 52,
+        "jobRisk": 58,
+        "graphStep": "handoff"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0bc9d6ddaae2555853a2fcab1ec6d378",
+      "displayName": "Eddie Lim",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789047933021,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
+      "fit": {
+        "responseQuality": 50,
         "jobRisk": 74,
-        "graphStep": "reply_1"
+        "graphStep": "reply_2"
       },
       "assessment": null
     },
     {
-      "id": "email:a4751f1274fe1079519b97cffa6d5275",
-      "displayName": "Ming Yuan Chen",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788957989447,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 33,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0cbae502076e0ff6a530af8cfc60e6ee",
-      "displayName": "Pol Hidalgo",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788957972185,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
-      "fit": {
-        "responseQuality": 33,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:82fdc6bb6ae0b94372d7c8c1ee307baa",
-      "displayName": "Pranav Kalal",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788957936399,
+      "id": "email:0145f1340d59e20978ed681e8d8dff4c",
+      "displayName": "Igor Chuvochin",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047921779,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
         "responseQuality": 38,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:d9e22c4831b855839d3b0679900606b6",
-      "displayName": "Rene James Jr Balandra",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788957919034,
+      "id": "email:01db72dd97704d842977d35639fdd99b",
+      "displayName": "Elijah Hughes",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047912923,
       "waitingOn": "us",
       "emailCampaignStatus": "draft_pending_review",
       "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 39,
+        "responseQuality": 26,
+        "jobRisk": 70,
+        "graphStep": "handoff"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6f9b2a6a3032db06d5c4ea1da62269e0",
+      "displayName": "Rizvan Saiyed",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047903654,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
+      "fit": {
+        "responseQuality": 76,
+        "jobRisk": 50,
+        "graphStep": "handoff"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:025e7d500f832bb34d0bffca6cfef260",
+      "displayName": "Augustine Mai",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789047894413,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
+      "fit": {
+        "responseQuality": 63,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "reply_2"
       },
       "assessment": null
     },
     {
-      "id": "email:932526cf99c59066d9695be369157332",
-      "displayName": "Vikas Jha",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788951002980,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:3c1d850ad5bde90a2345662748727bda",
+      "displayName": "Sukhi Singh",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047885303,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 43,
+        "jobRisk": 74,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:80672e511d7b05fb7d5c30c48e319c30",
-      "displayName": "Hazem Elsawy",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950876641,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:2c7f32492307348ae2b648b35c734269",
+      "displayName": "Amarjit Singh",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047875874,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 62,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:5021f651bb3c978f804dd9a60821d51a",
-      "displayName": "Robert Deskoski",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950592635,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:d544eb6201048b1a62aced83f4f22853",
+      "displayName": "keny poudel",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047866630,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 59,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:6729b4d93cce6a58eb8af5f1eaea199e",
-      "displayName": "Avishka Rathnavibhushana",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950459321,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:6203973498e2b6069ab5913bb49c098d",
+      "displayName": "Jax Moe El Antaki",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047857520,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 76,
+        "jobRisk": 50,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:bda63b62c7c616ce2b91dbb650e3c2ec",
-      "displayName": "Mohammed nihal",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950312112,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:281c52c241a9f52e2d468da14ae5fdcd",
+      "displayName": "Shailesh Mohan Bhattarai",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047848602,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 58,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:6bdf14bd53aacb386db466c1482c3105",
-      "displayName": "Han-Hsien LEI",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950184713,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:791f6719f712b6669ccd201b0cc5282b",
+      "displayName": "Stefan Anthony",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047839595,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 67,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:03efc7ff03501232465ef965f3554406",
-      "displayName": "Snehasis Sahoo",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788950034248,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:ab3f98d5d6ae711e483ad5813b1eaf89",
+      "displayName": "Vinh Nguyen",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047830779,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 57,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:0864a5e8eb252be5f6a39d0bf97f1ba2",
-      "displayName": "Varun Goel",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788949897222,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "id": "email:d192cc32d12ededd47fd47565e4382dd",
+      "displayName": "TONY QIAO",
+      "stage": "assessment_pending",
+      "stageLabel": "Assessment pending",
+      "updatedAt": 1789047821939,
+      "waitingOn": "us",
+      "emailCampaignStatus": "draft_pending_review",
+      "emailCampaignStatusLabel": "Draft pending review",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 57,
+        "jobRisk": 58,
+        "graphStep": "handoff"
       },
       "assessment": null
     },
     {
-      "id": "email:ebe56484cdf63f17e922e0c2abd1ec96",
-      "displayName": "Boyi Liu",
+      "id": "email:b409067203c96a432cb72390ad85ad2d",
+      "displayName": "Lily Go Yao",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788949770017,
+      "updatedAt": 1789044413596,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 37,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:8cd7cdedfd140a736c361f6f44e1f579",
-      "displayName": "Fernando Leonardelli",
+      "id": "email:7ec870d4419e60b16429c9a9e3f7a461",
+      "displayName": "Changhao Liu",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788949615883,
+      "updatedAt": 1789044412887,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 38,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:744bedda74833a60f98578a07bd97415",
-      "displayName": "Ram N",
+      "id": "email:4aad2ee28ce0b204ab24dca71bfb43d3",
+      "displayName": "Junjing Yu",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788949353318,
+      "updatedAt": 1789044412536,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 44,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:dc87675cc2a7ebae4a900faa019db026",
-      "displayName": "Salik Saleem",
+      "id": "email:0151892c45e7dabb46a8958a56750292",
+      "displayName": "Francisco Gallardo",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788949205977,
+      "updatedAt": 1789044411427,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 66,
+        "jobRisk": 50,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:22d4a7c0ea21ed47a51623421f348f96",
-      "displayName": "Priyam Sharma",
+      "id": "email:e59f15e4fcbd2b4aec39f5b98c50e3b2",
+      "displayName": "Aaron Giles",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788948834957,
+      "updatedAt": 1789044410712,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:28336163920cb8297c608fce29a0baf4",
-      "displayName": "Masroor Muntasir",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788948698217,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0e01c70de55e47b557dd37e92bed7255",
-      "displayName": "Jenny Hu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788948559388,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:15e7faa003765d4d670444ef3e4201a0",
-      "displayName": "chaoqun han",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788948277095,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0e97b22f694083716ee762bdaae22c92",
-      "displayName": "Nabeel Thenutty",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788948140526,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:3e95227fc8f094dbbc25719cf74b3bd3",
-      "displayName": "Steven Luo",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788947843984,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:7a60bc6aa49be832e141a4cc9e98fd0b",
-      "displayName": "Nikita Trofimov",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788947611317,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:4042133295a5c9d1dfcfc626acb1c592",
-      "displayName": "Mengqi Deng",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788947498785,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:b2575b345c6594115e072969ff43577c",
-      "displayName": "Ryan Dodd",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788947365097,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:4aadcec5d56e7dde9cde0cfd2a967636",
-      "displayName": "Parneet Batra",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788947233754,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:5c9e382e387b9f7eded885c7705b6d93",
-      "displayName": "Mani Shanthi Jayaraman",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788946747514,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:a07c8e6836df8e4aaa889c8755f9adea",
-      "displayName": "Eugene Perez",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788946620115,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:76ca9d1ea3dbbd28c2e030d9e14e1a0c",
-      "displayName": "Parth Sigdel",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788946505486,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:f040b295d2096d1b09596ae4a0d54159",
-      "displayName": "Rush Wijenayake",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788946027690,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:5d6d7ea8a0260b8f93961cb2b4d46f99",
-      "displayName": "Feng Cao",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788945795448,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:6fc719437f0eea54c4ecafb5e6438e5d",
-      "displayName": "Aparna Kudumula",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788945678267,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:8ea5986fc8e9ba66c549b1a9602547a2",
-      "displayName": "Deenadhayalan Subramaniam",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788945563892,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:11922a31fc0e774f6d42105398c2b83e",
-      "displayName": "Bharath Kumar Jangam",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788945238922,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d4ad1b81d4b7a935f36e88863eeb099b",
-      "displayName": "sachithra gayan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788945123324,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:41ea132eeb49e4874e82b8c225205183",
-      "displayName": "Thi Han Hein",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788944769656,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:e170dd6bdc76303b33e36435e030c130",
-      "displayName": "Jack YAO",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788944546972,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:2817ca425374660720c93b262c9d34cc",
-      "displayName": "Subash Shrestha",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788944321200,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:1a007e9a798a3c6e6bb7390a179b9c56",
-      "displayName": "Ben Alldridge",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788944212585,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:c4de8169a1f9acb1ef5122e7c444f7fe",
-      "displayName": "Ben Zheng",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788943890234,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:8ad17aee2c8f3be4165efd4c5f29b2cd",
-      "displayName": "Justin Lu",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788943548810,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:e136f8542210f6b9f14d04d8e7d1f963",
-      "displayName": "Christopher Totani",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788940460231,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:efe3dd59d36df6522befb0adc4a8891c",
-      "displayName": "CHENIEL LI",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788940012668,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:f0f02faea0f3167f8caf1f7aba7fcc33",
-      "displayName": "Stan Lukuvka",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788939683096,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:52c5b2b3da43e57d005e064e06e73ebb",
-      "displayName": "Kirby Smith",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788939457964,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:0e1754198e11932e357d75836f011050",
-      "displayName": "Sanish Manuel",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788939344782,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:9022a78f20d317bc7ccba7f16871b5b9",
-      "displayName": "Ben Rafael",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788939230190,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:7c3d468868bfe55d5005300ab7aac160",
-      "displayName": "Shifat Rahman",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788939008221,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:202c644a9d530d5e3bc1dd36175f9154",
-      "displayName": "Michael Hosemans",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788938897438,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:51f2f78cb16d75a1c8fee92ad5b1a5b0",
-      "displayName": "TERRY LAM",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788938788882,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 35,
+        "jobRisk": 74,
+        "graphStep": "permission"
       },
       "assessment": null
     },
@@ -2101,302 +433,1982 @@
       "displayName": "Elliott Melville",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788938292808,
-      "waitingOn": "us",
-      "emailCampaignStatus": "draft_pending_review",
-      "emailCampaignStatusLabel": "Draft pending review",
+      "updatedAt": 1789044410058,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 38,
+        "responseQuality": 29,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:6d7c58ffef63a1cae3798bd4fec328a7",
-      "displayName": "Gaurav Gogoi",
+      "id": "email:9e522a1b8c3ec1763472ff2295c83412",
+      "displayName": "Jiao Liu",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788908848284,
+      "updatedAt": 1789044409655,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 28,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:fd65731f3a74074ca625507be315b279",
-      "displayName": "walid hajj",
+      "id": "email:d3666ceb45a43fe6bda1b989245c63f0",
+      "displayName": "Alex Deng",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788908629335,
+      "updatedAt": 1789044409039,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 35,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:98d0754ff88d657e395c2ea6f70826c0",
-      "displayName": "Pushparaj G",
+      "id": "email:c259ee8010d79bba455d95cb493af03b",
+      "displayName": "Aleksei Protopopov",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788908281655,
+      "updatedAt": 1789044408396,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 29,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:5366b05cb31152be60f44f6546418afd",
-      "displayName": "Tom Malinowski",
+      "id": "email:12388b9533eadabe537edb25937801bd",
+      "displayName": "Bing Yan",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788908145725,
+      "updatedAt": 1789044408064,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 37,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:64f6df8a1a3c8032d26c100be9533938",
-      "displayName": "Brent Schuetze",
+      "id": "email:fb61b541ed1b059e0a63b80bd7c2c4e3",
+      "displayName": "Michal Sivak",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788906328539,
+      "updatedAt": 1789044406901,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
+        "responseQuality": 15,
         "jobRisk": 70,
-        "graphStep": "reply_1"
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:f5b9180d02965db28c91439af31e285e",
-      "displayName": "Rohail Agneshius",
+      "id": "email:e1440abe144d417fb9d9f3cb696b3f7d",
+      "displayName": "Andrew Chernyshov",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788906025540,
+      "updatedAt": 1789044406577,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 36,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:f7a45b9aa2057241ac5a9fcc29325752",
-      "displayName": "Tim Wang",
+      "id": "email:a148401548e68ae7caa6d5ad6e2eeeee",
+      "displayName": "Amin Bamavadat",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788905438153,
+      "updatedAt": 1789044405793,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
+        "responseQuality": 16,
         "jobRisk": 70,
-        "graphStep": "reply_1"
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:7f5fb357f4b0c134c60d81d74bf7e7b8",
-      "displayName": "Dawoud Tabboush",
+      "id": "email:a22386f7070b4126d809478099548104",
+      "displayName": "Daniel(Okseok) Kim",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788905163238,
+      "updatedAt": 1789044404750,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 35,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:14ce636101855e3e40536b6b95a88ea8",
-      "displayName": "Luke Lovekin",
+      "id": "email:3f44f50327314374525aa70df77e362e",
+      "displayName": "Mattias Bowa",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788904942979,
+      "updatedAt": 1789044404382,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 30,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:83bcacdc99bca048545119522a1c7969",
-      "displayName": "Rohit Pandey",
+      "id": "email:77fdc1c4f0c091ca55356af1acea7809",
+      "displayName": "Jade Edwards",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788904504818,
+      "updatedAt": 1789044403711,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 47,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
-      "id": "email:ce75b3d5af9094778e3e5b45fcee904d",
-      "displayName": "Quinn Perry",
+      "id": "email:acc05578a5f97e096931f97643b95c7f",
+      "displayName": "Yijun Liu",
       "stage": "rapport_in_progress",
       "stageLabel": "Rapport",
-      "updatedAt": 1788904287726,
+      "updatedAt": 1789042700816,
       "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:d980077709bf6b94f7d6fb268da61414",
-      "displayName": "Priya Murthy",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788904180518,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
-      },
-      "assessment": null
-    },
-    {
-      "id": "email:3e41863dd0ab482e4091157626d9af39",
-      "displayName": "MD NAZMUS SAADAT",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788904069383,
-      "waitingOn": "candidate",
-      "emailCampaignStatus": "in_progress",
-      "emailCampaignStatusLabel": "In progress",
-      "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 37,
+        "jobRisk": 58,
+        "graphStep": "permission"
       },
       "assessment": null
     },
     {
       "id": "email:a7a19ea011785282f565cd2f134e3715",
       "displayName": "Zane Massey",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788903832338,
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
       "waitingOn": "candidate",
       "emailCampaignStatus": "in_progress",
       "emailCampaignStatusLabel": "In progress",
       "fit": {
         "responseQuality": 40,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "outreach"
       },
       "assessment": null
     },
     {
       "id": "email:cdb13c31d420cedf059cfefbdc074fcf",
       "displayName": "Ross Tan",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788903832338,
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
       "waitingOn": "candidate",
       "emailCampaignStatus": "in_progress",
       "emailCampaignStatusLabel": "In progress",
       "fit": {
         "responseQuality": 39,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "outreach"
       },
       "assessment": null
     },
     {
       "id": "email:4dbd988b73370b779f071a73f097dfa2",
       "displayName": "Yang Ren",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788903832338,
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
       "waitingOn": "candidate",
       "emailCampaignStatus": "in_progress",
       "emailCampaignStatusLabel": "In progress",
       "fit": {
         "responseQuality": 40,
         "jobRisk": 58,
-        "graphStep": "reply_1"
+        "graphStep": "outreach"
       },
       "assessment": null
     },
     {
       "id": "email:3ba6e697b188d7617f2ba0922b1637c1",
       "displayName": "Christopher Kim",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788903832338,
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
       "waitingOn": "candidate",
       "emailCampaignStatus": "in_progress",
       "emailCampaignStatusLabel": "In progress",
       "fit": {
-        "responseQuality": 18,
-        "jobRisk": 70,
-        "graphStep": "reply_1"
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
       },
       "assessment": null
     },
     {
       "id": "email:7872c54ace0490e3046c05936e55ba46",
       "displayName": "Aung Kyaw",
-      "stage": "rapport_in_progress",
-      "stageLabel": "Rapport",
-      "updatedAt": 1788903832338,
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
       "waitingOn": "candidate",
       "emailCampaignStatus": "in_progress",
       "emailCampaignStatusLabel": "In progress",
       "fit": {
-        "responseQuality": 18,
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:c20de5c3fca2fae6d1c5c9fb2700e7d9",
+      "displayName": "Salvador Estidola Jr.",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 52,
+        "jobRisk": 64,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:3e41863dd0ab482e4091157626d9af39",
+      "displayName": "MD NAZMUS SAADAT",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:d980077709bf6b94f7d6fb268da61414",
+      "displayName": "Priya Murthy",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:ce75b3d5af9094778e3e5b45fcee904d",
+      "displayName": "Quinn Perry",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:83bcacdc99bca048545119522a1c7969",
+      "displayName": "Rohit Pandey",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:4dba2430348ef2a3f2c146bf9444012f",
+      "displayName": "Nic Ashton",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 40,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:14ce636101855e3e40536b6b95a88ea8",
+      "displayName": "Luke Lovekin",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:7f5fb357f4b0c134c60d81d74bf7e7b8",
+      "displayName": "Dawoud Tabboush",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:f7a45b9aa2057241ac5a9fcc29325752",
+      "displayName": "Tim Wang",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:78bdbbf261e203318431a23e159d1374",
+      "displayName": "kiran k",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 44,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:f5b9180d02965db28c91439af31e285e",
+      "displayName": "Rohail Agneshius",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:04a07fb288c61dcddf98a49c6376943a",
+      "displayName": "Minh Pham",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 49,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:64f6df8a1a3c8032d26c100be9533938",
+      "displayName": "Brent Schuetze",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:5366b05cb31152be60f44f6546418afd",
+      "displayName": "Tom Malinowski",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:98d0754ff88d657e395c2ea6f70826c0",
+      "displayName": "Pushparaj G",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:3c7109cdcdeb5e70f9b045303132560c",
+      "displayName": "Oleksii Voitiuk",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 38,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:fd65731f3a74074ca625507be315b279",
+      "displayName": "walid hajj",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6d7c58ffef63a1cae3798bd4fec328a7",
+      "displayName": "Gaurav Gogoi",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:51f2f78cb16d75a1c8fee92ad5b1a5b0",
+      "displayName": "TERRY LAM",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:202c644a9d530d5e3bc1dd36175f9154",
+      "displayName": "Michael Hosemans",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:7c3d468868bfe55d5005300ab7aac160",
+      "displayName": "Shifat Rahman",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:9022a78f20d317bc7ccba7f16871b5b9",
+      "displayName": "Ben Rafael",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0e1754198e11932e357d75836f011050",
+      "displayName": "Sanish Manuel",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:52c5b2b3da43e57d005e064e06e73ebb",
+      "displayName": "Kirby Smith",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:f0f02faea0f3167f8caf1f7aba7fcc33",
+      "displayName": "Stan Lukuvka",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:4768c78eb81e0a89829d285f3a0a338c",
+      "displayName": "Absar Ahmed",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 47,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:efe3dd59d36df6522befb0adc4a8891c",
+      "displayName": "CHENIEL LI",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:22526bce4bec5c247c308e6503a606b1",
+      "displayName": "FATIH SEVIM",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 34,
         "jobRisk": 70,
-        "graphStep": "reply_1"
+        "graphStep": "reply_2"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:e136f8542210f6b9f14d04d8e7d1f963",
+      "displayName": "Christopher Totani",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8ad17aee2c8f3be4165efd4c5f29b2cd",
+      "displayName": "Justin Lu",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:81b9163ef975b690347cc4081bc73fcb",
+      "displayName": "ryan williams",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 39,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:c4de8169a1f9acb1ef5122e7c444f7fe",
+      "displayName": "Ben Zheng",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2210c2d8e00508eb95e9c3ce2512d27d",
+      "displayName": "Hakan Gunaydin",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 39,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:1a007e9a798a3c6e6bb7390a179b9c56",
+      "displayName": "Ben Alldridge",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2817ca425374660720c93b262c9d34cc",
+      "displayName": "Subash Shrestha",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:e170dd6bdc76303b33e36435e030c130",
+      "displayName": "Jack YAO",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:41ea132eeb49e4874e82b8c225205183",
+      "displayName": "Thi Han Hein",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2d933254092990bf0bb2f6f47c64f0be",
+      "displayName": "DHARMVEER KAUR",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 57,
+        "jobRisk": 50,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:d4ad1b81d4b7a935f36e88863eeb099b",
+      "displayName": "sachithra gayan",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:11922a31fc0e774f6d42105398c2b83e",
+      "displayName": "Bharath Kumar Jangam",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8ea5986fc8e9ba66c549b1a9602547a2",
+      "displayName": "Deenadhayalan Subramaniam",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6fc719437f0eea54c4ecafb5e6438e5d",
+      "displayName": "Aparna Kudumula",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:5d6d7ea8a0260b8f93961cb2b4d46f99",
+      "displayName": "Feng Cao",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:f040b295d2096d1b09596ae4a0d54159",
+      "displayName": "Rush Wijenayake",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:bd5b8d0132dc47330a7aad2fb4956b0e",
+      "displayName": "kazi ahsan",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 39,
+        "jobRisk": 74,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:76ca9d1ea3dbbd28c2e030d9e14e1a0c",
+      "displayName": "Parth Sigdel",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:a07c8e6836df8e4aaa889c8755f9adea",
+      "displayName": "Eugene Perez",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:5c9e382e387b9f7eded885c7705b6d93",
+      "displayName": "Mani Shanthi Jayaraman",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:78cc8ae7bcdfd78ac213f4a2aa5c2cce",
+      "displayName": "Tyrone Johnston",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 39,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2a204140d3974b5ad2434fa2384a8bd3",
+      "displayName": "THANG DOAN",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 48,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:4aadcec5d56e7dde9cde0cfd2a967636",
+      "displayName": "Parneet Batra",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:b2575b345c6594115e072969ff43577c",
+      "displayName": "Ryan Dodd",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:4042133295a5c9d1dfcfc626acb1c592",
+      "displayName": "Mengqi Deng",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:7a60bc6aa49be832e141a4cc9e98fd0b",
+      "displayName": "Nikita Trofimov",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:3e95227fc8f094dbbc25719cf74b3bd3",
+      "displayName": "Steven Luo",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:04696caab0461f60a35a89b693bec38d",
+      "displayName": "Ryan Ren",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 45,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0e97b22f694083716ee762bdaae22c92",
+      "displayName": "Nabeel Thenutty",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:15e7faa003765d4d670444ef3e4201a0",
+      "displayName": "chaoqun han",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:cdeb15a56cbd20048ad5845a010e8e48",
+      "displayName": "Scott Cheung",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 58,
+        "jobRisk": 50,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0e01c70de55e47b557dd37e92bed7255",
+      "displayName": "Jenny Hu",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:28336163920cb8297c608fce29a0baf4",
+      "displayName": "Masroor Muntasir",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:22d4a7c0ea21ed47a51623421f348f96",
+      "displayName": "Priyam Sharma",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:dc87675cc2a7ebae4a900faa019db026",
+      "displayName": "Salik Saleem",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:744bedda74833a60f98578a07bd97415",
+      "displayName": "Ram N",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0cbae502076e0ff6a530af8cfc60e6ee",
+      "displayName": "Pol Hidalgo",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 33,
+        "jobRisk": 70,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8cd7cdedfd140a736c361f6f44e1f579",
+      "displayName": "Fernando Leonardelli",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:ebe56484cdf63f17e922e0c2abd1ec96",
+      "displayName": "Boyi Liu",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0864a5e8eb252be5f6a39d0bf97f1ba2",
+      "displayName": "Varun Goel",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:03efc7ff03501232465ef965f3554406",
+      "displayName": "Snehasis Sahoo",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6bdf14bd53aacb386db466c1482c3105",
+      "displayName": "Han-Hsien LEI",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:bda63b62c7c616ce2b91dbb650e3c2ec",
+      "displayName": "Mohammed nihal",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6729b4d93cce6a58eb8af5f1eaea199e",
+      "displayName": "Avishka Rathnavibhushana",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:5021f651bb3c978f804dd9a60821d51a",
+      "displayName": "Robert Deskoski",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:82fdc6bb6ae0b94372d7c8c1ee307baa",
+      "displayName": "Pranav Kalal",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 38,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:80672e511d7b05fb7d5c30c48e319c30",
+      "displayName": "Hazem Elsawy",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:932526cf99c59066d9695be369157332",
+      "displayName": "Vikas Jha",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:d9e22c4831b855839d3b0679900606b6",
+      "displayName": "Rene James Jr Balandra",
+      "stage": "rapport_in_progress",
+      "stageLabel": "Rapport",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "permission_pending",
+      "emailCampaignStatusLabel": "Permission pending",
+      "fit": {
+        "responseQuality": 39,
+        "jobRisk": 58,
+        "graphStep": "permission"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:06ef34926627197e94e76f21d25a89c4",
+      "displayName": "Sai Chaitanya Gaddam",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8608a951fd12a5301f7b87239ff896b4",
+      "displayName": "Ferdinand Sangap",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2882feb3747c94fcf9ffae0f4961b5fc",
+      "displayName": "Regina Hao",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:991a49ba1f4645ac60fc082cc2d37e74",
+      "displayName": "Abhimanyu Saini",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:a11e938aa891cfd42fed5adf6384858a",
+      "displayName": "Javi Romero",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:21bbb0d4d94a95b46bc8c6790d81754f",
+      "displayName": "Adnan Ali",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8afe4512700edbe8970111cd6e6853f4",
+      "displayName": "Nuduja Mapa",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:6b28c72f19f541f6b1bcc47990803bd1",
+      "displayName": "Sean Moldovan",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:d5e5db7739c9734711ffb46c08ce25a7",
+      "displayName": "Maanaav Anil Motiramani",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:da56f2d42e2e345b8f7c89d26a8fde15",
+      "displayName": "Sathika Jaheer Hussain",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:a0fd9c78d7ed26771ab98619987f91df",
+      "displayName": "Stuti Nainwal",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0d2041b372a1f1bc374d83f63e200b93",
+      "displayName": "Athul Thampan",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:c6d5f3a896b63a37931eda28fc123dff",
+      "displayName": "Ivan Aung",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:9828eeb0517770667dd6fd90ef3b67f2",
+      "displayName": "Leo Bosgiraud",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:d68a84d4b8b17fbb32cfacf17b8b4b03",
+      "displayName": "Irwin Alcover",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:8bac2b10d58fa0eab056b523df7a8a31",
+      "displayName": "Bruno Hoxha",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:7e88854892fd9049a702a1961c93f8d4",
+      "displayName": "Xavier Verdianto Tandova",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:e2d64135caebd37f525d972d304bc876",
+      "displayName": "Sameera Khatoon",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:ce6bde60679f911a217770386e2e6319",
+      "displayName": "Rajan sharma",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:abfd63f4b85443193d494fb030536c2c",
+      "displayName": "Dinuka Hettiarachchi",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:c32895b9dbe3ee73af05472e883cdb1b",
+      "displayName": "Sakshi Shinde",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:590b20d5d58cf924dfd4db7aac42fbd4",
+      "displayName": "Advait Krishna Karumathil",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2c8089e70b6f1b4384cb8890750b6c2d",
+      "displayName": "Haley Tran",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:1b9a8566180c6c2f983c4da7cc26c8f3",
+      "displayName": "Sigmund Howe",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:9eef423230680b4c86f526663e646bad",
+      "displayName": "Deepti Sharma",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:bee52882c94798b739589149d5c25df1",
+      "displayName": "wenbin zhou",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:877541ae1343f9ea40b4b896ccfe6900",
+      "displayName": "Vincent  Uba",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:2c4839ab33fa28f5be71bb5e80381ab0",
+      "displayName": "Muhammed Aslan",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:77218f3e1f5cd86d4b210cb789f77d7f",
+      "displayName": "Nicholas Milsom",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
+      },
+      "assessment": null
+    },
+    {
+      "id": "email:0a14c3276865caac0d4930f0318105cf",
+      "displayName": "Xrysto Wood",
+      "stage": "new",
+      "stageLabel": "New",
+      "updatedAt": 1789012886750,
+      "waitingOn": "candidate",
+      "emailCampaignStatus": "in_progress",
+      "emailCampaignStatusLabel": "In progress",
+      "fit": {
+        "responseQuality": 8,
+        "jobRisk": 62,
+        "graphStep": "outreach"
       },
       "assessment": null
     }
