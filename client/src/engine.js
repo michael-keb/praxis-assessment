@@ -12,6 +12,48 @@ export const DEFAULT_DURATION = 15 * 60;  // seconds; used until the code's asse
 export const PAUSE_LIMIT = 5 * 60;        // max cumulative paused seconds
 const ENDPOINT = "/api/assessment";
 
+/* Microphone tap that runs on the audio rendering thread. It converts the mic
+   to PCM16 in ~100ms chunks and posts them to the page. ScriptProcessorNode
+   (the fallback below) is deprecated and main-thread bound: when the page is
+   busy or backgrounded it silently drops input. An AudioWorklet keeps
+   capturing whatever the main thread is doing; late delivery only delays
+   the send, it never loses audio. */
+const PCM_TAP_NAME = "praxis-pcm-tap";
+const PCM_TAP_SOURCE = `
+class PraxisPcmTap extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.size = Math.max(160, Math.round(sampleRate / 10));
+    this.buf = new Int16Array(this.size);
+    this.n = 0;
+    this.sumSq = 0;
+  }
+  process(inputs) {
+    const ch = inputs[0] && inputs[0][0];
+    if (!ch) return true;
+    for (let i = 0; i < ch.length; i++) {
+      const s = Math.max(-1, Math.min(1, ch[i]));
+      this.sumSq += s * s;
+      this.buf[this.n++] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      if (this.n === this.size) {
+        const pcm = this.buf.buffer;
+        this.port.postMessage({ pcm, rms: Math.sqrt(this.sumSq / this.size) }, [pcm]);
+        this.buf = new Int16Array(this.size);
+        this.n = 0;
+        this.sumSq = 0;
+      }
+    }
+    return true;
+  }
+}
+registerProcessor("${PCM_TAP_NAME}", PraxisPcmTap);
+`;
+let pcmTapUrl = null;
+function pcmTapModuleUrl() {
+  if (!pcmTapUrl) pcmTapUrl = URL.createObjectURL(new Blob([PCM_TAP_SOURCE], { type: "application/javascript" }));
+  return pcmTapUrl;
+}
+
 export function createEngine(caseId, { preflightOnly = false, recordingStore } = {}) {
   const STORE_KEY = "praxis_assess_" + caseId;
   const OWNER_KEY = "praxis_owner_" + caseId;
@@ -56,7 +98,13 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
   let recognition = null;      // Web Speech API session (fallback engine)
   let ws = null;               // AssemblyAI streaming socket (primary engine)
   let audioCtx = null;         // feeds PCM16 from the mic into the socket
-  let processor = null;
+  let audioTap = null;         // AudioWorkletNode (preferred) or ScriptProcessorNode (fallback)
+  let audioMute = null;        // zero-gain path to the destination: a node is only rendered when it reaches one
+  let audioEngine = "";        // "worklet" | "processor" — recorded in audio_health events
+  const audioStats = { chunks: 0, sumRms: 0, lastChunkAt: 0, stalled: false };
+  let lastServerMsgAt = 0;     // any AssemblyAI frame (Begin, Turn, Heartbeat) — dead-socket watchdog
+  let heartbeats = false;      // AssemblyAI honoured session_heartbeat; only then is silence from it suspicious
+  let healthTicks = 0;
   let micStream = null;        // the ONE mic stream this page holds (assembly mode)
   let transcribing = false;    // should a transcription engine be running
   let micLive = false;         // an engine is actually live (UI indicator)
@@ -347,15 +395,40 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
      AssemblyAI dropped and we tried to reconnect. */
   function disconnectAssemblyTransport() {
     clearTimeout(muteTimer);
-    try { processor?.disconnect(); } catch { /* not connected */ }
-    processor = null;
+    if (audioTap) {
+      if (audioTap.port) { audioTap.port.onmessage = null; try { audioTap.port.close(); } catch { /* closed */ } }
+      audioTap.onaudioprocess = null;
+      try { audioTap.disconnect(); } catch { /* not connected */ }
+    }
+    audioTap = null;
+    try { audioMute?.disconnect(); } catch { /* not connected */ }
+    audioMute = null;
+    audioStats.chunks = 0; audioStats.sumRms = 0; audioStats.lastChunkAt = 0; audioStats.stalled = false;
+    lastServerMsgAt = 0;
+    heartbeats = false;
     if (ws) {
       ws.onopen = ws.onmessage = ws.onerror = ws.onclose = null;
       try { ws.close(); } catch { /* already closed */ }
       ws = null;
     }
-    try { audioCtx?.close(); } catch { /* already closed */ }
+    if (audioCtx) {
+      audioCtx.onstatechange = null;
+      try { audioCtx.close(); } catch { /* already closed */ }
+    }
     audioCtx = null;
+  }
+
+  /* Chrome does not suspend an AudioContext merely because the tab is hidden,
+     but a context can still end up "suspended" or "interrupted" (an OS audio
+     device change, a Bluetooth headset switching profiles, Safari). Resume
+     whenever we notice; the start click gives sticky activation, so no
+     further gesture is needed. The audio watchdog rebuilds the graph if
+     resuming does not bring PCM back. */
+  function keepAudioGraphAlive() {
+    if (!audioCtx || finalized || destroyed || !transcribing) return;
+    if (audioCtx.state === "suspended" || audioCtx.state === "interrupted") {
+      audioCtx.resume().catch(() => {});
+    }
   }
   function teardownAssembly() {
     disconnectAssemblyTransport();
@@ -365,8 +438,8 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
 
   /* ---------------- primary engine: AssemblyAI Universal-Streaming ----------
      One mic stream → PCM16 over a websocket → partial words for the captions,
-     formatted end-of-turn sentences into the log. The server mints short-lived
-     tokens (the API key never reaches this page). Any failure to start falls
+     end-of-turn sentences into the log (formatted text replaces the same turn).
+     The server mints short-lived tokens (the API key never reaches this page). Any failure to start falls
      back to the browser engine below; a mid-session drop reconnects, and if
      that fails, falls back too — a session never dies over transcription. */
   async function mintStreamToken() {
@@ -402,6 +475,7 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     reconnectTimer = setTimeout(async () => {
       try {
         if (!transcribing || finalized || destroyed || generation !== transcriptionGeneration) return;
+        commitPendingVoice();
         disconnectAssemblyTransport();
         const again = await startAssemblyTranscription();
         if (generation !== transcriptionGeneration || finalized || destroyed) return;
@@ -445,6 +519,82 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     }
   }
 
+  function applyAssemblyTurn(msg) {
+    const text = (msg.transcript || "").trim();
+    if (!text) return;
+    lastHeardAt = now();
+    confirmMicrophone(text);
+    const turnOrder = Number.isInteger(msg.turn_order) ? msg.turn_order : null;
+    if (msg.end_of_turn) {
+      if (running && micCheck !== "checking") {
+        const lastVoice = [...state.log].reverse().find((event) => event?.type === "voice");
+        const sameTurn = turnOrder != null && lastVoice?.turnOrder === turnOrder;
+        if (sameTurn) {
+          lastVoice.text = text;
+          if (msg.turn_is_formatted) delete lastVoice.interim;
+          save();
+          scheduleCheckpoint();
+        } else {
+          logEvent({
+            type: "voice",
+            text,
+            ...(turnOrder != null ? { turnOrder } : {}),
+            ...(msg.turn_is_formatted ? {} : { interim: true }),
+          });
+        }
+      }
+      transcriptTail = [...transcriptTail, text].slice(-4);
+      interim = "";
+    } else {
+      interim = text;
+    }
+    save();
+    scheduleCheckpoint();
+    emit();
+  }
+
+  async function loadPcmTap(ctx) {
+    if (!ctx.audioWorklet?.addModule || typeof AudioWorkletNode !== "function") return false;
+    try {
+      await Promise.race([
+        ctx.audioWorklet.addModule(pcmTapModuleUrl()),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("worklet timeout")), 4000)),
+      ]);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /* Prefer the worklet; fall back to ScriptProcessor (deprecated, but still
+     everywhere) when the worklet cannot be loaded or constructed. */
+  function buildPcmTap(onPcm) {
+    if (audioEngine === "worklet") {
+      try {
+        const node = new AudioWorkletNode(audioCtx, PCM_TAP_NAME, {
+          numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: "explicit",
+        });
+        node.port.onmessage = (e) => { if (e.data?.pcm) onPcm(e.data.pcm, e.data.rms || 0); };
+        return node;
+      } catch {
+        audioEngine = "processor";
+      }
+    }
+    const node = audioCtx.createScriptProcessor(4096, 1, 1);
+    node.onaudioprocess = (e) => {
+      const f32 = e.inputBuffer.getChannelData(0);
+      const i16 = new Int16Array(f32.length);
+      let sumSq = 0;
+      for (let i = 0; i < f32.length; i++) {
+        const s = Math.max(-1, Math.min(1, f32[i]));
+        sumSq += s * s;
+        i16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+      onPcm(i16.buffer, f32.length ? Math.sqrt(sumSq / f32.length) : 0);
+    };
+    return node;
+  }
+
   async function startAssemblyTranscription() {
     const generation = transcriptionGeneration;
     const token = await mintStreamToken();
@@ -456,11 +606,13 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
 
     const AC = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AC({ sampleRate: 16000 });
+    audioCtx.onstatechange = () => keepAudioGraphAlive();
     await audioCtx.resume();
     if (generation !== transcriptionGeneration || destroyed || finalized) return { ok: false, reason: "cancelled" };
     const rate = Math.round(audioCtx.sampleRate); // browser may not honour 16k — tell AAI what we actually have
     const source = audioCtx.createMediaStreamSource(micStream);
-    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+    audioEngine = (await loadPcmTap(audioCtx)) ? "worklet" : "processor";
+    if (generation !== transcriptionGeneration || destroyed || finalized) return { ok: false, reason: "cancelled" };
 
     return new Promise((resolve) => {
       let settled = false;
@@ -471,9 +623,23 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
         resolve(value);
       };
       const timeout = setTimeout(() => ready({ ok: false, reason: 'ws_timeout' }), 8000);
-      ws = new WebSocket(
-        `wss://streaming.assemblyai.com/v3/ws?sample_rate=${rate}&format_turns=true&token=${encodeURIComponent(token)}`
-      );
+      const params = new URLSearchParams({
+        sample_rate: String(rate),
+        format_turns: "true",
+        // Thinking aloud while coding has mid-sentence pauses. The default
+        // end-of-turn silence splits words ("Does" / "n't") into separate
+        // turns. AssemblyAI ignores unknown parameters, so both the current
+        // name and the pre-rename spelling are sent.
+        min_turn_silence: "1000",
+        min_end_of_turn_silence_when_confident: "1000",
+        max_turn_silence: "2800",
+        end_of_turn_confidence_threshold: "0.7",
+        // A Heartbeat every 5s lets the watchdog tell a dead socket (laptop
+        // sleep, network change, half-open TCP) from a quiet candidate.
+        session_heartbeat: "true",
+        token,
+      });
+      ws = new WebSocket(`wss://streaming.assemblyai.com/v3/ws?${params}`);
       const socket = ws;
       ws.binaryType = "arraybuffer";
 
@@ -483,46 +649,49 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
           ready({ ok: false, reason: 'cancelled' });
           return;
         }
-        processor.onaudioprocess = (e) => {
-          if (!transcribing || !ws || ws.readyState !== 1) return;
-          const f32 = e.inputBuffer.getChannelData(0);
-          const i16 = new Int16Array(f32.length);
-          for (let i = 0; i < f32.length; i++) {
-            const s = Math.max(-1, Math.min(1, f32[i]));
-            i16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
-          }
-          ws.send(i16.buffer);
+        const onPcm = (buffer, rms) => {
+          audioStats.chunks++;
+          audioStats.sumRms += rms;
+          audioStats.lastChunkAt = Date.now();
+          if (!transcribing || !ws || ws.readyState !== 1 || socket !== ws) return;
+          ws.send(buffer);
         };
-        source.connect(processor);
-        processor.connect(audioCtx.destination);
+        try {
+          audioTap = buildPcmTap(onPcm);
+          source.connect(audioTap);
+          // A node is only rendered when it reaches the destination. Neither
+          // tap writes any output, so nothing is audible and echo cancellation
+          // has no reference to subtract; the gain-0 node is purely a pull path.
+          try {
+            audioMute = audioCtx.createGain();
+            audioMute.gain.value = 0;
+            audioTap.connect(audioMute);
+            audioMute.connect(audioCtx.destination);
+          } catch {
+            audioTap.connect(audioCtx.destination);
+          }
+        } catch {
+          socket.close();
+          ready({ ok: false, reason: "audio_graph" });
+          return;
+        }
+        keepAudioGraphAlive();
         micLive = true;
         lastHeardAt = now();
+        lastServerMsgAt = Date.now();
+        audioStats.lastChunkAt = Date.now(); // grace period for the first chunk
         emit();
-        if (!settled) { logEvent({ type: "transcript_started", engine: "assemblyai" }); ready({ ok: true }); }
+        if (!settled) { logEvent({ type: "transcript_started", engine: "assemblyai", audio: audioEngine }); ready({ ok: true }); }
       };
 
       ws.onmessage = (evt) => {
         if (generation !== transcriptionGeneration || destroyed || finalized || !transcribing || socket !== ws) return;
+        lastServerMsgAt = Date.now();
         let msg;
         try { msg = JSON.parse(evt.data); } catch { return; }
+        if (msg.type === "Heartbeat") { heartbeats = true; return; }
         if (msg.type !== "Turn") return;
-        const text = (msg.transcript || "").trim();
-        if (!text) return;
-        lastHeardAt = now();
-        confirmMicrophone(text);
-        if (msg.end_of_turn && msg.turn_is_formatted) {
-          if (running && micCheck !== "checking") logEvent({ type: "voice", text });
-          transcriptTail = [...transcriptTail, text].slice(-4);
-          interim = "";
-        } else if (!msg.end_of_turn) {
-          interim = text;
-        } else {
-          // Keep an unformatted final turn until the formatted result arrives.
-          interim = text;
-        }
-        save();
-        scheduleCheckpoint();
-        emit();
+        applyAssemblyTurn(msg);
       };
 
       ws.onerror = () => {
@@ -800,8 +969,40 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
      Make it THEIR screen's problem (banner via snapshot) and the assessor's
      record (log event) — never silently produce an empty transcript. */
   const MIC_SILENT_AFTER_MS = 45_000;
+  const AUDIO_STALL_MS = 15_000;   // no PCM from the audio graph → rebuild it
+  const SOCKET_STALL_MS = 20_000;  // no frame from AssemblyAI although it heartbeats every 5s → reconnect
+  const HEALTH_EVERY_TICKS = 15;   // this runs every 2s → one audio_health line per 30s
   function micSilenceCheck() {
-    if (!running || finalized || phase !== "running" || !micLive) return;
+    keepAudioGraphAlive();
+    if (!running || finalized || phase !== "running") return;
+    /* Transport watchdog + health telemetry. Runs even while the tab is
+       hidden (the open WebSocket exempts the page from intensive timer
+       throttling). The health line is what lets a reviewer see whether audio
+       was flowing while the candidate was in their editor. */
+    if (ws && ws.readyState === 1 && transcribing && !reconnecting) {
+      const nowMs = Date.now();
+      const hidden = typeof document !== "undefined" && !!document.hidden;
+      if (audioStats.lastChunkAt && nowMs - audioStats.lastChunkAt > AUDIO_STALL_MS) {
+        logEvent({ type: "audio_stalled", engine: audioEngine, ctx: audioCtx?.state || "none", hidden });
+        scheduleAssemblyReconnect(); // rebuilds graph + socket; the mic stream is kept
+        return;
+      }
+      if (heartbeats && lastServerMsgAt && nowMs - lastServerMsgAt > SOCKET_STALL_MS) {
+        logEvent({ type: "transcript_stalled", quietFor: Math.round((nowMs - lastServerMsgAt) / 1000), hidden });
+        scheduleAssemblyReconnect();
+        return;
+      }
+      if (++healthTicks >= HEALTH_EVERY_TICKS) {
+        healthTicks = 0;
+        const level = audioStats.chunks
+          ? Math.round(20 * Math.log10(Math.max(audioStats.sumRms / audioStats.chunks, 1e-5)))
+          : null; // dBFS-ish average; -100 means digital silence, speech is typically -35…-15
+        logEvent({ type: "audio_health", engine: audioEngine, chunks: audioStats.chunks, level, ctx: audioCtx?.state || "none", hidden });
+        audioStats.chunks = 0;
+        audioStats.sumRms = 0;
+      }
+    }
+    if (!micLive) return;
     const quiet = now() - lastHeardAt > MIC_SILENT_AFTER_MS;
     if (quiet && !silentLogged) {
       silentLogged = true;
@@ -1180,12 +1381,14 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
 
   /* ---------------- global listeners ---------------- */
   function goAway() {
+    keepAudioGraphAlive();
     if (!running || tabAway) return;
     tabAway = true;
     idleSince = null;
     logEvent({ type: "blur_tab" });
   }
   function comeBack() {
+    keepAudioGraphAlive();
     if (!running || !tabAway) return;
     tabAway = false;
     lastActivity = now();
@@ -1213,7 +1416,10 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
     const n = now();
     if (n - mmThrottle > 400) { mmThrottle = n; activity(); }
   };
-  const onVisibility = () => { document.hidden ? goAway() : comeBack(); };
+  const onVisibility = () => {
+    keepAudioGraphAlive();
+    document.hidden ? goAway() : comeBack();
+  };
   const onBeforeUnload = (e) => {
     if (running || state.pendingSubmission) { e.preventDefault(); e.returnValue = ""; }
   };
