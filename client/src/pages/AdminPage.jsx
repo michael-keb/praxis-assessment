@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { CODE_COLUMNS, nextSort, sortByColumn } from "../admin-table-sort.js";
 import { api } from "../api.js";
 
 const BriefEditor = lazy(() => import("../components/BriefEditor.jsx"));
@@ -9,6 +10,7 @@ export default function AdminPage({ user, onLogout }) {
   const [codes, setCodes] = useState([]);
   const [error, setError] = useState("");
   const [filterId, setFilterId] = useState("all");
+  const [sort, setSort] = useState({ key: null, dir: "asc" });
 
   const refresh = useCallback(() => {
     api.adminAssessments().then((d) => setAssessments(d.assessments)).catch((e) => setError(e.message));
@@ -20,6 +22,10 @@ export default function AdminPage({ user, onLogout }) {
     () => (filterId === "all" ? codes : codes.filter((c) => String(c.assessment_id || "") === String(filterId))),
     [codes, filterId]
   );
+  const sortedCodes = useMemo(() => {
+    const column = CODE_COLUMNS.find((c) => c.key === sort.key);
+    return column ? sortByColumn(visibleCodes, column, sort.dir) : visibleCodes;
+  }, [visibleCodes, sort]);
   const summary = visibleCodes.reduce((acc, c) => ((acc[c.status] = (acc[c.status] || 0) + 1), acc), {});
   const link = (code) => `${window.location.origin}/assess?case=${code}`;
 
@@ -59,13 +65,30 @@ export default function AdminPage({ user, onLogout }) {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Code</th><th>Assessment</th><th>Candidate link</th><th>Status</th><th>Candidate</th>
-              <th>Started</th><th>Submitted</th><th>End</th><th>Frames</th><th>Audio</th><th>Actions</th>
+              {CODE_COLUMNS.map((column) => {
+                const active = sort.key === column.key;
+                return (
+                  <th
+                    key={column.key}
+                    aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button
+                      type="button"
+                      className="sort-th"
+                      data-active={active ? "true" : "false"}
+                      onClick={() => setSort((current) => nextSort(current, column.key))}
+                    >
+                      {column.label}
+                      <span className="sort-ind" aria-hidden="true">{active ? (sort.dir === "asc" ? "▲" : "▼") : "↕"}</span>
+                    </button>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {visibleCodes.length === 0 && <tr><td colSpan={11}>none yet</td></tr>}
-            {visibleCodes.map((c) => (
+            {sortedCodes.length === 0 && <tr><td colSpan={CODE_COLUMNS.length}>none yet</td></tr>}
+            {sortedCodes.map((c) => (
               <tr key={c.code}>
                 <td style={{ fontFamily: "var(--mono)" }}>{c.code}</td>
                 <td>{c.assessment_title || "—"}</td>

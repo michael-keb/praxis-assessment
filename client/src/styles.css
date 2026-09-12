@@ -335,6 +335,16 @@ textarea:focus { border-color: var(--cold); box-shadow: 4px 4px 0 var(--warm); }
   font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
   color: var(--cold-faint); font-weight: 700; background: var(--raised);
 }
+.admin-table .sort-th {
+  display: inline-flex; align-items: center; gap: 6px; width: 100%;
+  background: none; border: none; padding: 0; margin: 0;
+  font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit;
+  text-align: left; white-space: nowrap;
+}
+.admin-table .sort-th:hover { color: var(--cold); }
+.admin-table .sort-ind { font-size: 9px; opacity: .4; }
+.admin-table .sort-th[data-active="true"] { color: var(--cold); }
+.admin-table .sort-th[data-active="true"] .sort-ind { opacity: 1; }
 .admin-table input { width: 100%; font: inherit; font-size: 12.5px; border: none; background: none; color: var(--cold-dim); }
 .status-pill { font-family: var(--mono); font-size: 12px; padding: 2px 8px; font-weight: 700; text-transform: uppercase; }
 .status-unused { background: var(--warm-soft); color: var(--cold); }
