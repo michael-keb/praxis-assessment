@@ -61,6 +61,11 @@ for (const [col, def] of [
   try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} INTEGER NOT NULL DEFAULT ${def}`); } catch { /* exists */ }
 }
 try { db.exec(`ALTER TABLE codes ADD COLUMN candidate_portfolio TEXT`); } catch { /* exists */ }
+/* Integrations may tag an issuance with their own reference (e.g. a candidate
+   id) so a retry after a lost response returns the same code instead of
+   minting a second one. Unique where present; legacy rows stay NULL. */
+try { db.exec(`ALTER TABLE codes ADD COLUMN client_ref TEXT`); } catch { /* exists */ }
+db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_codes_client_ref ON codes(client_ref) WHERE client_ref IS NOT NULL`);
 /* Candidate-session ownership and the assessment snapshot are nullable on
    purpose. Pre-existing active/submitted rows cannot be assigned a trustworthy
    owner during migration, so candidate writes to those rows are refused. */
@@ -135,19 +140,40 @@ export const nowIso = () => new Date().toISOString().slice(0, 19) + "Z";
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no 0/O/1/I/L
 export const CODE_RE = /^[A-Z0-9]{6}$/;
 
-export function newCodes(count, assessmentId = null) {
-  const insert = db.prepare("INSERT INTO codes (code, created_at, assessment_id) VALUES (?, ?, ?)");
+export function newCodes(count, assessmentId = null, clientRef = null) {
+  const insert = db.prepare("INSERT INTO codes (code, created_at, assessment_id, client_ref) VALUES (?, ?, ?, ?)");
   const issued = [];
   while (issued.length < count) {
     let code = "";
     for (let i = 0; i < 6; i++) code += CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)];
     try {
-      insert.run(code, nowIso(), assessmentId);
+      insert.run(code, nowIso(), assessmentId, clientRef);
       issued.push(code);
-    } catch { /* collision — retry */ }
+    } catch (error) {
+      /* A client_ref clash is not a code collision: the caller already holds a code
+         under that reference, and retrying would spin forever. */
+      if (clientRef && /idx_codes_client_ref|client_ref/.test(error.message)) throw error;
+      /* code collision — retry */
+    }
   }
   return issued;
 }
+
+export const CLIENT_REF_RE = /^[A-Za-z0-9._:@+-]{1,128}$/;
+
+export function getCodeByClientRef(clientRef) {
+  if (!clientRef || !CLIENT_REF_RE.test(clientRef)) return null;
+  return db.prepare("SELECT * FROM codes WHERE client_ref = ?").get(clientRef) || null;
+}
+
+/* Issue-or-return under a client reference, atomically: two concurrent calls with
+   the same reference get the same code. */
+export const issueCodeForClientRef = db.transaction((assessmentId, clientRef) => {
+  const existing = getCodeByClientRef(clientRef);
+  if (existing) return { code: existing.code, reused: true };
+  const [code] = newCodes(1, assessmentId, clientRef);
+  return { code, reused: false };
+});
 
 export function getCode(code) {
   if (!code || !CODE_RE.test(code)) return null;

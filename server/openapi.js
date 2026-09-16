@@ -57,6 +57,7 @@ export const openapiSpec = {
         example: { error: "unknown code" }
       },
       Ok: { type: "object", properties: { ok: { type: "boolean", example: true } } },
+      ClientRef: { type: "string", pattern: "^[A-Za-z0-9._:@+-]{1,128}$", example: "rm:email:21bbb0d4", description: "Caller-owned issuance reference; unique per code." },
       Code: {
         type: "string",
         description: "Single-use assessment code — six characters, no 0/O/1/I/L.",
@@ -844,25 +845,33 @@ export const openapiSpec = {
         tags: ["integrations"],
         summary: "Issue a single code and its candidate link",
         description:
-          "Candidate name/LinkedIn are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`).",
+          "Candidate name/LinkedIn are NOT accepted here — the platform captures them itself when the candidate opens the link (see `/api/assessment/start`). Pass `clientRef` (your own id for this issuance, e.g. a candidate id) to make the call idempotent: a repeat with the same reference returns the code already held under it (`reused: true`) instead of minting another.",
         security: [{ apiKey: [] }],
         requestBody: {
           content: {
             "application/json": {
-              schema: { type: "object", properties: { assessmentId: { type: "integer", nullable: true } } }
+              schema: {
+                type: "object",
+                properties: {
+                  assessmentId: { type: "integer", nullable: true },
+                  clientRef: { $ref: "#/components/schemas/ClientRef" }
+                }
+              }
             }
           }
         },
         responses: {
           200: {
-            description: "Issued",
+            description: "Issued (or, under a known clientRef, returned again)",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
                     code: { $ref: "#/components/schemas/Code" },
-                    url: { type: "string", format: "uri", example: "https://assess.example.com/assess?case=K7QM4X" }
+                    url: { type: "string", format: "uri", example: "https://assess.example.com/assess?case=K7QM4X" },
+                    clientRef: { $ref: "#/components/schemas/ClientRef" },
+                    reused: { type: "boolean", description: "Present only with clientRef: true when an earlier call already minted this code." }
                   }
                 }
               }
@@ -870,6 +879,36 @@ export const openapiSpec = {
           },
           400: { $ref: "#/components/responses/BadRequest" },
           401: { $ref: "#/components/responses/Unauthorized" }
+        }
+      },
+      get: {
+        tags: ["integrations"],
+        summary: "Reconcile an issuance by clientRef",
+        description: "Answers whether an earlier `POST` under this reference minted a code — for a caller that sent the request and lost the response. 404 means nothing was minted and issuing again is safe.",
+        security: [{ apiKey: [] }],
+        parameters: [{ name: "clientRef", in: "query", required: true, schema: { $ref: "#/components/schemas/ClientRef" } }],
+        responses: {
+          200: {
+            description: "A code exists under this reference",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    code: { $ref: "#/components/schemas/Code" },
+                    url: { type: "string", format: "uri" },
+                    clientRef: { $ref: "#/components/schemas/ClientRef" },
+                    status: { $ref: "#/components/schemas/CodeStatus" },
+                    assessmentId: { type: "integer", nullable: true },
+                    createdAt: { type: "string" }
+                  }
+                }
+              }
+            }
+          },
+          400: { $ref: "#/components/responses/BadRequest" },
+          401: { $ref: "#/components/responses/Unauthorized" },
+          404: { description: "No code under this clientRef" }
         }
       }
     },
