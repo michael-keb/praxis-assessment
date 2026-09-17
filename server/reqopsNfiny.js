@@ -126,7 +126,21 @@ async function fetchLiveCommandCenter(req) {
   }
 }
 
+const PROGRESS_HTML = path.join(ROOT, "static", "nfiny", "backend-engineer", "index.html");
+
+function mountBackendEngineerProgress(app) {
+  if (!fs.existsSync(PROGRESS_HTML)) return;
+  const sendProgress = (_req, res) => {
+    res.set("X-Robots-Tag", "noindex, nofollow");
+    res.sendFile(PROGRESS_HTML);
+  };
+  app.get(["/nfiny/backend-engineer", "/nfiny/backend-engineer/"], sendProgress);
+  console.log("  nfiny backend engineer progress: /nfiny/backend-engineer/");
+}
+
 export function mountReqopsNfiny(app) {
+  mountBackendEngineerProgress(app);
+
   if (!fs.existsSync(STATIC_DIR)) return;
 
   const snapshot = loadEmbeddedSnapshot();
