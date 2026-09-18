@@ -68,6 +68,8 @@ test("serves the Nfiny backend engineer progress report", async () => {
   assert.match(html, /Moving to round two/);
   assert.equal(html.includes("<a "), false);
   assert.equal(/href="https?:/.test(html), false);
+  assert.match(html, /<g class="scatter-point"/);
+  assert.ok((html.match(/<g class="scatter-point"/g) || []).length >= 48);
 });
 
 test("trailing slash reaches the same report", async () => {
