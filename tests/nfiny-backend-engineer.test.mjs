@@ -66,6 +66,8 @@ test("serves the Nfiny backend engineer progress report", async () => {
   const html = await response.text();
   assert.match(html, /Backend Engineering · Progress Update/);
   assert.match(html, /Moving to round two/);
+  assert.equal(html.includes("<a "), false);
+  assert.equal(/href="https?:/.test(html), false);
 });
 
 test("trailing slash reaches the same report", async () => {
