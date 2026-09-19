@@ -10,7 +10,7 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
-import { createSendASweetRouter } from "../../Send a Sweet/site/server/sendasweet.js";
+import { createSendASweetRouter } from "./sendasweet.js";
 import { startSessionSweeper } from "./assessment-session.js";
 import { mountReqopsNfiny } from "./reqopsNfiny.js";
 
@@ -18,7 +18,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
 const CAREERS_DIR = path.join(ROOT, "static", "careers");
-const SENDASWEET_DIR = path.join(ROOT, "..", "Send a Sweet", "site", "public");
+const SENDASWEET_DIR = path.join(ROOT, "static", "sendasweet");
 
 seedAdmin();
 startSessionSweeper();
