@@ -10,7 +10,7 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
-import { createSendASweetRouter } from "./sendasweet.js";
+import { createSendASweetRouter } from "../../Send a Sweet/site/server/sendasweet.js";
 import { startSessionSweeper } from "./assessment-session.js";
 import { mountReqopsNfiny } from "./reqopsNfiny.js";
 
@@ -18,7 +18,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
 const CAREERS_DIR = path.join(ROOT, "static", "careers");
-const SENDASWEET_DIR = path.join(ROOT, "static", "sendasweet");
+const SENDASWEET_DIR = path.join(ROOT, "..", "Send a Sweet", "site", "public");
 
 seedAdmin();
 startSessionSweeper();
@@ -58,12 +58,18 @@ if (fs.existsSync(CAREERS_DIR)) {
   app.get(["/careers", "/careers/"], (_req, res) => {
     res.sendFile(path.join(CAREERS_DIR, "index.html"));
   });
-  const manualTesterCareers = path.join(CAREERS_DIR, "manual-tester", "index.html");
-  if (fs.existsSync(manualTesterCareers)) {
-    app.get(["/careers/manual-tester", "/careers/manual-tester/"], (_req, res) => {
-      res.sendFile(manualTesterCareers);
-    });
-  }
+  /* The Backend Engineer posting is the careers index itself; outreach emails
+     link to it by slug. */
+  app.get(["/careers/backend-engineer", "/careers/backend-engineer/"], (_req, res) => {
+    res.sendFile(path.join(CAREERS_DIR, "index.html"));
+  });
+  /* Any posting with its own folder: static/careers/<slug>/index.html. */
+  app.get("/careers/:slug", (req, res, next) => {
+    if (!/^[a-z0-9-]+$/.test(req.params.slug)) return next();
+    const page = path.join(CAREERS_DIR, req.params.slug, "index.html");
+    if (!fs.existsSync(page)) return next();
+    res.sendFile(page);
+  });
   app.use(
     "/careers",
     express.static(CAREERS_DIR, { index: false, redirect: false })
