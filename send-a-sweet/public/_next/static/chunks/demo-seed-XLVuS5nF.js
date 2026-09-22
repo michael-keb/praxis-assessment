@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-Belv08Rx.js";import{i as t}from"./framework-Ce4z38D7.js";import{n}from"./demoSeed-CWQrDExI.js";var r=e(t(),1);function i(){return(0,r.useEffect)(()=>{n()},[]),null}export{i as DemoSeed};

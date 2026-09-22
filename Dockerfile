@@ -26,6 +26,7 @@ RUN apt-get update \
 COPY server ./server
 COPY --from=build /app/dist ./dist
 COPY static ./static
+COPY send-a-sweet ./send-a-sweet
 
 EXPOSE 8124
 CMD ["node", "server/index.js"]

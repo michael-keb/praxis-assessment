@@ -8,7 +8,7 @@ import { PORT } from "./config.js";
 export const openapiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "Praxis Assessment API",
+    title: "ReqOps Assessment API",
     version: "2.0.0",
     description:
       "Assessment platform API.\n\n" +
@@ -234,14 +234,14 @@ export const openapiSpec = {
     }
   },
   paths: {
-    "/sendasweet": {
+    "/send-a-sweet": {
       get: {
         tags: ["system"], summary: "Send a Sweet gallery", security: [],
-        description: "Public standalone gifting concept. Assets and maker stores are scoped to /sendasweet.",
+        description: "Public standalone gifting concept. Assets and maker stores are scoped to /send-a-sweet.",
         responses: { 200: { description: "Gallery HTML", content: { "text/html": { schema: { type: "string" } } } } }
       }
     },
-    "/sendasweet/makers/{slug}": {
+    "/send-a-sweet/makers/{slug}": {
       get: {
         tags: ["system"], summary: "Send a Sweet maker storefront", security: [],
         parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string", enum: ["cocoa-and-crumb", "butter-and-fold", "sunday-sweet"] } }],
@@ -956,7 +956,7 @@ docsRouter.use(
   "/docs",
   swaggerUi.serve,
   swaggerUi.setup(openapiSpec, {
-    customSiteTitle: "Praxis Assessment API",
+    customSiteTitle: "ReqOps Assessment API",
     swaggerOptions: { persistAuthorization: true, docExpansion: "list" }
   })
 );

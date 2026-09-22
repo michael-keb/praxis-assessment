@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New gift order — Send a Sweet</title>
+</head>
+<body style="margin:0; padding:0; background-color:#fdf4e9; -webkit-font-smoothing:antialiased;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fdf4e9;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:560px;">
+
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <a href="{{siteUrl}}" style="text-decoration:none;"><img src="{{siteUrl}}brand/send-a-sweet-horizontal-burgundy-email.png" width="160" height="59" alt="Send a Sweet" style="display:block; width:160px; height:auto; border:0; outline:none; color:#b81d45; font-family:Georgia, serif; font-size:22px;" /></a>
+              <p style="margin:8px 0 0 0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:11px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:#811c30;">
+                Maker notification
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <h1 style="margin:0; font-family:'Cormorant Garamond', Cormorant, Georgia, 'Times New Roman', serif; font-size:24px; font-weight:500; line-height:1.25; color:#69192b;">
+                New order for {{storeName}}
+              </h1>
+              <p style="margin:12px 0 0 0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; line-height:1.55; color:#79544e;">
+                Payment is confirmed. Please review the details below and contact the buyer to confirm delivery or pickup timing so the surprise stays on track.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#FFFFFF; border:1px solid #d7bfb6; border-radius:16px; box-shadow:0 4px 24px rgba(105,25,43,0.08);">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <p style="margin:0 0 6px 0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#79544e;">
+                      Order reference
+                    </p>
+                    <p style="margin:0 0 16px 0; font-family:ui-monospace, 'Cascadia Code', 'SF Mono', Consolas, monospace; font-size:17px; font-weight:600; color:#69192b;">
+                      {{orderId}}
+                    </p>
+                    <p style="margin:0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:1.5; color:#69192b;">
+                      <strong>Sweet:</strong> {{sweetEmoji}} {{sweetName}}<br />
+                      <strong>Total:</strong> {{total}}<br />
+                      <strong>Ordered:</strong> {{orderedAt}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3e9dc; border:1px solid #d7bfb6; border-radius:16px;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <p style="margin:0 0 10px 0; font-family:'Cormorant Garamond', Cormorant, Georgia, 'Times New Roman', serif; font-size:16px; font-weight:500; color:#69192b;">
+                      Buyer (sender)
+                    </p>
+                    <p style="margin:0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:1.55; color:#79544e;">
+                      {{senderName}}<br />
+                      {{buyerEmail}}<br />
+                      {{buyerPhone}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:20px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f3e9dc; border:1px solid #d7bfb6; border-radius:16px;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <p style="margin:0 0 10px 0; font-family:'Cormorant Garamond', Cormorant, Georgia, 'Times New Roman', serif; font-size:16px; font-weight:500; color:#69192b;">
+                      Recipient &amp; delivery
+                    </p>
+                    <p style="margin:0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; line-height:1.55; color:#79544e;">
+                      {{recipientBlock}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding-bottom:28px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#FFFFFF; border:1px solid #d7bfb6; border-radius:16px;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <p style="margin:0 0 10px 0; font-family:'Cormorant Garamond', Cormorant, Georgia, 'Times New Roman', serif; font-size:16px; font-weight:500; color:#69192b;">
+                      Gift message
+                    </p>
+                    <p style="margin:0; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:15px; line-height:1.6; color:#69192b; font-style:italic;">
+                      {{giftMessage}}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-bottom:28px;">
+              <a href="{{makerDashboardUrl}}" style="display:inline-block; padding:14px 28px; border-radius:999px; background-color:#69192b; color:#fdf4e9; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:14px; font-weight:600; text-decoration:none;">
+                Open in dashboard
+              </a>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="padding-top:8px; border-top:1px solid #d7bfb6;">
+              <p style="margin:0; padding-top:20px; font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size:12px; line-height:1.5; color:#79544e;">
+                Send a Sweet &mdash; maker notifications<br />
+                <a href="{{siteUrl}}" style="color:#811c30; text-decoration:underline;">{{siteUrlDisplay}}</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

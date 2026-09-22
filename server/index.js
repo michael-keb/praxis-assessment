@@ -10,7 +10,7 @@ import { adminRouter } from "./admin.js";
 import { integrationsRouter } from "./integrations.js";
 import { docsRouter } from "./openapi.js";
 import { PORT } from "./config.js";
-import { createSendASweetRouter } from "./sendasweet.js";
+import { createSendASweetRouter } from "../send-a-sweet/server/sendasweet.js";
 import { startSessionSweeper } from "./assessment-session.js";
 import { mountReqopsNfiny } from "./reqopsNfiny.js";
 
@@ -18,7 +18,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const DIST = path.join(ROOT, "dist");
 const INTERIOR_DIR = path.join(ROOT, "static", "interior-designers");
 const CAREERS_DIR = path.join(ROOT, "static", "careers");
-const SENDASWEET_DIR = path.join(ROOT, "static", "sendasweet");
+const SENDASWEET_DIR = path.join(ROOT, "send-a-sweet", "public");
 
 seedAdmin();
 startSessionSweeper();
@@ -78,7 +78,15 @@ if (fs.existsSync(CAREERS_DIR)) {
 
 /* Send a Sweet gallery and maker stores (public standalone export). */
 if (fs.existsSync(SENDASWEET_DIR)) {
-  app.use("/sendasweet", createSendASweetRouter(SENDASWEET_DIR));
+  app.use("/send-a-sweet", createSendASweetRouter(SENDASWEET_DIR));
+  /* The site used to live at /sendasweet. That path is retired: answer it with
+     Send a Sweet's own 404 page rather than letting the SPA fallback below
+     serve the assessment app to someone following an old link. */
+  app.use("/sendasweet", (req, res, next) => {
+    const missing = path.join(SENDASWEET_DIR, "missing", "index.html");
+    if (!req.accepts("html") || !fs.existsSync(missing)) return next();
+    res.status(404).set("Cache-Control", "no-store").sendFile(missing);
+  });
 }
 
 /* ReqOps client recruitment observatory (password gate). */
@@ -92,6 +100,7 @@ if (fs.existsSync(DIST)) {
     if (req.path.startsWith("/interior-designers")) return next();
     if (req.path.startsWith("/careers")) return next();
     if (req.path.startsWith("/reqops/nfiny")) return next();
+    if (req.path === "/send-a-sweet" || req.path.startsWith("/send-a-sweet/")) return next();
     if (req.path === "/sendasweet" || req.path.startsWith("/sendasweet/")) return next();
     res.sendFile(path.join(DIST, "index.html"));
   });

@@ -169,15 +169,19 @@ The previous zero-dependency Python implementation is kept in `legacy/`.
 
 ## Send a Sweet
 
-`/sendasweet` serves the public Send a Sweet gallery, with maker stores at
-`/sendasweet/makers/{slug}`. The concept includes personalised gift-note previews;
-it does not accept orders or write assessment data.
+`/send-a-sweet` serves the public Send a Sweet gallery, with maker stores at
+`/send-a-sweet/makers/{slug}`. The concept includes personalised gift-note previews;
+it does not accept orders or write assessment data. The site was previously at
+`/sendasweet`; that path is retired and answers with Send a Sweet's own 404 page.
 
-`server/sendasweet.js` serves the standalone HTML, images, fonts, JavaScript and
-React navigation payloads in `static/sendasweet/`. Unknown paths return 404
-instead of entering the assessment app. Docker already includes `static/`.
+`send-a-sweet/server/sendasweet.js` serves the standalone HTML, images, fonts,
+JavaScript and React navigation payloads in `send-a-sweet/public/`. Unknown
+paths return 404 instead of entering the assessment app. Both are committed —
+Render builds from this repo — and the Dockerfile copies `send-a-sweet/`.
 
-To update the site, run `npm run export:praxis` in the Send a Sweet source project,
-then replace `static/sendasweet/` with that project's `out-praxis/` contents. The
-export uses `/sendasweet` for all links and assets. Run `npm test` and
-`npm run build` before publishing this repository. Render deploys commits to main.
+To update the site, run `node scripts/export-praxis.mjs /send-a-sweet` in the
+Send a Sweet source project (`../Send a Sweet/Send A Sweet/`), then
+`npm run sync:sendasweet` here to vendor the result. The export writes
+`/send-a-sweet` into every link and asset URL, so a different mount path needs a
+fresh export. Run `npm test` and `npm run build` before publishing this
+repository. Render deploys commits to main.
