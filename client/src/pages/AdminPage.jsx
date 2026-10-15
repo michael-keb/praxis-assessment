@@ -1,7 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { CODE_COLUMNS, nextSort, sortByColumn } from "../admin-table-sort.js";
+import { CODE_COLUMNS, formatTimestamp, nextSort, sortByColumn } from "../admin-table-sort.js";
 import { api } from "../api.js";
+import { ReqopsLockup } from "../components/ReqopsMark.jsx";
 
 const BriefEditor = lazy(() => import("../components/BriefEditor.jsx"));
 
@@ -39,7 +40,7 @@ export default function AdminPage({ user, onLogout }) {
     <>
       <header className="appbar">
         <div className="bar wide">
-          <div className="wordmark">praxis</div>
+          <ReqopsLockup />
           <div className="case-chip">admin</div>
           <div className="spacer" />
           <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>{user.email}</span>
@@ -103,8 +104,8 @@ export default function AdminPage({ user, onLogout }) {
                         : c.candidate_name
                     : "—"}
                 </td>
-                <td style={{ fontSize: 12.5 }}>{c.started_at || "—"}</td>
-                <td style={{ fontSize: 12.5 }}>{c.submitted_at || "—"}</td>
+                <td style={{ fontSize: 12.5, whiteSpace: "nowrap" }} title={c.started_at || undefined}>{formatTimestamp(c.started_at)}</td>
+                <td style={{ fontSize: 12.5, whiteSpace: "nowrap" }} title={c.submitted_at || undefined}>{formatTimestamp(c.submitted_at)}</td>
                 <td>{c.end_reason || "—"}</td>
                 <td>{c.frames}</td>
                 <td>{c.audio || 0}</td>
@@ -138,6 +139,40 @@ function gateSummary(a) {
   if (a.require_cv) parts.push("CV");
   if (a.require_portfolio) parts.push("Portfolio");
   return parts.join(" · ");
+}
+
+const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+function AttachmentsEditor({ existing, pending, onAddPending, onRemovePending, onRemoveExisting }) {
+  return (
+    <div className="field">
+      <label>Attachments for the candidate</label>
+      <div style={{ display: "grid", gap: 6, marginTop: 6, fontSize: 14 }}>
+        {existing.map((f) => (
+          <div key={f.id} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <a href={`/api/admin/attachments/${f.id}`}>{f.name}</a>
+            <span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>{fmtSize(f.size)}</span>
+            <button type="button" className="btn-small" onClick={() => onRemoveExisting(f)}>Remove</button>
+          </div>
+        ))}
+        {pending.map((f, i) => (
+          <div key={`p${i}`} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <span>{f.name}</span>
+            <span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>{fmtSize(f.size)} · uploads on save</span>
+            <button type="button" className="btn-small" onClick={() => onRemovePending(i)}>Remove</button>
+          </div>
+        ))}
+        <input
+          type="file"
+          multiple
+          onChange={(e) => { onAddPending([...e.target.files]); e.target.value = ""; }}
+        />
+      </div>
+      <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+        Candidates can download these alongside the brief once they start. Up to 50 MB per file.
+      </p>
+    </div>
+  );
 }
 
 function GateFieldsEditor({ value, onChange }) {
@@ -177,7 +212,8 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
   const [busy, setBusy] = useState(false);
 
   function startNew() {
-    setEditing({ id: null, title: "", brief: "", durationMinutes: 15, ...DEFAULT_GATE });
+    setEditing({ id: null, title: "", brief: "", durationMinutes: 15, ...DEFAULT_GATE,
+      allowCandidateUploads: false, attachments: [], pendingFiles: [], removedAttachments: [] });
   }
   function startEdit(a) {
     setEditing({
@@ -189,6 +225,10 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       requireUpwork: !!a.require_upwork,
       requireCv: !!a.require_cv,
       requirePortfolio: !!a.require_portfolio,
+      allowCandidateUploads: !!a.allow_candidate_uploads,
+      attachments: a.attachments || [],
+      pendingFiles: [],
+      removedAttachments: [],
     });
   }
   function cancelEdit() { setEditing(null); }
@@ -210,10 +250,14 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       requireUpwork: editing.requireUpwork,
       requireCv: editing.requireCv,
       requirePortfolio: editing.requirePortfolio,
+      allowCandidateUploads: editing.allowCandidateUploads,
     };
     try {
-      if (editing.id) await api.adminUpdateAssessment(editing.id, body);
-      else await api.adminCreateAssessment(body);
+      const { assessment } = editing.id
+        ? await api.adminUpdateAssessment(editing.id, body)
+        : await api.adminCreateAssessment(body);
+      for (const id of editing.removedAttachments) await api.adminDeleteAttachment(id);
+      if (editing.pendingFiles.length) await api.adminUploadAttachments(assessment.id, editing.pendingFiles);
       setEditing(null);
       refresh();
     } catch (e) { setError(e.message); }
@@ -279,6 +323,33 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
             onChange={(gate) => setEditing({ ...editing, ...gate })}
           />
           <div className="field">
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
+              <span style={{ minWidth: 170 }}>Candidates can upload files</span>
+              <select
+                value={editing.allowCandidateUploads ? "yes" : "no"}
+                onChange={(e) => setEditing({ ...editing, allowCandidateUploads: e.target.value === "yes" })}
+                style={{ padding: "6px 10px" }}
+              >
+                <option value="yes">On</option>
+                <option value="no">Off</option>
+              </select>
+            </label>
+            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+              When on, candidates get an upload box during the session to hand in their work for review.
+            </p>
+          </div>
+          <AttachmentsEditor
+            existing={editing.attachments}
+            pending={editing.pendingFiles}
+            onAddPending={(files) => setEditing((c) => ({ ...c, pendingFiles: [...c.pendingFiles, ...files] }))}
+            onRemovePending={(i) => setEditing((c) => ({ ...c, pendingFiles: c.pendingFiles.filter((_, j) => j !== i) }))}
+            onRemoveExisting={(f) => setEditing((c) => ({
+              ...c,
+              attachments: c.attachments.filter((x) => x.id !== f.id),
+              removedAttachments: [...c.removedAttachments, f.id],
+            }))}
+          />
+          <div className="field">
             <label id="a-brief-label" htmlFor="a-brief">Brief (shown to the candidate)</label>
             <Suspense fallback={<p>Loading brief editor…</p>}>
               <BriefEditor
@@ -306,7 +377,9 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
             <b style={{ fontSize: 15.5 }}>{a.title}</b>
             <span style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
-              {a.duration_minutes} min · {gateSummary(a)} · {a.code_count} code{a.code_count === 1 ? "" : "s"} issued
+              {a.duration_minutes} min · {gateSummary(a)}
+              {a.attachments?.length ? ` · ${a.attachments.length} attachment${a.attachments.length === 1 ? "" : "s"}` : ""}
+              {a.allow_candidate_uploads ? " · uploads on" : ""} · {a.code_count} code{a.code_count === 1 ? "" : "s"} issued
               · updated {a.updated_at?.slice(0, 10)}
             </span>
             <div className="spacer" />

@@ -1,4 +1,8 @@
-# Render Blueprint — Praxis Assessment
+# Render Blueprint — ReqOps Assessment
+#
+# NOTE: the service `name` below stays `praxis-assessment`. It identifies the
+# live Render service and its persistent disk; renaming it here provisions a
+# new service and orphans the SQLite database and captured frames.
 #
 # Deploy: push this repo to GitHub, then in Render:
 #   New → Blueprint → pick the repo → apply.
@@ -25,7 +29,7 @@ services:
     disk:
       name: assessment-data
       mountPath: /data       # matches DATA_DIR
-      sizeGB: 10             # ~60 sessions of 1fps frames; raise as needed
+      sizeGB: 30             # 10 GB filled after ~150 sessions (2026-09-14); raise as needed
     envVars:
       # No port is pinned here on purpose. Render injects its own PORT (10000)
       # and health-checks that same port; hardcoding 8124 — the local registry

@@ -54,6 +54,8 @@ export function assessmentSnapshotForStart(codeRow) {
       ? Math.floor(durationMinutes * 60)
       : DEFAULT_ASSESSMENT_SNAPSHOT.durationSeconds,
     gateFields: gateFieldsFromAssessment(assessment),
+    attachments: (assessment.attachments || []).map(({ id, name, size }) => ({ id, name, size })),
+    allowUploads: !!assessment.allow_candidate_uploads,
   };
 }
 
@@ -65,7 +67,7 @@ export function frozenAssessment(codeRow) {
 
 export function publicAssessment(assessment) {
   if (!assessment) return null;
-  const { brief: _brief, ...metadata } = assessment;
+  const { brief: _brief, attachments: _attachments, ...metadata } = assessment;
   return metadata;
 }
 

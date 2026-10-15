@@ -22,5 +22,14 @@ export const api = {
   adminAssessments: () => request("/api/admin/assessments"),
   adminCreateAssessment: (body) => request("/api/admin/assessments", { method: "POST", body }),
   adminUpdateAssessment: (id, body) => request(`/api/admin/assessments/${id}`, { method: "PUT", body }),
-  adminDeleteAssessment: (id) => request(`/api/admin/assessments/${id}`, { method: "DELETE" })
+  adminDeleteAssessment: (id) => request(`/api/admin/assessments/${id}`, { method: "DELETE" }),
+  adminUploadAttachments: async (id, files) => {
+    const fd = new FormData();
+    for (const f of files) fd.append("files", f);
+    const res = await fetch(`/api/admin/assessments/${id}/attachments`, { method: "POST", body: fd });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw Object.assign(new Error(data?.error || res.statusText), { status: res.status });
+    return data;
+  },
+  adminDeleteAttachment: (id) => request(`/api/admin/attachments/${id}`, { method: "DELETE" })
 };

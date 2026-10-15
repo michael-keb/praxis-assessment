@@ -9,6 +9,7 @@ import CaseReviewPage from "./pages/CaseReviewPage.jsx";
 import { ChromeMicSetup } from "./components/ChromeMicSetup.jsx";
 import { isGoogleChrome } from "./chrome.js";
 import "./styles.css";
+import { ReqopsLockup } from "./components/ReqopsMark.jsx";
 
 function RequireUser({ user, ready, children }) {
   const location = useLocation();
@@ -119,7 +120,7 @@ function Landing({ user, ready }) {
   return (
     <div className="screen">
       <div className="card-col">
-        <div className="gate-mark">praxis</div>
+        <ReqopsLockup variant="gate" size={24} />
         <h1>Assessment</h1>
         <p className="lede">
           This assessment must be taken in <b>Google Chrome</b> on a computer,
@@ -134,7 +135,7 @@ function Landing({ user, ready }) {
               placeholder="e.g. 7K2M9Q" maxLength={6} spellCheck="false" autoComplete="off"
               style={{ fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: ".12em" }} />
           </div>
-          <button className="btn-accent" disabled={checkingCode}>
+          <button className="btn-solid" disabled={checkingCode}>
             {checkingCode ? "Checking assessment code…" : "Check assessment code"}
           </button>
           {error && <div className="error-box">{error}</div>}
@@ -155,7 +156,7 @@ function Landing({ user, ready }) {
           Continue to assessment
         </button>
         <p className="fine" style={{ marginTop: 26 }}>
-          Praxis staff: <a href="/auth">admin log in</a>
+          ReqOps staff: <a href="/auth">admin log in</a>
         </p>
       </div>
     </div>

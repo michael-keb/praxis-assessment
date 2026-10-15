@@ -19,6 +19,14 @@ export function actionSortValue(c) {
   return parts.join(" ");
 }
 
+// "13 Sep 2026, 3:58 pm" in the viewer's local time; the raw ISO string stays available as a tooltip.
+export function formatTimestamp(value, { locale = "en-AU", timeZone } = {}) {
+  if (isEmpty(value, "date")) return "—";
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", timeZone,
+  }).format(new Date(value));
+}
+
 function isEmpty(value, type) {
   if (type === "number") return value == null || Number.isNaN(Number(value));
   if (value == null) return true;

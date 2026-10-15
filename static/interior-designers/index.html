@@ -3,23 +3,30 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#faf9f7" />
+  <meta name="theme-color" content="#fbfaf7" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Interior designers</title>
+  <title>Interior designers — ReqOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" />
   <style>
     :root {
-      --bg: #faf9f7;
+      --bg: #fbfaf7;
       --card: #ffffff;
-      --text: #1a1a1a;
-      --muted: #6b6b6b;
-      --line: #e8e6e1;
-      --yes: #1b7f5a;
-      --yes-bg: #e8f5ef;
-      --maybe: #b45309;
-      --maybe-bg: #fef3e2;
-      --no: #9ca3af;
-      --no-bg: #f3f4f6;
-      --accent: #1a1a1a;
+      --text: #1d2128;
+      --muted: #7c828c;
+      --line: rgba(0, 0, 0, .09);
+      --edge: #cfd2d8;
+      --warm: #f4a259;
+      --yes: #3d9e6e;
+      --yes-bg: rgba(61, 158, 110, .12);
+      --maybe: #7d4a17;
+      --maybe-bg: rgba(244, 162, 89, .16);
+      --no: #9aa0aa;
+      --no-bg: #f1efe9;
+      --accent: #1d2128;
+      --font-display: "Space Grotesk", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
       --safe-b: env(safe-area-inset-bottom, 0px);
       --safe-t: env(safe-area-inset-top, 0px);
     }
@@ -27,7 +34,7 @@
     html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font-display);
       background: var(--bg);
       color: var(--text);
       line-height: 1.4;
@@ -37,13 +44,39 @@
       position: sticky;
       top: 0;
       z-index: 30;
-      background: rgba(250,249,247,.92);
+      background: rgba(251,250,247,.88);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
       padding: calc(12px + var(--safe-t)) 16px 12px;
     }
-    .brand { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-    h1 { margin: 4px 0 0; font-size: 22px; font-weight: 650; letter-spacing: -.02em; }
+    .brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+      letter-spacing: .02em; color: var(--text);
+    }
+    .rq-svg {
+      display: block; overflow: visible; flex: none; color: var(--text);
+      transform: rotate(-34deg); transform-origin: center;
+    }
+    .rq-svg .rq-ghost { fill: none; stroke: currentColor; opacity: .16; stroke-linecap: round; }
+    .rq-svg .rq-trail {
+      fill: none; stroke: currentColor; opacity: .6; stroke-linecap: round;
+      animation: rqBreathe 4.6s ease-in-out infinite;
+    }
+    .rq-svg .rq-anchor { fill: currentColor; opacity: .55; }
+    .rq-svg .rq-head {
+      fill: currentColor; transform-box: fill-box; transform-origin: center;
+      animation: rqHeadBreathe 4.6s ease-in-out infinite;
+    }
+    @keyframes rqBreathe { 0%, 100% { opacity: .46; } 50% { opacity: .86; } }
+    @keyframes rqHeadBreathe {
+      0%, 100% { transform: scale(1); opacity: .82; }
+      50% { transform: scale(1.13); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .rq-svg .rq-trail, .rq-svg .rq-head { animation: none; }
+    }
+    h1 { margin: 6px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -.03em; }
     .stats { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .stat {
       font-size: 12px;
@@ -447,7 +480,15 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand">Praxis</div>
+    <div class="brand">
+      <svg class="rq-svg" width="20" height="20" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path class="rq-ghost" d="M 33.04 22.86 A 32 32 0 1 0 66.96 22.86" stroke-width="7.5" />
+        <path class="rq-trail" d="M 33.04 22.86 A 32 32 0 1 0 66.96 22.86" stroke-width="7.5" />
+        <circle class="rq-anchor" cx="33.04" cy="22.86" r="5.4" />
+        <circle class="rq-head" cx="66.96" cy="22.86" r="8" />
+      </svg>
+      <span>ReqOps</span>
+    </div>
     <h1>Interior designers</h1>
     <div class="stats" id="stats"></div>
   </header>

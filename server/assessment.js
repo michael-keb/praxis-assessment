@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
-import { db, getCode, caseDir } from "./db.js";
+import { db, getCode, caseDir, getAttachment, attachmentPath } from "./db.js";
 import { ASSEMBLYAI_API_KEY } from "./config.js";
 import { normalizeLinkedInUrl, normalizeUpworkUrl } from "./profile-url.js";
 import {
@@ -36,6 +36,8 @@ const IMAGE_EXT_RE = /\.(jpe?g|png|webp)$/i;
 const PORTFOLIO_MAX = 10;
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 120 } });
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 16 * 1024 * 1024, files: 8 } });
+const candidateUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024, files: 10 } });
+const CANDIDATE_UPLOADS_MAX = 30;
 const startUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 11 } });
 
 /* No candidate accounts: a signed browser token races to bind the single-use
@@ -683,4 +685,78 @@ assessmentRouter.post("/audio", audioUpload.array("audio"), (req, res) => {
     }
   }
   res.json({ ok: true, saved, status: row.status });
+});
+
+/* ---------------- attachments & candidate uploads ---------------- */
+
+/* Candidate uploads are kept under the case directory with an index file so
+   they travel with the case zip. Stored names are generated; the index holds
+   the original filename. */
+export function listCandidateUploads(code) {
+  try {
+    const list = JSON.parse(fs.readFileSync(path.join(caseDir(code, "uploads"), "index.json"), "utf-8"));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+export function candidateUploadPath(code, file) {
+  return path.join(caseDir(code, "uploads"), path.basename(file));
+}
+
+function ownedStartedRow(req, res, caseId) {
+  const row = getCode(String(caseId || "").trim().toUpperCase());
+  if (!row || (row.status !== "active" && row.status !== "submitted")) {
+    res.status(403).json({ error: "unknown or inactive code" });
+    return null;
+  }
+  const token = tokenFor(req, res);
+  if (!token) return null;
+  const owner = ownership(row, token);
+  if (!owner.ok) {
+    sendOwnershipError(res, owner.reason);
+    return null;
+  }
+  return row;
+}
+
+/* Only attachments frozen into this code's snapshot at start are served. */
+assessmentRouter.get("/attachments/:id", (req, res) => {
+  const row = ownedStartedRow(req, res, req.query.case);
+  if (!row) return;
+  const id = Number(req.params.id);
+  const listed = (frozenAssessment(row)?.attachments || []).some((a) => a.id === id);
+  const attachment = listed ? getAttachment(id) : null;
+  if (!attachment) return res.status(404).json({ error: "unknown attachment" });
+  res.download(attachmentPath(attachment), attachment.name, (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
+
+assessmentRouter.get("/uploads", (req, res) => {
+  const row = ownedStartedRow(req, res, req.query.case);
+  if (!row) return;
+  res.json({ uploads: listCandidateUploads(row.code).map(({ name, size, uploadedAt }) => ({ name, size, uploadedAt })) });
+});
+
+assessmentRouter.post("/uploads", candidateUpload.array("files"), (req, res) => {
+  const row = ownedStartedRow(req, res, req.body?.caseId);
+  if (!row) return;
+  if (row.status !== "active") return res.status(409).json({ error: "The session has ended — uploads are closed." });
+  if (!frozenAssessment(row)?.allowUploads) return res.status(403).json({ error: "This assessment does not accept uploads." });
+  const list = listCandidateUploads(row.code);
+  const incoming = (req.files || []).filter((f) => f.buffer?.length);
+  if (list.length + incoming.length > CANDIDATE_UPLOADS_MAX) {
+    return res.status(400).json({ error: `At most ${CANDIDATE_UPLOADS_MAX} files per session.` });
+  }
+  for (const file of incoming) {
+    const name = Buffer.from(file.originalname, "latin1").toString("utf8").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 200) || "file";
+    const ext = (path.extname(name).match(/^\.[A-Za-z0-9]{1,10}$/) || [""])[0].toLowerCase();
+    const stored = `${String(list.length + 1).padStart(2, "0")}-${Date.now()}${ext}`;
+    fs.writeFileSync(candidateUploadPath(row.code, stored), file.buffer);
+    list.push({ file: stored, name, size: file.buffer.length, uploadedAt: new Date().toISOString() });
+  }
+  fs.writeFileSync(path.join(caseDir(row.code, "uploads"), "index.json"), JSON.stringify(list, null, 2));
+  res.json({ ok: true, uploads: list.map(({ name, size, uploadedAt }) => ({ name, size, uploadedAt })) });
 });

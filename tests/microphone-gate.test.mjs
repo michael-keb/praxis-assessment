@@ -534,7 +534,7 @@ test('AudioWorklet tap streams PCM to AssemblyAI and asks for heartbeats and lon
   h.sockets[0].onopen();
   await flush();
   assert.equal(h.taps.length, 1);
-  assert.equal(h.taps[0].name, 'praxis-pcm-tap');
+  assert.equal(h.taps[0].name, 'reqops-pcm-tap');
   assert.match(h.sockets[0].url, /min_turn_silence=1000/);
   assert.match(h.sockets[0].url, /session_heartbeat=true/);
   h.taps[0].chunk();

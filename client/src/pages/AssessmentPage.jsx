@@ -5,6 +5,7 @@ import BriefContent from "../components/BriefContent.jsx";
 import { ChromeMicSetup } from "../components/ChromeMicSetup.jsx";
 import { isGoogleChrome } from "../chrome.js";
 import { normalizeProfileUrl } from "../profile-url.js";
+import { ReqopsLockup } from "../components/ReqopsMark.jsx";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
@@ -53,11 +54,11 @@ function SavingScreen({ engine, snap }) {
 function DoneScreen({ reason }) {
   const copy = {
     expired: ["⏱", "Time expired",
-      "The timer reached zero. Your screen recording and voice transcript were submitted. You may close this tab."],
+      "The timer reached zero. Your screen recording and voice transcript were submitted. Your submission will now be analysed by our AI, and our team will take it from there. If you progress to the next round, we will reach out to you personally. You may close this tab."],
     pause_limit: ["⏱", "Pause limit reached",
-      "Screen sharing was paused for longer than the allowed limit, so your session was submitted as-is. You may close this tab."]
+      "Screen sharing was paused for longer than the allowed limit, so your session was submitted as-is. Your submission will now be analysed by our AI, and our team will take it from there. If you progress to the next round, we will reach out to you personally. You may close this tab."]
   }[reason] || ["✓", "Session submitted",
-    "Thank you. Your screen recording and voice transcript have been submitted. You may close this tab."];
+    "Thank you. Your screen recording and voice transcript have been submitted. Your submission will now be analysed by our AI, and our team will take it from there. If you progress to the next round, we will reach out to you personally. You may close this tab."];
   return <CenterScreen mark={copy[0]} title={copy[1]} text={copy[2]} />;
 }
 
@@ -117,7 +118,7 @@ function Gate({ engine, snap }) {
     return (
       <div className="screen">
         <div className="card-col">
-          <div className="gate-mark">praxis</div>
+          <ReqopsLockup variant="gate" size={24} />
           <h1>Before you start</h1>
           <p className="lede">
             First you will share your entire screen, then we will confirm live
@@ -173,7 +174,7 @@ function Gate({ engine, snap }) {
   return (
     <div className="screen">
       <div className="card-col">
-        <div className="gate-mark">praxis</div>
+        <ReqopsLockup variant="gate" size={24} />
         <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
         <p className="lede">
           Fill in your details below to unlock the assessment. Use{" "}
@@ -257,7 +258,7 @@ function Gate({ engine, snap }) {
             <b>transcribed in real time</b> (the transcript is shown on screen and
             stored; no audio recording is kept), and my interaction with this page
             (focus changes and timing) being <b>logged</b> for the sole purpose of
-            evaluating this assessment. Records are reviewed by Praxis assessors and
+            evaluating this assessment. Records are reviewed by ReqOps assessors and
             retained no longer than the hiring process requires.
           </span>
         </label>
@@ -307,7 +308,7 @@ function Task({ engine, snap }) {
     <>
       <header className="appbar">
         <div className="bar">
-          <div className="wordmark">praxis</div>
+          <ReqopsLockup />
           <div className="case-chip">{snap.caseId}</div>
           <div className="spacer" />
           {snap.reconnecting && <div className="mic-chip mic-warn" role="status">Reconnecting transcript…</div>}
@@ -331,7 +332,10 @@ function Task({ engine, snap }) {
         <section className="brief open-brief">
           <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
           <BriefContent text={snap.assessment?.brief} />
+          <AttachmentList snap={snap} />
         </section>
+
+        {snap.assessment?.allowUploads && <UploadBox snap={snap} />}
 
         <section className="work open-work">
           <button className={`btn-primary ${confirming ? "confirming" : ""}`} onClick={submitClick}>
@@ -351,8 +355,91 @@ function Task({ engine, snap }) {
         </span>
       </div>
 
-      <footer className="foot">praxis · assessment · {snap.caseId}</footer>
+      <footer className="foot">ReqOps · assessment · {snap.caseId}</footer>
     </>
+  );
+}
+
+const fmtSize = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+function AttachmentList({ snap }) {
+  const files = snap.assessment?.attachments || [];
+  const [error, setError] = useState("");
+  if (!files.length) return null;
+
+  // Downloads go through fetch so the session token rides in a header, never the URL.
+  async function download(f) {
+    setError("");
+    try {
+      const res = await fetch(`/api/assessment/attachments/${f.id}?case=${encodeURIComponent(snap.caseId)}`, {
+        headers: { "X-Assessment-Session": snap.sessionToken },
+      });
+      if (!res.ok) throw new Error("Download failed.");
+      const url = URL.createObjectURL(await res.blob());
+      const a = Object.assign(document.createElement("a"), { href: url, download: f.name });
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (e) { setError(e.message); }
+  }
+
+  return (
+    <div className="attachments">
+      <h3>Attachments</h3>
+      <ul>
+        {files.map((f) => (
+          <li key={f.id}>
+            <button type="button" className="btn-small" onClick={() => download(f)}>{f.name}</button>
+            {" "}<span className="muted">{fmtSize(f.size)}</span>
+          </li>
+        ))}
+      </ul>
+      {error && <p className="error-box">{error}</p>}
+    </div>
+  );
+}
+
+function UploadBox({ snap }) {
+  const [uploads, setUploads] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const headers = { "X-Assessment-Session": snap.sessionToken };
+
+  useEffect(() => {
+    fetch(`/api/assessment/uploads?case=${encodeURIComponent(snap.caseId)}`, { headers })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setUploads(d.uploads))
+      .catch(() => {});
+  }, [snap.caseId, snap.sessionToken]);
+
+  async function send(files) {
+    if (!files.length) return;
+    setBusy(true);
+    setError("");
+    const fd = new FormData();
+    fd.append("caseId", snap.caseId);
+    for (const f of files) fd.append("files", f);
+    try {
+      const res = await fetch("/api/assessment/uploads", { method: "POST", headers, body: fd });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || (res.status === 413 ? "File too large (50 MB max)." : "Upload failed."));
+      setUploads(data.uploads);
+    } catch (e) { setError(e.message); }
+    setBusy(false);
+  }
+
+  return (
+    <section className="upload-box">
+      <h3>Upload your work</h3>
+      <p className="muted">Add files for the reviewer before you submit. Up to 50 MB each.</p>
+      <input type="file" multiple disabled={busy} onChange={(e) => { send([...e.target.files]); e.target.value = ""; }} />
+      {busy && <p role="status">Uploading…</p>}
+      {error && <p className="error-box">{error}</p>}
+      {uploads.length > 0 && (
+        <ul>
+          {uploads.map((u, i) => <li key={i}>✓ {u.name} <span className="muted">{fmtSize(u.size)}</span></li>)}
+        </ul>
+      )}
+    </section>
   );
 }
 

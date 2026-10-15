@@ -2,10 +2,15 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import archiver from "archiver";
+import multer from "multer";
 import {
   ARCHIVES_DIR, db, getCode, newCodes, SUBMISSIONS_DIR,
-  listAssessments, getAssessment, createAssessment, updateAssessment, deleteAssessment
+  listAssessments, getAssessment, createAssessment, updateAssessment, deleteAssessment,
+  addAttachment, getAttachment, attachmentPath, removeAttachment
 } from "./db.js";
+import { listCandidateUploads, candidateUploadPath } from "./assessment.js";
+
+const attachmentUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024, files: 10 } });
 import { requireAdmin } from "./auth.js";
 import { checkpointRow, checkpointValue, sweepExpiredSessions } from "./assessment-session.js";
 import { listSessionResets, resetAssessmentCode, SessionResetError } from "./session-reset.js";
@@ -63,6 +68,7 @@ adminRouter.post("/assessments", (req, res) => {
       brief,
       durationMinutes: duration.value,
       gateFields: parseGateFields(req.body),
+      allowCandidateUploads: [true, 1, "yes", "true"].includes(req.body?.allowCandidateUploads),
     })
   });
 });
@@ -87,8 +93,35 @@ adminRouter.put("/assessments/:id", (req, res) => {
       brief,
       durationMinutes: duration.value,
       gateFields: parseGateFields(req.body),
+      allowCandidateUploads: [true, 1, "yes", "true"].includes(req.body?.allowCandidateUploads),
     })
   });
+});
+
+/* Reference files the candidate receives alongside the brief once they start. */
+adminRouter.post("/assessments/:id/attachments", attachmentUpload.array("files"), (req, res) => {
+  const id = Number(req.params.id);
+  if (!getAssessment(id)) return res.status(404).json({ error: "unknown assessment" });
+  const added = [];
+  for (const file of req.files || []) {
+    if (!file.buffer?.length) continue;
+    const name = Buffer.from(file.originalname, "latin1").toString("utf8").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 200) || "file";
+    added.push(addAttachment(id, name, file.buffer));
+  }
+  res.json({ added, assessment: getAssessment(id) });
+});
+
+adminRouter.get("/attachments/:id", (req, res) => {
+  const row = getAttachment(Number(req.params.id));
+  if (!row) return res.status(404).end();
+  res.download(attachmentPath(row), row.name, (err) => { if (err && !res.headersSent) res.status(404).end(); });
+});
+
+adminRouter.delete("/attachments/:id", (req, res) => {
+  const row = getAttachment(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: "unknown attachment" });
+  removeAttachment(row.id);
+  res.json({ ok: true });
 });
 
 adminRouter.delete("/assessments/:id", (req, res) => {
@@ -195,7 +228,8 @@ adminRouter.get("/sessions/:code", (req, res) => {
       }
     : null;
   const resets = listSessionResets(row.code);
-  res.json({ code: row, candidate, payload, checkpoint, frames, audio, portfolio, resets });
+  const uploads = listCandidateUploads(row.code);
+  res.json({ code: row, candidate, payload, checkpoint, frames, audio, portfolio, uploads, resets });
 });
 
 adminRouter.get("/sessions/:code/portfolio/:name", (req, res) => {
@@ -203,6 +237,15 @@ adminRouter.get("/sessions/:code/portfolio/:name", (req, res) => {
   const name = path.basename(req.params.name || "");
   if (!row || !PORTFOLIO_RE.test(name)) return res.status(404).end();
   res.sendFile(path.join(SUBMISSIONS_DIR, row.code, "portfolio", name), (err) => {
+    if (err && !res.headersSent) res.status(404).end();
+  });
+});
+
+adminRouter.get("/sessions/:code/uploads/:file", (req, res) => {
+  const row = getCode(String(req.params.code || "").toUpperCase());
+  const entry = row && listCandidateUploads(row.code).find((u) => u.file === req.params.file);
+  if (!entry) return res.status(404).end();
+  res.download(candidateUploadPath(row.code, entry.file), entry.name, (err) => {
     if (err && !res.headersSent) res.status(404).end();
   });
 });

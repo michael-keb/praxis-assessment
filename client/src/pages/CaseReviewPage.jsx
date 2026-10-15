@@ -13,7 +13,7 @@ export default function CaseReviewPage() {
 
   if (error) return <main className="page"><div className="error-box">{error}</div></main>;
   if (!data) return null;
-  const { candidate, frames, audio = [], portfolio = [] } = data;
+  const { candidate, frames, audio = [], portfolio = [], uploads = [] } = data;
   const payload = data.payload || data.checkpoint;
   const draft = !data.payload && !!data.checkpoint;
 
@@ -51,6 +51,21 @@ export default function CaseReviewPage() {
               </figure>
             ))}
           </div>
+        </>
+      )}
+      {uploads.length > 0 && (
+        <>
+          <h3>Candidate uploads ({uploads.length})</h3>
+          <ul>
+            {uploads.map((u) => (
+              <li key={u.file}>
+                <a href={`/api/admin/sessions/${code}/uploads/${encodeURIComponent(u.file)}`}>{u.name}</a>
+                {" "}<span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>
+                  {Math.max(1, Math.round(u.size / 1024))} KB · {u.uploadedAt?.slice(0, 16).replace("T", " ")}
+                </span>
+              </li>
+            ))}
+          </ul>
         </>
       )}
       {payload ? (

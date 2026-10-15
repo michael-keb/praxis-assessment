@@ -1,4 +1,4 @@
-# Praxis Reasoning Assessment
+# ReqOps Reasoning Assessment
 
 Full-stack React app. One problem, 15 minutes, hard timer, any tools permitted
 including AI. Candidates open their **unique server-issued code link**, provide
@@ -21,7 +21,7 @@ pause capped at 5 min, then auto-submit).
 
 ```bash
 DOMAIN=assess.example.com \
-ADMIN_EMAIL=you@praxis.com ADMIN_PASSWORD=$(openssl rand -hex 12) \
+ADMIN_EMAIL=you@reqops.com ADMIN_PASSWORD=$(openssl rand -hex 12) \
 docker compose up -d --build
 ```
 

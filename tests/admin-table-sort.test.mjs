@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CODE_COLUMNS, compareSortValues, nextSort, sortByColumn } from "../client/src/admin-table-sort.js";
+import { CODE_COLUMNS, compareSortValues, formatTimestamp, nextSort, sortByColumn } from "../client/src/admin-table-sort.js";
+
+test("formatTimestamp renders a readable local time and a dash when empty", () => {
+  assert.match(formatTimestamp("2026-09-13T05:58:44.595Z", { timeZone: "Australia/Sydney" }), /^13 Sept? 2026, 3:58\spm$/i);
+  assert.equal(formatTimestamp(null), "—");
+  assert.equal(formatTimestamp(""), "—");
+});
 
 test("compareSortValues keeps empty values last in both directions", () => {
   assert.equal(compareSortValues("", "B", "text", "asc"), 1);

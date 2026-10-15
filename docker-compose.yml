@@ -1,7 +1,7 @@
-# Praxis Assessment — full stack (React + Express) with automatic HTTPS.
+# ReqOps Assessment — full stack (React + Express) with automatic HTTPS.
 #
 #   DOMAIN=assess.example.com \
-#   ADMIN_EMAIL=you@praxis.com ADMIN_PASSWORD=change-me \
+#   ADMIN_EMAIL=you@reqops.com ADMIN_PASSWORD=change-me \
 #   docker compose up -d --build
 #
 # DNS for $DOMAIN must point at this machine; Caddy fetches certificates

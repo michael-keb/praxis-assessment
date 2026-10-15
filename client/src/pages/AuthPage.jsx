@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
+import { ReqopsLockup } from "../components/ReqopsMark.jsx";
 
 /* Admin login only — candidates never sign in; they enter their details
    at the assessment gate. */
@@ -36,7 +37,7 @@ export default function AuthPage({ onAuthed }) {
   return (
     <div className="screen">
       <div className="card-col narrow">
-        <div className="gate-mark">praxis</div>
+        <ReqopsLockup variant="gate" size={24} />
         <h1>Admin log in</h1>
         <p className="lede">
           Taking an assessment? You don't need an account — open the link you

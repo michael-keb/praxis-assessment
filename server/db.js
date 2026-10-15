@@ -9,9 +9,11 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 export const SUBMISSIONS_DIR = path.join(DATA_DIR, "submissions");
 export const ARCHIVES_DIR = path.join(DATA_DIR, "submission-archives");
+export const ATTACHMENTS_DIR = path.join(DATA_DIR, "assessment-attachments");
 
 fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
 fs.mkdirSync(ARCHIVES_DIR, { recursive: true });
+fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true });
 
 export const db = new Database(path.join(DATA_DIR, "assessment.db"));
 db.pragma("journal_mode = WAL");
@@ -61,6 +63,19 @@ for (const [col, def] of [
   try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} INTEGER NOT NULL DEFAULT ${def}`); } catch { /* exists */ }
 }
 try { db.exec(`ALTER TABLE codes ADD COLUMN candidate_portfolio TEXT`); } catch { /* exists */ }
+/* Per-assessment switch: may the candidate hand files back during the session. */
+try { db.exec(`ALTER TABLE assessments ADD COLUMN allow_candidate_uploads INTEGER NOT NULL DEFAULT 0`); } catch { /* exists */ }
+/* Reference files handed to candidates with the brief. Bytes live on disk at
+   ATTACHMENTS_DIR/<assessment_id>/<id>; this table keeps the display name. */
+db.exec(`
+  CREATE TABLE IF NOT EXISTS assessment_attachments (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    assessment_id INTEGER NOT NULL REFERENCES assessments(id),
+    name          TEXT NOT NULL,
+    size          INTEGER NOT NULL,
+    created_at    TEXT NOT NULL
+  );
+`);
 /* Integrations may tag an issuance with their own reference (e.g. a candidate
    id) so a retry after a lost response returns the same code instead of
    minting a second one. Unique where present; legacy rows stay NULL. */
@@ -185,18 +200,47 @@ export function listAssessments() {
   return db.prepare(`
     SELECT a.*, (SELECT COUNT(*) FROM codes c WHERE c.assessment_id = a.id) AS code_count
     FROM assessments a ORDER BY a.updated_at DESC
-  `).all();
+  `).all().map((a) => ({ ...a, attachments: listAttachments(a.id) }));
+}
+
+export function listAttachments(assessmentId) {
+  return db.prepare("SELECT id, name, size, created_at FROM assessment_attachments WHERE assessment_id = ? ORDER BY id")
+    .all(assessmentId);
+}
+
+export function getAttachment(id) {
+  return db.prepare("SELECT * FROM assessment_attachments WHERE id = ?").get(id) || null;
+}
+
+export function attachmentPath(row) {
+  return path.join(ATTACHMENTS_DIR, String(row.assessment_id), String(row.id));
+}
+
+export function addAttachment(assessmentId, name, buffer) {
+  const info = db.prepare("INSERT INTO assessment_attachments (assessment_id, name, size, created_at) VALUES (?, ?, ?, ?)")
+    .run(assessmentId, name, buffer.length, nowIso());
+  const row = getAttachment(info.lastInsertRowid);
+  fs.mkdirSync(path.dirname(attachmentPath(row)), { recursive: true });
+  fs.writeFileSync(attachmentPath(row), buffer);
+  return row;
+}
+
+/* Removing an attachment only unlinks it from the assessment; the bytes stay on
+   disk because codes already started hold a frozen snapshot that references it. */
+export function removeAttachment(id) {
+  db.prepare("UPDATE assessment_attachments SET assessment_id = -assessment_id WHERE id = ? AND assessment_id > 0").run(id);
 }
 
 export function getAssessment(id) {
-  return db.prepare("SELECT * FROM assessments WHERE id = ?").get(id) || null;
+  const row = db.prepare("SELECT * FROM assessments WHERE id = ?").get(id) || null;
+  return row && { ...row, attachments: listAttachments(row.id) };
 }
 
-export function createAssessment({ title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
+export function createAssessment({ title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false }) {
   const ts = nowIso();
   const info = db.prepare(
-    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, require_portfolio, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, require_portfolio, allow_candidate_uploads, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     title,
     brief || "",
@@ -205,16 +249,17 @@ export function createAssessment({ title, brief, durationMinutes, gateFields = D
     gateFields.requireUpwork ? 1 : 0,
     gateFields.requireCv ? 1 : 0,
     gateFields.requirePortfolio ? 1 : 0,
+    allowCandidateUploads ? 1 : 0,
     ts,
     ts
   );
   return getAssessment(info.lastInsertRowid);
 }
 
-export function updateAssessment(id, { title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS }) {
+export function updateAssessment(id, { title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false }) {
   db.prepare(
     `UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?,
-     require_linkedin = ?, require_upwork = ?, require_cv = ?, require_portfolio = ?, updated_at = ?
+     require_linkedin = ?, require_upwork = ?, require_cv = ?, require_portfolio = ?, allow_candidate_uploads = ?, updated_at = ?
      WHERE id = ?`
   ).run(
     title,
@@ -224,6 +269,7 @@ export function updateAssessment(id, { title, brief, durationMinutes, gateFields
     gateFields.requireUpwork ? 1 : 0,
     gateFields.requireCv ? 1 : 0,
     gateFields.requirePortfolio ? 1 : 0,
+    allowCandidateUploads ? 1 : 0,
     nowIso(),
     id
   );

@@ -1,5 +1,5 @@
 /*
- * Praxis assessment session engine — framework-agnostic port of the
+ * ReqOps assessment session engine — framework-agnostic port of the
  * verified single-file logic. Owns: timer + pause accounting, entire-screen
  * capture enforcement, event log, localStorage persistence/resume, 1fps
  * frame shipping, idle detection, auto-submit (expiry / pause budget).
@@ -18,9 +18,9 @@ const ENDPOINT = "/api/assessment";
    busy or backgrounded it silently drops input. An AudioWorklet keeps
    capturing whatever the main thread is doing; late delivery only delays
    the send, it never loses audio. */
-const PCM_TAP_NAME = "praxis-pcm-tap";
+const PCM_TAP_NAME = "reqops-pcm-tap";
 const PCM_TAP_SOURCE = `
-class PraxisPcmTap extends AudioWorkletProcessor {
+class ReqopsPcmTap extends AudioWorkletProcessor {
   constructor() {
     super();
     this.size = Math.max(160, Math.round(sampleRate / 10));
@@ -46,7 +46,7 @@ class PraxisPcmTap extends AudioWorkletProcessor {
     return true;
   }
 }
-registerProcessor("${PCM_TAP_NAME}", PraxisPcmTap);
+registerProcessor("${PCM_TAP_NAME}", ReqopsPcmTap);
 `;
 let pcmTapUrl = null;
 function pcmTapModuleUrl() {

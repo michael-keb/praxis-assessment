@@ -111,7 +111,7 @@ if (fs.existsSync(DIST)) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Praxis assessment server on http://0.0.0.0:${PORT}`);
+  console.log(`ReqOps assessment server on http://0.0.0.0:${PORT}`);
   console.log(`  data: ${DATA_DIR}`);
   console.log(`  docs: http://0.0.0.0:${PORT}/api/docs`);
   if (fs.existsSync(INTERIOR_DIR)) {

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(openssl version *)",
+      "Bash(sed -e 's/=.*/=<redacted>/' .env)",
+      "Read(//Users/mk/Documents/Clients/Praxis/**)",
+      "Read(//Users/mk/Documents/**)"
+    ]
+  }
+}
