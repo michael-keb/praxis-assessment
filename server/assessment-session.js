@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import {
   db,
   caseDir,
+  employerBranding,
   getAssessment,
   gateFieldsFromAssessment,
   jwtSecret,
@@ -16,6 +17,8 @@ export const DEFAULT_ASSESSMENT_SNAPSHOT = Object.freeze({
   brief: "",
   durationSeconds: 15 * 60,
   gateFields: Object.freeze({ linkedin: true, upwork: false, cv: false, portfolio: false }),
+  employer: null,
+  jobDescription: null,
 });
 
 const SESSION_TOKEN_KIND = "assessment-session-v1";
@@ -56,7 +59,18 @@ export function assessmentSnapshotForStart(codeRow) {
     gateFields: gateFieldsFromAssessment(assessment),
     attachments: (assessment.attachments || []).map(({ id, name, size }) => ({ id, name, size })),
     allowUploads: !!assessment.allow_candidate_uploads,
+    employer: employerBranding(assessment.employer_id),
+    jobDescription: jobDescriptionSnapshot(assessment),
   };
+}
+
+/* `file` is the stored name; candidates fetch it through
+   /api/assessment/job-description?case=<code>, never by name. */
+function jobDescriptionSnapshot(assessment) {
+  const url = assessment.job_description_url || null;
+  const file = assessment.job_description_file || null;
+  if (!url && !file) return null;
+  return { url, fileName: file ? assessment.job_description_name || "Job description" : null, file };
 }
 
 export function frozenAssessment(codeRow) {
@@ -68,6 +82,10 @@ export function frozenAssessment(codeRow) {
 export function publicAssessment(assessment) {
   if (!assessment) return null;
   const { brief: _brief, attachments: _attachments, ...metadata } = assessment;
+  if (metadata.jobDescription) {
+    const { file: _file, ...jobDescription } = metadata.jobDescription;
+    metadata.jobDescription = jobDescription;
+  }
   return metadata;
 }
 

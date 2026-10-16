@@ -135,8 +135,9 @@ export function ChromeMicSetup({ caseId = "", requireTest = false, onPassedChang
       <div className="mic-preflight">
         <button
           type="button"
-          className="btn-ghost"
+          className="btn btn-line btn-block"
           disabled={!chrome || !currentSession || !session.engine || busy}
+          aria-busy={busy || undefined}
           onClick={runTest}
         >
           {buttonLabel}

@@ -221,6 +221,8 @@ test("unused codes receive unique signed tokens, default metadata, and cannot su
     title: "Assessment",
     durationSeconds: 900,
     gateFields: { linkedin: true, upwork: false, cv: false, portfolio: false },
+    employer: null,
+    jobDescription: null,
   });
   assert.equal(Object.hasOwn(first.body.assessment, "brief"), false);
   assert.equal(typeof first.body.sessionToken, "string");
@@ -243,6 +245,8 @@ test("unused codes receive unique signed tokens, default metadata, and cannot su
     brief: "",
     durationSeconds: 900,
     gateFields: { linkedin: true, upwork: false, cv: false, portfolio: false },
+    employer: null,
+    jobDescription: null,
   });
   assert.equal(Number.isSafeInteger(started.body.startedAt), true);
   assert.equal(started.body.checkpoint.revision, 0);

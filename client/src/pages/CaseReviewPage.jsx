@@ -19,11 +19,13 @@ export default function CaseReviewPage() {
 
   return (
     <main className="page wide review">
-      <p>
-        <Link to="/admin">← admin</Link>{" · "}
-        <a href={`/api/admin/sessions/${code}/zip`}>download zip</a>
-      </p>
-      <h1 style={{ fontSize: 22, margin: "10px 0" }}>Case {code}</h1>
+      <nav className="crumbs" aria-label="Breadcrumb">
+        <Link to="/admin">Admin</Link><span className="sep">/</span>
+        <span className="mono">{code}</span>
+        <span className="spacer" />
+        <a className="btn btn-line btn-sm" href={`/api/admin/sessions/${code}/zip`}>Download zip</a>
+      </nav>
+      <h2>Case <span className="mono">{code}</span></h2>
       {candidate && (
         <p>
           <b>Candidate:</b> {candidate.name}{candidate.email ? <> &lt;{candidate.email}&gt;</> : null}<br />
@@ -60,7 +62,7 @@ export default function CaseReviewPage() {
             {uploads.map((u) => (
               <li key={u.file}>
                 <a href={`/api/admin/sessions/${code}/uploads/${encodeURIComponent(u.file)}`}>{u.name}</a>
-                {" "}<span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>
+                {" "}<span className="help">
                   {Math.max(1, Math.round(u.size / 1024))} KB · {u.uploadedAt?.slice(0, 16).replace("T", " ")}
                 </span>
               </li>
@@ -79,12 +81,12 @@ export default function CaseReviewPage() {
           {(payload.log || []).some((ev) => ev.type === "voice") && (
             <>
               <h3>Spoken transcript</h3>
-              <div style={{ background: "var(--raised, #f6f6f4)", border: "1px solid var(--line, #ddd)", padding: "14px 16px", marginBottom: 18, lineHeight: 1.65 }}>
+              <div className="transcript">
                 {(payload.log || [])
                   .filter((ev) => ev.type === "voice")
                   .map((ev, i) => (
                     <span key={i}>
-                      <span style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--cold-faint, #888)" }}>
+                      <span className="t">
                         {Math.floor(ev.t / 60)}:{String(ev.t % 60).padStart(2, "0")}{" "}
                       </span>
                       {ev.text}{" "}
@@ -97,6 +99,7 @@ export default function CaseReviewPage() {
             <p><b>Last words awaiting recognition:</b> {payload.pendingTranscript}</p>
           )}
           <h3>Event log ({(payload.log || []).length})</h3>
+          <div className="log-wrap">
           <table className="log-table">
             <thead><tr><th>t</th><th>type</th><th>detail</th></tr></thead>
             <tbody>
@@ -111,6 +114,7 @@ export default function CaseReviewPage() {
               })}
             </tbody>
           </table>
+          </div>
         </>
       ) : (
         <p><i>No session has been saved yet.</i></p>

@@ -119,7 +119,7 @@ test("Markdown paste survives preview, save, reopen and candidate rendering", as
     transform: getComputedStyle(el).textTransform, size: parseFloat(getComputedStyle(el).fontSize),
   }));
   expect(headingStyle.transform).toBe("none");
-  expect(headingStyle.size).toBe(32);
+  expect(headingStyle.size).toBe(28);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await candidate.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBeTruthy();
 });

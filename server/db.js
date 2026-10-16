@@ -10,10 +10,14 @@ export const DATA_DIR = process.env.DATA_DIR || path.join(ROOT, "data");
 export const SUBMISSIONS_DIR = path.join(DATA_DIR, "submissions");
 export const ARCHIVES_DIR = path.join(DATA_DIR, "submission-archives");
 export const ATTACHMENTS_DIR = path.join(DATA_DIR, "assessment-attachments");
+export const EMPLOYER_LOGOS_DIR = path.join(DATA_DIR, "employer-logos");
+export const JOB_DESCRIPTIONS_DIR = path.join(DATA_DIR, "job-descriptions");
 
 fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
 fs.mkdirSync(ARCHIVES_DIR, { recursive: true });
 fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true });
+fs.mkdirSync(EMPLOYER_LOGOS_DIR, { recursive: true });
+fs.mkdirSync(JOB_DESCRIPTIONS_DIR, { recursive: true });
 
 export const db = new Database(path.join(DATA_DIR, "assessment.db"));
 db.pragma("journal_mode = WAL");
@@ -81,6 +85,26 @@ db.exec(`
    minting a second one. Unique where present; legacy rows stay NULL. */
 try { db.exec(`ALTER TABLE codes ADD COLUMN client_ref TEXT`); } catch { /* exists */ }
 db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_codes_client_ref ON codes(client_ref) WHERE client_ref IS NOT NULL`);
+/* Employers an assessment can be branded under. A null employer_id keeps the
+   ReqOps-branded experience. Logo bytes live at EMPLOYER_LOGOS_DIR/<logo_file>;
+   each upload gets a fresh file name and old files stay on disk, because a
+   started code's frozen snapshot keeps pointing at the logo it started with. */
+db.exec(`
+  CREATE TABLE IF NOT EXISTS employers (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    brand_color TEXT,
+    logo_file   TEXT,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+  );
+`);
+try { db.exec(`ALTER TABLE assessments ADD COLUMN employer_id INTEGER REFERENCES employers(id)`); } catch { /* exists */ }
+/* The job description is public to the candidate before they start: a link,
+   an uploaded file at JOB_DESCRIPTIONS_DIR/<job_description_file>, or both. */
+for (const col of ["job_description_url", "job_description_name", "job_description_file"]) {
+  try { db.exec(`ALTER TABLE assessments ADD COLUMN ${col} TEXT`); } catch { /* exists */ }
+}
 /* Candidate-session ownership and the assessment snapshot are nullable on
    purpose. Pre-existing active/submitted rows cannot be assigned a trustworthy
    owner during migration, so candidate writes to those rows are refused. */
@@ -198,8 +222,10 @@ export function getCode(code) {
 /* ---------------- assessments (document-style briefs, issued to codes) ---------------- */
 export function listAssessments() {
   return db.prepare(`
-    SELECT a.*, (SELECT COUNT(*) FROM codes c WHERE c.assessment_id = a.id) AS code_count
-    FROM assessments a ORDER BY a.updated_at DESC
+    SELECT a.*, e.name AS employer_name,
+      (SELECT COUNT(*) FROM codes c WHERE c.assessment_id = a.id) AS code_count
+    FROM assessments a LEFT JOIN employers e ON e.id = a.employer_id
+    ORDER BY a.updated_at DESC
   `).all().map((a) => ({ ...a, attachments: listAttachments(a.id) }));
 }
 
@@ -236,11 +262,15 @@ export function getAssessment(id) {
   return row && { ...row, attachments: listAttachments(row.id) };
 }
 
-export function createAssessment({ title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false }) {
+export function createAssessment({
+  title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false,
+  employerId = null, jobDescriptionUrl = null,
+}) {
   const ts = nowIso();
   const info = db.prepare(
-    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, require_portfolio, allow_candidate_uploads, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO assessments (title, brief, duration_minutes, require_linkedin, require_upwork, require_cv, require_portfolio, allow_candidate_uploads,
+       employer_id, job_description_url, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     title,
     brief || "",
@@ -250,16 +280,22 @@ export function createAssessment({ title, brief, durationMinutes, gateFields = D
     gateFields.requireCv ? 1 : 0,
     gateFields.requirePortfolio ? 1 : 0,
     allowCandidateUploads ? 1 : 0,
+    employerId,
+    jobDescriptionUrl,
     ts,
     ts
   );
   return getAssessment(info.lastInsertRowid);
 }
 
-export function updateAssessment(id, { title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false }) {
+export function updateAssessment(id, {
+  title, brief, durationMinutes, gateFields = DEFAULT_GATE_FIELDS, allowCandidateUploads = false,
+  employerId = null, jobDescriptionUrl = null,
+}) {
   db.prepare(
     `UPDATE assessments SET title = ?, brief = ?, duration_minutes = ?,
-     require_linkedin = ?, require_upwork = ?, require_cv = ?, require_portfolio = ?, allow_candidate_uploads = ?, updated_at = ?
+     require_linkedin = ?, require_upwork = ?, require_cv = ?, require_portfolio = ?, allow_candidate_uploads = ?,
+     employer_id = ?, job_description_url = ?, updated_at = ?
      WHERE id = ?`
   ).run(
     title,
@@ -270,10 +306,87 @@ export function updateAssessment(id, { title, brief, durationMinutes, gateFields
     gateFields.requireCv ? 1 : 0,
     gateFields.requirePortfolio ? 1 : 0,
     allowCandidateUploads ? 1 : 0,
+    employerId,
+    jobDescriptionUrl,
     nowIso(),
     id
   );
   return getAssessment(id);
+}
+
+/* Like logos, a replaced or removed job description file stays on disk for
+   codes that froze it at start. */
+export function setJobDescriptionFile(id, name, buffer, ext) {
+  let file = null;
+  if (buffer) {
+    file = `${id}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${ext}`;
+    fs.writeFileSync(path.join(JOB_DESCRIPTIONS_DIR, file), buffer);
+  }
+  db.prepare("UPDATE assessments SET job_description_name = ?, job_description_file = ?, updated_at = ? WHERE id = ?")
+    .run(buffer ? name : null, file, nowIso(), id);
+  return getAssessment(id);
+}
+
+export const STORED_FILE_RE = /^\d+-\d+-[0-9a-f]{8}\.[a-z0-9]{1,5}$/;
+
+export function jobDescriptionPath(file) {
+  return STORED_FILE_RE.test(file || "") ? path.join(JOB_DESCRIPTIONS_DIR, file) : null;
+}
+
+/* ---------------- employers (branding) ---------------- */
+export const BRAND_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
+
+export function listEmployers() {
+  return db.prepare(`
+    SELECT e.*, (SELECT COUNT(*) FROM assessments a WHERE a.employer_id = e.id) AS assessment_count
+    FROM employers e ORDER BY e.name COLLATE NOCASE
+  `).all();
+}
+
+export function getEmployer(id) {
+  return db.prepare("SELECT * FROM employers WHERE id = ?").get(id) || null;
+}
+
+export function createEmployer({ name, brandColor = null }) {
+  const ts = nowIso();
+  const info = db.prepare("INSERT INTO employers (name, brand_color, created_at, updated_at) VALUES (?, ?, ?, ?)")
+    .run(name, brandColor, ts, ts);
+  return getEmployer(info.lastInsertRowid);
+}
+
+export function updateEmployer(id, { name, brandColor = null }) {
+  db.prepare("UPDATE employers SET name = ?, brand_color = ?, updated_at = ? WHERE id = ?")
+    .run(name, brandColor, nowIso(), id);
+  return getEmployer(id);
+}
+
+export function setEmployerLogo(id, buffer, ext) {
+  let file = null;
+  if (buffer) {
+    file = `${id}-${Date.now()}-${crypto.randomBytes(4).toString("hex")}${ext}`;
+    fs.writeFileSync(path.join(EMPLOYER_LOGOS_DIR, file), buffer);
+  }
+  db.prepare("UPDATE employers SET logo_file = ?, updated_at = ? WHERE id = ?").run(file, nowIso(), id);
+  return getEmployer(id);
+}
+
+export function employerLogoPath(file) {
+  return STORED_FILE_RE.test(file || "") ? path.join(EMPLOYER_LOGOS_DIR, file) : null;
+}
+
+export function deleteEmployer(id) {
+  db.prepare("DELETE FROM employers WHERE id = ?").run(id);
+}
+
+/* What a candidate page needs to brand itself; null means ReqOps branding. */
+export function employerBranding(id) {
+  const employer = id ? getEmployer(id) : null;
+  if (!employer) return null;
+  return {
+    name: employer.name,
+    brandColor: employer.brand_color || null,
+    logo: employer.logo_file ? `/api/assessment/brand/logos/${employer.logo_file}` : null,
+  };
 }
 
 export function deleteAssessment(id) {

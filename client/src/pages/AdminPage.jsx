@@ -8,6 +8,7 @@ const BriefEditor = lazy(() => import("../components/BriefEditor.jsx"));
 
 export default function AdminPage({ user, onLogout }) {
   const [assessments, setAssessments] = useState([]);
+  const [employers, setEmployers] = useState([]);
   const [codes, setCodes] = useState([]);
   const [error, setError] = useState("");
   const [filterId, setFilterId] = useState("all");
@@ -15,6 +16,7 @@ export default function AdminPage({ user, onLogout }) {
 
   const refresh = useCallback(() => {
     api.adminAssessments().then((d) => setAssessments(d.assessments)).catch((e) => setError(e.message));
+    api.adminEmployers().then((d) => setEmployers(d.employers)).catch((e) => setError(e.message));
     api.adminCodes().then((d) => setCodes(d.codes)).catch((e) => setError(e.message));
   }, []);
   useEffect(refresh, [refresh]);
@@ -43,27 +45,31 @@ export default function AdminPage({ user, onLogout }) {
           <ReqopsLockup />
           <div className="case-chip">admin</div>
           <div className="spacer" />
-          <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>{user.email}</span>
-          <button className="btn-small" onClick={onLogout}>Log out</button>
+          <span className="who">{user.email}</span>
+          <button className="btn btn-line btn-sm" onClick={onLogout}>Log out</button>
         </div>
       </header>
       <main className="page wide">
         {error && <div className="error-box">{error}</div>}
 
-        <AssessmentsPanel assessments={assessments} setError={setError} refresh={refresh} />
+        <EmployersPanel employers={employers} setError={setError} refresh={refresh} />
 
-        <h1 style={{ fontSize: 22, margin: "36px 0 6px" }}>Issued codes</h1>
-        <p style={{ color: "var(--ink-soft)", fontSize: 14 }}>
+        <AssessmentsPanel assessments={assessments} employers={employers} setError={setError} refresh={refresh} />
+
+        <section className="section">
+        <div className="section-head"><h2>Issued codes</h2></div>
+        <p className="help">
           {Object.entries(summary).map(([k, v]) => `${k}: ${v}`).join(" · ") || "no codes yet"}
         </p>
         <div className="issue-row">
-          <label style={{ fontSize: 13, fontWeight: 700 }}>Show</label>
-          <select value={filterId} onChange={(e) => setFilterId(e.target.value)} style={{ padding: "8px 10px" }}>
+          <label htmlFor="code-filter">Show</label>
+          <select id="code-filter" className="select" value={filterId} onChange={(e) => setFilterId(e.target.value)}>
             <option value="all">All assessments</option>
             {assessments.map((a) => <option key={a.id} value={a.id}>{a.title}</option>)}
           </select>
         </div>
-        <table className="admin-table">
+        <div className="table-wrap">
+        <table className="table admin-table">
           <thead>
             <tr>
               {CODE_COLUMNS.map((column) => {
@@ -88,13 +94,13 @@ export default function AdminPage({ user, onLogout }) {
             </tr>
           </thead>
           <tbody>
-            {sortedCodes.length === 0 && <tr><td colSpan={CODE_COLUMNS.length}>none yet</td></tr>}
+            {sortedCodes.length === 0 && <tr className="empty-row"><td colSpan={CODE_COLUMNS.length}>none yet</td></tr>}
             {sortedCodes.map((c) => (
               <tr key={c.code}>
-                <td style={{ fontFamily: "var(--mono)" }}>{c.code}</td>
+                <td className="id">{c.code}</td>
                 <td>{c.assessment_title || "—"}</td>
-                <td><input readOnly value={link(c.code)} onClick={(e) => e.target.select()} /></td>
-                <td><span className={`status-pill status-${c.status}`}>{c.status}</span></td>
+                <td><input className="link-input" readOnly aria-label={`Link for ${c.code}`} value={link(c.code)} onClick={(e) => e.target.select()} /></td>
+                <td><span className={`badge ${STATUS_TONE[c.status] || ""}`}><span className="dot" />{c.status}</span></td>
                 <td>
                   {c.candidate_name
                     ? c.candidate_linkedin
@@ -104,12 +110,12 @@ export default function AdminPage({ user, onLogout }) {
                         : c.candidate_name
                     : "—"}
                 </td>
-                <td style={{ fontSize: 12.5, whiteSpace: "nowrap" }} title={c.started_at || undefined}>{formatTimestamp(c.started_at)}</td>
-                <td style={{ fontSize: 12.5, whiteSpace: "nowrap" }} title={c.submitted_at || undefined}>{formatTimestamp(c.submitted_at)}</td>
+                <td className="when nowrap" title={c.started_at || undefined}>{formatTimestamp(c.started_at)}</td>
+                <td className="when nowrap" title={c.submitted_at || undefined}>{formatTimestamp(c.submitted_at)}</td>
                 <td>{c.end_reason || "—"}</td>
-                <td>{c.frames}</td>
-                <td>{c.audio || 0}</td>
-                <td style={{ whiteSpace: "nowrap" }}>
+                <td className="num">{c.frames}</td>
+                <td className="num">{c.audio || 0}</td>
+                <td className="nowrap">
                   {(c.status === "submitted" || c.frames > 0 || (c.audio || 0) > 0) && (
                     <>
                       <Link to={`/admin/case/${c.code}`}>review</Link>{" · "}
@@ -125,10 +131,15 @@ export default function AdminPage({ user, onLogout }) {
             ))}
           </tbody>
         </table>
+        </div>
+        </section>
       </main>
     </>
   );
 }
+
+/* Status chips are neutral; the dot carries the tone. */
+const STATUS_TONE = { active: "info", submitted: "ok", void: "" };
 
 const DEFAULT_GATE = { requireLinkedin: true, requireUpwork: false, requireCv: false, requirePortfolio: false };
 
@@ -147,19 +158,19 @@ function AttachmentsEditor({ existing, pending, onAddPending, onRemovePending, o
   return (
     <div className="field">
       <label>Attachments for the candidate</label>
-      <div style={{ display: "grid", gap: 6, marginTop: 6, fontSize: 14 }}>
+      <div className="file-list">
         {existing.map((f) => (
-          <div key={f.id} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div key={f.id} className="file-row">
             <a href={`/api/admin/attachments/${f.id}`}>{f.name}</a>
-            <span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>{fmtSize(f.size)}</span>
-            <button type="button" className="btn-small" onClick={() => onRemoveExisting(f)}>Remove</button>
+            <span className="size">{fmtSize(f.size)}</span>
+            <button type="button" className="btn btn-line btn-sm" onClick={() => onRemoveExisting(f)}>Remove</button>
           </div>
         ))}
         {pending.map((f, i) => (
-          <div key={`p${i}`} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <div key={`p${i}`} className="file-row">
             <span>{f.name}</span>
-            <span style={{ color: "var(--ink-faint)", fontSize: 12.5 }}>{fmtSize(f.size)} · uploads on save</span>
-            <button type="button" className="btn-small" onClick={() => onRemovePending(i)}>Remove</button>
+            <span className="size">{fmtSize(f.size)} · uploads on save</span>
+            <button type="button" className="btn btn-line btn-sm" onClick={() => onRemovePending(i)}>Remove</button>
           </div>
         ))}
         <input
@@ -168,21 +179,197 @@ function AttachmentsEditor({ existing, pending, onAddPending, onRemovePending, o
           onChange={(e) => { onAddPending([...e.target.files]); e.target.value = ""; }}
         />
       </div>
-      <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+      <p className="help">
         Candidates can download these alongside the brief once they start. Up to 50 MB per file.
       </p>
     </div>
   );
 }
 
+function JobDescriptionEditor({ id, url, existingName, pending, onUrl, onFile, onRemoveExisting }) {
+  return (
+    <div className="field">
+      <label htmlFor="a-jd-url">Job description</label>
+      <input
+        id="a-jd-url"
+        className="input"
+        type="url"
+        value={url}
+        onChange={(e) => onUrl(e.target.value)}
+        placeholder="https://example.com/careers/role (optional)"
+        spellCheck="false"
+      />
+      <div className="file-list">
+        {existingName && !pending && (
+          <div className="file-row">
+            <a href={`/api/admin/assessments/${id}/job-description`}>{existingName}</a>
+            <button type="button" className="btn btn-line btn-sm" onClick={onRemoveExisting}>Remove</button>
+          </div>
+        )}
+        {pending && (
+          <div className="file-row">
+            <span>{pending.name}</span>
+            <span className="size">{fmtSize(pending.size)} · uploads on save</span>
+            <button type="button" className="btn btn-line btn-sm" onClick={() => onFile(null)}>Remove</button>
+          </div>
+        )}
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx,.rtf,.txt,.md"
+          aria-label="Job description file"
+          onChange={(e) => { onFile(e.target.files?.[0] || null); e.target.value = ""; }}
+        />
+      </div>
+      <p className="help">
+        Add a link, a file (PDF, Word, RTF, Markdown or text, up to 10 MB), or both. Candidates can open it before
+        they start and during the assessment. A new file replaces the old one.
+      </p>
+    </div>
+  );
+}
+
+const logoUrl = (file) => `/api/assessment/brand/logos/${file}`;
+
+function EmployersPanel({ employers, setError, refresh }) {
+  const [editing, setEditing] = useState(null); // {id, name, brandColor, logoFile, pendingLogo, removeLogo}; id=null means "new"
+  const [busy, setBusy] = useState(false);
+  const [previewLogo, setPreviewLogo] = useState(null);
+
+  useEffect(() => {
+    if (editing?.pendingLogo) {
+      const url = URL.createObjectURL(editing.pendingLogo);
+      setPreviewLogo(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPreviewLogo(editing?.logoFile && !editing.removeLogo ? logoUrl(editing.logoFile) : null);
+  }, [editing?.pendingLogo, editing?.logoFile, editing?.removeLogo]);
+
+  function startNew() {
+    setEditing({ id: null, name: "", brandColor: "", logoFile: null, pendingLogo: null, removeLogo: false });
+  }
+  function startEdit(emp) {
+    setEditing({ id: emp.id, name: emp.name, brandColor: emp.brand_color || "", logoFile: emp.logo_file, pendingLogo: null, removeLogo: false });
+  }
+
+  async function save() {
+    if (!editing.name.trim()) { setError("Give the employer a name."); return; }
+    setBusy(true);
+    setError("");
+    const body = { name: editing.name, brandColor: editing.brandColor.trim() };
+    try {
+      const { employer } = editing.id
+        ? await api.adminUpdateEmployer(editing.id, body)
+        : await api.adminCreateEmployer(body);
+      if (editing.pendingLogo) await api.adminUploadEmployerLogo(employer.id, editing.pendingLogo);
+      else if (editing.removeLogo) await api.adminDeleteEmployerLogo(employer.id);
+      setEditing(null);
+      refresh();
+    } catch (e) { setError(e.message); }
+    setBusy(false);
+  }
+
+  async function remove(emp) {
+    if (!window.confirm(`Delete employer "${emp.name}"?`)) return;
+    try { await api.adminDeleteEmployer(emp.id); refresh(); }
+    catch (e) { setError(e.message); }
+  }
+
+  const validColor = /^#[0-9a-f]{6}$/i.test(editing?.brandColor || "");
+
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2>Employers</h2>
+        <div className="spacer" />
+        {!editing && <button className="btn btn-line" onClick={startNew}>New employer</button>}
+      </div>
+      <p className="help">
+        Brand an assessment under the employer you are hiring for. Candidates see the employer's logo and colour;
+        assessments without an employer stay ReqOps-branded.
+      </p>
+
+      {editing && (
+        <div className="card editor-card">
+          <div className="field">
+            <label htmlFor="e-name">Employer name</label>
+            <input id="e-name" className="input" value={editing.name}
+              onChange={(e) => setEditing({ ...editing, name: e.target.value })} placeholder="e.g. Nfiny" />
+          </div>
+          <div className="field">
+            <label htmlFor="e-color">Brand colour</label>
+            <div className="file-row">
+              <input type="color" aria-label="Pick brand colour" value={validColor ? editing.brandColor : "#888888"}
+                onChange={(e) => setEditing({ ...editing, brandColor: e.target.value })}
+                style={{ width: 44, height: 36, padding: 2, background: "none", border: 0 }} />
+              <input id="e-color" className="input" value={editing.brandColor}
+                onChange={(e) => setEditing({ ...editing, brandColor: e.target.value })}
+                placeholder="#1a73e8 (optional)" spellCheck="false" style={{ maxWidth: 180, fontFamily: "var(--font-mono)" }} />
+              {editing.brandColor && (
+                <button type="button" className="btn btn-line btn-sm" onClick={() => setEditing({ ...editing, brandColor: "" })}>Clear</button>
+              )}
+            </div>
+            <p className="help">Shown as a stripe along the top of the candidate's screens.</p>
+          </div>
+          <div className="field">
+            <label htmlFor="e-logo">Logo</label>
+            <div className="file-list">
+              {previewLogo && (
+                <div className="file-row">
+                  <img className="logo-plate" src={previewLogo} alt="" style={{ height: 36 }} />
+                  <button type="button" className="btn btn-line btn-sm"
+                    onClick={() => setEditing({ ...editing, pendingLogo: null, removeLogo: true })}>Remove</button>
+                </div>
+              )}
+              <input id="e-logo" type="file" accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) setEditing((c) => ({ ...c, pendingLogo: f, removeLogo: false }));
+                  e.target.value = "";
+                }} />
+            </div>
+            <p className="help">
+              PNG, JPG or WebP up to 2 MB. A wide logo works best. Without a logo, candidates see the employer name.
+            </p>
+          </div>
+          <div className="actions">
+            <button className="btn btn-primary" disabled={busy} aria-busy={busy || undefined} onClick={save}>
+              {busy ? "Saving…" : "Save employer"}
+            </button>
+            <button className="btn btn-line" onClick={() => setEditing(null)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {employers.length === 0 && !editing && (
+        <p className="help">No employers yet. Every assessment is ReqOps-branded.</p>
+      )}
+      {employers.map((emp) => (
+        <div key={emp.id} className="card admin-card" style={emp.brand_color ? { borderLeft: `4px solid ${emp.brand_color}` } : undefined}>
+          <div className="head">
+            {emp.logo_file && <img className="logo-plate" src={logoUrl(emp.logo_file)} alt="" style={{ height: 24, maxWidth: 140 }} />}
+            <span className="title">{emp.name}</span>
+            <span className="meta">
+              {emp.brand_color || "no colour"} · {emp.assessment_count} assessment{emp.assessment_count === 1 ? "" : "s"}
+            </span>
+            <div className="actions">
+              <button className="btn btn-line btn-sm" onClick={() => startEdit(emp)}>Edit</button>
+              {emp.assessment_count === 0 && <button className="btn btn-danger btn-sm" onClick={() => remove(emp)}>Delete</button>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
+}
+
 function GateFieldsEditor({ value, onChange }) {
   const row = (key, label) => (
-    <label key={key} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
-      <span style={{ minWidth: 170 }}>{label}</span>
+    <label key={key} className="inline">
+      <span>{label}</span>
       <select
+        className="select"
         value={value[key] ? "yes" : "no"}
         onChange={(e) => onChange({ ...value, [key]: e.target.value === "yes" })}
-        style={{ padding: "6px 10px" }}
       >
         <option value="yes">Yes</option>
         <option value="no">No</option>
@@ -192,20 +379,20 @@ function GateFieldsEditor({ value, onChange }) {
   return (
     <div className="field">
       <label>Candidate details to collect</label>
-      <div style={{ display: "grid", gap: 8, marginTop: 6 }}>
+      <div className="file-list">
         {row("requireLinkedin", "LinkedIn profile URL")}
         {row("requireUpwork", "Upwork profile URL")}
         {row("requireCv", "CV / résumé upload")}
         {row("requirePortfolio", "Image portfolio upload")}
       </div>
-      <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+      <p className="help">
         Full name is always required. Turn fields off when you only need a name.
       </p>
     </div>
   );
 }
 
-function AssessmentsPanel({ assessments, setError, refresh }) {
+function AssessmentsPanel({ assessments, employers, setError, refresh }) {
   const [editing, setEditing] = useState(null); // {id, title, brief} or null; id=null means "new"
   const [issuing, setIssuing] = useState(null);  // assessment id currently showing an issue-count input
   const [count, setCount] = useState(5);
@@ -213,7 +400,8 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
 
   function startNew() {
     setEditing({ id: null, title: "", brief: "", durationMinutes: 15, ...DEFAULT_GATE,
-      allowCandidateUploads: false, attachments: [], pendingFiles: [], removedAttachments: [] });
+      allowCandidateUploads: false, attachments: [], pendingFiles: [], removedAttachments: [],
+      employerId: "", jobDescriptionUrl: "", jobDescriptionName: null, pendingJdFile: null, removeJd: false });
   }
   function startEdit(a) {
     setEditing({
@@ -229,6 +417,11 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       attachments: a.attachments || [],
       pendingFiles: [],
       removedAttachments: [],
+      employerId: a.employer_id ? String(a.employer_id) : "",
+      jobDescriptionUrl: a.job_description_url || "",
+      jobDescriptionName: a.job_description_file ? a.job_description_name : null,
+      pendingJdFile: null,
+      removeJd: false,
     });
   }
   function cancelEdit() { setEditing(null); }
@@ -251,6 +444,8 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
       requireCv: editing.requireCv,
       requirePortfolio: editing.requirePortfolio,
       allowCandidateUploads: editing.allowCandidateUploads,
+      employerId: editing.employerId ? Number(editing.employerId) : null,
+      jobDescriptionUrl: editing.jobDescriptionUrl.trim(),
     };
     try {
       const { assessment } = editing.id
@@ -258,6 +453,8 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
         : await api.adminCreateAssessment(body);
       for (const id of editing.removedAttachments) await api.adminDeleteAttachment(id);
       if (editing.pendingFiles.length) await api.adminUploadAttachments(assessment.id, editing.pendingFiles);
+      if (editing.pendingJdFile) await api.adminUploadJobDescription(assessment.id, editing.pendingJdFile);
+      else if (editing.removeJd) await api.adminDeleteJobDescription(assessment.id);
       setEditing(null);
       refresh();
     } catch (e) { setError(e.message); }
@@ -278,35 +475,62 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
 
   return (
     <section>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
-        <h1 style={{ fontSize: 22, marginBottom: 6 }}>Assessments</h1>
+      <div className="section-head">
+        <h2>Assessments</h2>
         <div className="spacer" />
         {!editing && (
-          <button className="btn-primary" style={{ padding: "9px 18px", fontSize: 14.5 }} onClick={startNew}>
+          <button className="btn btn-primary" onClick={startNew}>
             New assessment
           </button>
         )}
       </div>
-      <p style={{ color: "var(--ink-soft)", fontSize: 14, marginBottom: 16 }}>
+      <p className="help">
         Write up the brief for a candidate, save it, then issue codes under it — each code hands that
         candidate this exact brief.
       </p>
 
       {editing && (
-        <div style={{ border: "1px solid var(--line)", padding: 18, marginBottom: 20, background: "var(--raised)" }}>
+        <div className="card editor-card">
           <div className="field">
             <label htmlFor="a-title">Title</label>
             <input
               id="a-title"
+              className="input"
               value={editing.title}
               onChange={(e) => setEditing({ ...editing, title: e.target.value })}
               placeholder="e.g. Senior React — build task"
             />
           </div>
-          <div className="field" style={{ maxWidth: 160 }}>
+          <div className="field">
+            <label className="inline">
+              <span>Branded as</span>
+              <select
+                className="select"
+                value={editing.employerId}
+                onChange={(e) => setEditing({ ...editing, employerId: e.target.value })}
+              >
+                <option value="">ReqOps (no employer)</option>
+                {employers.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+              </select>
+            </label>
+            <p className="help">
+              Candidates see this employer's logo and colour on every screen. Add employers under Employers above.
+            </p>
+          </div>
+          <JobDescriptionEditor
+            id={editing.id}
+            url={editing.jobDescriptionUrl}
+            existingName={editing.removeJd ? null : editing.jobDescriptionName}
+            pending={editing.pendingJdFile}
+            onUrl={(jobDescriptionUrl) => setEditing((c) => ({ ...c, jobDescriptionUrl }))}
+            onFile={(pendingJdFile) => setEditing((c) => ({ ...c, pendingJdFile }))}
+            onRemoveExisting={() => setEditing((c) => ({ ...c, removeJd: true }))}
+          />
+          <div className="field" style={{ maxWidth: 180 }}>
             <label htmlFor="a-duration">Duration (minutes)</label>
             <input
               id="a-duration"
+              className="input"
               type="number"
               min="1"
               value={editing.durationMinutes}
@@ -323,18 +547,18 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
             onChange={(gate) => setEditing({ ...editing, ...gate })}
           />
           <div className="field">
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 14 }}>
-              <span style={{ minWidth: 170 }}>Candidates can upload files</span>
+            <label className="inline">
+              <span>Candidates can upload files</span>
               <select
+                className="select"
                 value={editing.allowCandidateUploads ? "yes" : "no"}
                 onChange={(e) => setEditing({ ...editing, allowCandidateUploads: e.target.value === "yes" })}
-                style={{ padding: "6px 10px" }}
               >
                 <option value="yes">On</option>
                 <option value="no">Off</option>
               </select>
             </label>
-            <p style={{ fontSize: 12.5, color: "var(--ink-soft)", marginTop: 8 }}>
+            <p className="help">
               When on, candidates get an upload box during the session to hand in their work for review.
             </p>
           </div>
@@ -359,38 +583,40 @@ function AssessmentsPanel({ assessments, setError, refresh }) {
               />
             </Suspense>
           </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-primary" style={{ padding: "9px 18px", fontSize: 14.5 }} disabled={busy} onClick={save}>
+          <div className="actions">
+            <button className="btn btn-primary" disabled={busy} aria-busy={busy || undefined} onClick={save}>
               {busy ? "Saving…" : "Save"}
             </button>
-            <button className="btn-small" onClick={cancelEdit}>Cancel</button>
+            <button className="btn btn-line" onClick={cancelEdit}>Cancel</button>
           </div>
         </div>
       )}
 
       {assessments.length === 0 && !editing && (
-        <p style={{ color: "var(--ink-faint)", fontSize: 14 }}>No assessments yet — create one to start issuing codes.</p>
+        <p className="help">No assessments yet — create one to start issuing codes.</p>
       )}
 
       {assessments.map((a) => (
-        <div key={a.id} style={{ border: "1px solid var(--line)", padding: "14px 16px", marginBottom: 10 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
-            <b style={{ fontSize: 15.5 }}>{a.title}</b>
-            <span style={{ fontSize: 12.5, color: "var(--ink-faint)" }}>
-              {a.duration_minutes} min · {gateSummary(a)}
+        <div key={a.id} className="card admin-card">
+          <div className="head">
+            <span className="title">{a.title}</span>
+            <span className="meta">
+              {a.employer_name || "ReqOps"} · {a.duration_minutes} min · {gateSummary(a)}
+              {a.job_description_url || a.job_description_file ? " · job description" : ""}
               {a.attachments?.length ? ` · ${a.attachments.length} attachment${a.attachments.length === 1 ? "" : "s"}` : ""}
               {a.allow_candidate_uploads ? " · uploads on" : ""} · {a.code_count} code{a.code_count === 1 ? "" : "s"} issued
               · updated {a.updated_at?.slice(0, 10)}
             </span>
-            <div className="spacer" />
-            <button className="btn-small" onClick={() => startEdit(a)}>Edit</button>
-            <button className="btn-small" onClick={() => setIssuing(issuing === a.id ? null : a.id)}>Issue codes</button>
-            {a.code_count === 0 && <button className="btn-small" onClick={() => remove(a)}>Delete</button>}
+            <div className="actions">
+              <button className="btn btn-line btn-sm" onClick={() => startEdit(a)}>Edit</button>
+              <button className="btn btn-line btn-sm" onClick={() => setIssuing(issuing === a.id ? null : a.id)}>Issue codes</button>
+              {a.code_count === 0 && <button className="btn btn-danger btn-sm" onClick={() => remove(a)}>Delete</button>}
+            </div>
           </div>
           {issuing === a.id && (
             <div className="issue-row">
-              <input type="number" min="1" max="200" value={count} onChange={(e) => setCount(e.target.value)} />
-              <button className="btn-primary" style={{ padding: "9px 18px", fontSize: 14.5 }} onClick={() => issue(a)}>
+              <input className="input" type="number" min="1" max="200" aria-label="Number of codes" value={count} onChange={(e) => setCount(e.target.value)} />
+              <button className="btn btn-primary" onClick={() => issue(a)}>
                 Issue
               </button>
             </div>

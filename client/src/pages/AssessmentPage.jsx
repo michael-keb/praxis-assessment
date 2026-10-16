@@ -5,7 +5,7 @@ import BriefContent from "../components/BriefContent.jsx";
 import { ChromeMicSetup } from "../components/ChromeMicSetup.jsx";
 import { isGoogleChrome } from "../chrome.js";
 import { normalizeProfileUrl } from "../profile-url.js";
-import { ReqopsLockup } from "../components/ReqopsMark.jsx";
+import { BrandLockup, useEmployerBrand } from "../components/ReqopsMark.jsx";
 
 const fmt = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0, s) % 60).padStart(2, "0")}`;
 
@@ -21,10 +21,11 @@ export default function AssessmentPage() {
     engine.boot();
     return () => engine.destroy();
   }, [engine]);
+  useEmployerBrand(snap.assessment?.employer || null);
 
   if (snap.phase === "loading") return null;
   if (snap.phase === "fatal") return <CenterScreen mark="⚠" title={snap.fatal.title} text={snap.fatal.text}
-    action={snap.fatal.retryable && <button className="btn-accent" onClick={() => engine.boot()}>Retry connection</button>} />;
+    action={snap.fatal.retryable && <button className="btn btn-primary btn-lg btn-block" onClick={() => engine.boot()}>Retry connection</button>} />;
   if (snap.phase === 'submitting') return <SavingScreen engine={engine} snap={snap} />;
   if (snap.phase === "done") return <DoneScreen reason={snap.doneReason} />;
   if (snap.phase === "gate") return <Gate engine={engine} snap={snap} />;
@@ -36,8 +37,8 @@ function CenterScreen({ mark, title, text, action }) {
     <div className="center-screen">
       <div className="mark">{mark}</div>
       <h1>{title}</h1>
-      <p style={{ maxWidth: 480, margin: "0 auto" }}>{text}</p>
-      {action && <div style={{ maxWidth: 480, margin: '24px auto 0', padding: '0 20px' }}>{action}</div>}
+      <p>{text}</p>
+      {action && <div className="actions">{action}</div>}
     </div>
   );
 }
@@ -47,7 +48,7 @@ function SavingScreen({ engine, snap }) {
     text={snap.submissionError || 'Your screen and microphone are stopped. Keep this tab open while your transcript and recording finish saving.'}
     action={<>
       {snap.pendingFrames > 0 && <p role="status">Your recording is still uploading.</p>}
-      {snap.submissionError && <button className="btn-accent" onClick={() => engine.retrySubmit()}>Retry saving</button>}
+      {snap.submissionError && <button className="btn btn-primary btn-lg btn-block" onClick={() => engine.retrySubmit()}>Retry saving</button>}
     </>} />;
 }
 
@@ -118,7 +119,7 @@ function Gate({ engine, snap }) {
     return (
       <div className="screen">
         <div className="card-col">
-          <ReqopsLockup variant="gate" size={24} />
+          <BrandLockup employer={snap.assessment?.employer} variant="gate" />
           <h1>Before you start</h1>
           <p className="lede">
             First you will share your entire screen, then we will confirm live
@@ -142,7 +143,7 @@ function Gate({ engine, snap }) {
                 submits as-is. If interrupted, reopening this link resumes it.</li>
             </ul>
           </div>
-          <button className="btn-accent" disabled={busy || !isGoogleChrome()} onClick={begin}>
+          <button className="btn btn-primary btn-lg btn-block" disabled={busy || !isGoogleChrome()} aria-busy={busy || undefined} onClick={begin}>
             {busy ? (snap.micCheck === "checking" ? "Listening — say a sentence now…" : "Connecting…") : "Check microphone and start"}
           </button>
           {busy && snap.micCheck === "checking" && (
@@ -153,7 +154,7 @@ function Gate({ engine, snap }) {
             </div>
           )}
           {!busy && (
-            <button className="btn-ghost" onClick={() => { setError(""); setStep("details"); }}>
+            <button className="btn btn-line btn-block" onClick={() => { setError(""); setStep("details"); }}>
               Go back
             </button>
           )}
@@ -166,6 +167,7 @@ function Gate({ engine, snap }) {
             then for microphone access. Speak the test sentence when prompted.
             A single tab or window is not accepted.
           </p>
+          <PoweredBy snap={snap} />
         </div>
       </div>
     );
@@ -174,37 +176,38 @@ function Gate({ engine, snap }) {
   return (
     <div className="screen">
       <div className="card-col">
-        <ReqopsLockup variant="gate" size={24} />
+        <BrandLockup employer={snap.assessment?.employer} variant="gate" />
         <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
         <p className="lede">
           Fill in your details below to unlock the assessment. Use{" "}
           <b>Google Chrome</b> on a computer. The brief stays hidden until you
           start — the timer begins after the checks pass and your start is confirmed.
         </p>
+        <JobDescription snap={snap} />
         <ChromeMicSetup caseId={snap.caseId} />
         <div className="gate-facts">
-          <div><dt>Case ID</dt><dd>{snap.caseId}</dd></div>
-          <div><dt>Duration</dt><dd>{fmt(snap.duration)}</dd></div>
+          <div><dt>Case ID</dt><dd className="mono">{snap.caseId}</dd></div>
+          <div><dt>Duration</dt><dd className="mono">{fmt(snap.duration)}</dd></div>
           <div><dt>Format</dt><dd>Open create + voice</dd></div>
           <div><dt>Tools</dt><dd>Anything, incl. AI</dd></div>
         </div>
 
-        <h2 style={{ fontSize: 17, margin: "0 0 4px" }}>Your details</h2>
-        <p style={{ fontSize: 13.5, color: "var(--ink-soft)", marginBottom: 14 }}>
+        <h2>Your details</h2>
+        <p className="help">
           Your results are linked to these details, so use your real ones.
         </p>
         <div className="field">
           <label htmlFor="g-name">Full name</label>
-          <input id="g-name" value={form.name} onChange={set("name")} autoComplete="name" />
+          <input id="g-name" className="input" value={form.name} onChange={set("name")} autoComplete="name" />
         </div>
         {gate.linkedin && (
           <div className="field">
             <label htmlFor="g-linkedin">LinkedIn profile URL</label>
-            <input id="g-linkedin" type="url" value={form.linkedin} onChange={set("linkedin")}
+            <input id="g-linkedin" className="input" type="url" value={form.linkedin} onChange={set("linkedin")}
               onBlur={normalizeOnBlur('linkedin')} aria-invalid={linkedinInvalid}
               aria-describedby={linkedinInvalid ? 'g-linkedin-error' : undefined}
               placeholder="https://www.linkedin.com/in/…" spellCheck="false" />
-            {linkedinInvalid && <p id="g-linkedin-error" style={{ fontSize: 12.5, color: 'var(--danger)', marginTop: 6 }}>
+            {linkedinInvalid && <p id="g-linkedin-error" className="error">
               Enter a valid LinkedIn profile URL, such as linkedin.com/in/your-name.
             </p>}
           </div>
@@ -212,11 +215,11 @@ function Gate({ engine, snap }) {
         {gate.upwork && (
           <div className="field">
             <label htmlFor="g-upwork">Upwork profile URL</label>
-            <input id="g-upwork" type="url" value={form.upwork} onChange={set("upwork")}
+            <input id="g-upwork" className="input" type="url" value={form.upwork} onChange={set("upwork")}
               onBlur={normalizeOnBlur('upwork')} aria-invalid={upworkInvalid}
               aria-describedby={upworkInvalid ? 'g-upwork-error' : undefined}
               placeholder="https://www.upwork.com/freelancers/~01…" spellCheck="false" />
-            {upworkInvalid && <p id="g-upwork-error" style={{ fontSize: 12.5, color: 'var(--danger)', marginTop: 6 }}>
+            {upworkInvalid && <p id="g-upwork-error" className="error">
               Enter a valid Upwork profile URL, such as upwork.com/freelancers/~your-id.
             </p>}
           </div>
@@ -227,7 +230,7 @@ function Gate({ engine, snap }) {
             <input id="g-cv" type="file" accept=".pdf,.doc,.docx"
               onChange={(e) => setCvFile(e.target.files?.[0] || null)} />
             {cvFile && !cvOk && (
-              <p style={{ fontSize: 12.5, color: "var(--danger)", marginTop: 6 }}>
+              <p className="error">
                 Must be a .pdf, .doc, or .docx under 8 MB.
               </p>
             )}
@@ -239,30 +242,31 @@ function Gate({ engine, snap }) {
             <input id="g-portfolio" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple
               onChange={(e) => setPortfolioFiles([...e.target.files || []].slice(0, 10))} />
             {portfolioFiles.length > 0 && (
-              <ul style={{ fontSize: 12.5, margin: "8px 0 0", paddingLeft: 18, color: "var(--ink-soft)" }}>
+              <ul className="files">
                 {portfolioFiles.map((f) => <li key={f.name + f.size}>{f.name}</li>)}
               </ul>
             )}
             {portfolioFiles.length > 0 && !portfolioOk && (
-              <p style={{ fontSize: 12.5, color: "var(--danger)", marginTop: 6 }}>
+              <p className="error">
                 Each file must be a JPG, PNG, or WebP under 8 MB (1–10 images).
               </p>
             )}
           </div>
         )}
 
-        <label className="consent">
+        <label className="consent check">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
           <span>
             I consent to my <b>entire screen</b> being recorded, my voice being{" "}
             <b>transcribed in real time</b> (the transcript is shown on screen and
             stored; no audio recording is kept), and my interaction with this page
             (focus changes and timing) being <b>logged</b> for the sole purpose of
-            evaluating this assessment. Records are reviewed by ReqOps assessors and
+            evaluating this assessment. Records are reviewed by ReqOps assessors
+            {snap.assessment?.employer ? <> on behalf of {snap.assessment.employer.name}</> : null} and
             retained no longer than the hiring process requires.
           </span>
         </label>
-        <button className="btn-accent" disabled={!consent || !detailsComplete || !isGoogleChrome()}
+        <button className="btn btn-primary btn-lg btn-block" disabled={!consent || !detailsComplete || !isGoogleChrome()}
           onClick={() => setStep("confirm")}>
           Start
         </button>
@@ -273,6 +277,7 @@ function Gate({ engine, snap }) {
           Next you will see exactly what happens when the session begins — nothing
           starts and nothing is recorded until you confirm on the following step.
         </p>
+        <PoweredBy snap={snap} />
       </div>
     </div>
   );
@@ -308,14 +313,14 @@ function Task({ engine, snap }) {
     <>
       <header className="appbar">
         <div className="bar">
-          <ReqopsLockup />
+          <BrandLockup employer={snap.assessment?.employer} />
           <div className="case-chip">{snap.caseId}</div>
           <div className="spacer" />
-          {snap.reconnecting && <div className="mic-chip mic-warn" role="status">Reconnecting transcript…</div>}
-          {snap.micLive && !snap.micSilent && !snap.reconnecting && <div className="mic-chip" title="Live transcription running">● TRANSCRIBING</div>}
-          {snap.micLive && snap.micSilent && <div className="mic-chip mic-warn" title="Nothing heard recently">⚠ CAN'T HEAR YOU</div>}
+          {snap.reconnecting && <div className="mic-chip mic-warn" role="status"><span className="dot" />Reconnecting transcript…</div>}
+          {snap.micLive && !snap.micSilent && !snap.reconnecting && <div className="mic-chip" title="Live transcription running"><span className="dot" />Transcribing</div>}
+          {snap.micLive && snap.micSilent && <div className="mic-chip mic-warn" title="Nothing heard recently"><span className="dot" />Can't hear you</div>}
           <div className={`timer ${timerClass}`}>
-            {snap.phase === "blocked" ? "PAUSED" : fmt(snap.remaining)}
+            {snap.phase === "blocked" ? "Paused" : fmt(snap.remaining)}
           </div>
         </div>
       </header>
@@ -331,6 +336,7 @@ function Task({ engine, snap }) {
 
         <section className="brief open-brief">
           <h1>{snap.assessment?.title || DEFAULT_TITLE}</h1>
+          <JobDescription snap={snap} />
           <BriefContent text={snap.assessment?.brief} />
           <AttachmentList snap={snap} />
         </section>
@@ -338,7 +344,7 @@ function Task({ engine, snap }) {
         {snap.assessment?.allowUploads && <UploadBox snap={snap} />}
 
         <section className="work open-work">
-          <button className={`btn-primary ${confirming ? "confirming" : ""}`} onClick={submitClick}>
+          <button className={`btn btn-lg ${confirming ? "btn-primary" : "btn-line"}`} onClick={submitClick}>
             {confirming ? `Click again to confirm — ${fmt(snap.remaining)} remains` : "Submit session"}
           </button>
           <p className="submit-note">At 0:00 your session submits automatically.</p>
@@ -346,7 +352,7 @@ function Task({ engine, snap }) {
       </main>
 
       <div className={`caption-bar ${snap.micSilent ? "silent" : ""}`}>
-        <span className="cap-label">{snap.micSilent ? "⚠ CAN'T HEAR YOU" : "LIVE TRANSCRIPT"}</span>
+        <span className="cap-label tag"><span className="dot" />{snap.micSilent ? "Can't hear you" : "Live transcript"}</span>
         <span className="cap-text">
           {snap.micSilent
             ? "Nothing heard for a while — check your microphone is the right one and keep talking through your thinking."
@@ -355,8 +361,33 @@ function Task({ engine, snap }) {
         </span>
       </div>
 
-      <footer className="foot">ReqOps · assessment · {snap.caseId}</footer>
+      <footer className="foot">
+        {snap.assessment?.employer ? `${snap.assessment.employer.name} · assessment by ReqOps` : "ReqOps · assessment"} · {snap.caseId}
+      </footer>
     </>
+  );
+}
+
+function PoweredBy({ snap }) {
+  if (!snap.assessment?.employer) return null;
+  return <p className="powered-by">Assessment run by ReqOps for {snap.assessment.employer.name}</p>;
+}
+
+/* The job description is public: links open in a new tab so the gate or the
+   running assessment stays put. */
+function JobDescription({ snap }) {
+  const jd = snap.assessment?.jobDescription;
+  if (!jd?.url && !jd?.fileName) return null;
+  return (
+    <div className="job-description">
+      <span className="jd-label">Job description</span>
+      {jd.url && <a href={jd.url} target="_blank" rel="noopener noreferrer">View the role ↗</a>}
+      {jd.fileName && (
+        <a href={`/api/assessment/job-description?case=${encodeURIComponent(snap.caseId)}`} target="_blank" rel="noopener noreferrer">
+          {jd.fileName}
+        </a>
+      )}
+    </div>
   );
 }
 
@@ -388,8 +419,8 @@ function AttachmentList({ snap }) {
       <ul>
         {files.map((f) => (
           <li key={f.id}>
-            <button type="button" className="btn-small" onClick={() => download(f)}>{f.name}</button>
-            {" "}<span className="muted">{fmtSize(f.size)}</span>
+            <button type="button" className="btn btn-line btn-sm" onClick={() => download(f)}>{f.name}</button>
+            <span className="muted">{fmtSize(f.size)}</span>
           </li>
         ))}
       </ul>
@@ -428,7 +459,7 @@ function UploadBox({ snap }) {
   }
 
   return (
-    <section className="upload-box">
+    <section className="upload-box card">
       <h3>Upload your work</h3>
       <p className="muted">Add files for the reviewer before you submit. Up to 50 MB each.</p>
       <input type="file" multiple disabled={busy} onChange={(e) => { send([...e.target.files]); e.target.value = ""; }} />
@@ -456,7 +487,7 @@ function BlockedOverlay({ engine, snap }) {
   return (
     <div className="blocked-overlay">
       <div className="inner">
-        <div className="mark">■</div>
+        <div className="mark tag"><span className="dot" />Timer paused</div>
         <h1>{snap.blockedTitle}</h1>
         <p>
           {snap.blockedTitle === 'Recording storage interrupted'
@@ -468,7 +499,7 @@ function BlockedOverlay({ engine, snap }) {
             : <>The assessment is locked and the timer is paused until you share your <b>entire screen</b> and pass the microphone check. Stay in Google Chrome.</>}
         </p>
         <p className="pause-budget">Pause budget remaining: {fmt(snap.pauseBudgetLeft)}</p>
-        <button className="btn-light" disabled={busy} onClick={reshare}>
+        <button className="btn btn-primary btn-lg btn-block" disabled={busy} aria-busy={busy || undefined} onClick={reshare}>
           {busy ? (snap.micCheck === "checking" ? "Listening — say a sentence now…" : "Connecting…") : snap.screenLive ? "Check microphone and continue" : "Share screen and check microphone"}
         </button>
         {busy && snap.micCheck === "checking" && (

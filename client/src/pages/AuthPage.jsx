@@ -37,7 +37,7 @@ export default function AuthPage({ onAuthed }) {
   return (
     <div className="screen">
       <div className="card-col narrow">
-        <ReqopsLockup variant="gate" size={24} />
+        <ReqopsLockup variant="gate" />
         <h1>Admin log in</h1>
         <p className="lede">
           Taking an assessment? You don't need an account — open the link you
@@ -46,14 +46,14 @@ export default function AuthPage({ onAuthed }) {
         <form onSubmit={submit}>
           <div className="field">
             <label htmlFor="email">Email</label>
-            <input id="email" type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
+            <input id="email" className="input" type="email" value={form.email} onChange={set("email")} autoComplete="email" required />
           </div>
           <div className="field">
             <label htmlFor="password">Password</label>
-            <input id="password" type="password" value={form.password} onChange={set("password")}
+            <input id="password" className="input" type="password" value={form.password} onChange={set("password")}
               autoComplete="current-password" required />
           </div>
-          <button className="btn-accent" disabled={busy}>{busy ? "Please wait…" : "Log in"}</button>
+          <button className="btn btn-primary btn-lg btn-block" disabled={busy} aria-busy={busy || undefined}>{busy ? "Please wait…" : "Log in"}</button>
           {error && <div className="error-box">{error}</div>}
         </form>
       </div>

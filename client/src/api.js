@@ -1,3 +1,12 @@
+async function upload(path, files, field = "files") {
+  const fd = new FormData();
+  for (const f of files) fd.append(field, f);
+  const res = await fetch(path, { method: "POST", body: fd });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw Object.assign(new Error(data?.error || res.statusText), { status: res.status });
+  return data;
+}
+
 async function request(path, options = {}) {
   const res = await fetch(path, {
     headers: options.body ? { "Content-Type": "application/json" } : undefined,
@@ -23,13 +32,14 @@ export const api = {
   adminCreateAssessment: (body) => request("/api/admin/assessments", { method: "POST", body }),
   adminUpdateAssessment: (id, body) => request(`/api/admin/assessments/${id}`, { method: "PUT", body }),
   adminDeleteAssessment: (id) => request(`/api/admin/assessments/${id}`, { method: "DELETE" }),
-  adminUploadAttachments: async (id, files) => {
-    const fd = new FormData();
-    for (const f of files) fd.append("files", f);
-    const res = await fetch(`/api/admin/assessments/${id}/attachments`, { method: "POST", body: fd });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw Object.assign(new Error(data?.error || res.statusText), { status: res.status });
-    return data;
-  },
-  adminDeleteAttachment: (id) => request(`/api/admin/attachments/${id}`, { method: "DELETE" })
+  adminUploadAttachments: (id, files) => upload(`/api/admin/assessments/${id}/attachments`, files),
+  adminDeleteAttachment: (id) => request(`/api/admin/attachments/${id}`, { method: "DELETE" }),
+  adminUploadJobDescription: (id, file) => upload(`/api/admin/assessments/${id}/job-description`, [file], "file"),
+  adminDeleteJobDescription: (id) => request(`/api/admin/assessments/${id}/job-description`, { method: "DELETE" }),
+  adminEmployers: () => request("/api/admin/employers"),
+  adminCreateEmployer: (body) => request("/api/admin/employers", { method: "POST", body }),
+  adminUpdateEmployer: (id, body) => request(`/api/admin/employers/${id}`, { method: "PUT", body }),
+  adminDeleteEmployer: (id) => request(`/api/admin/employers/${id}`, { method: "DELETE" }),
+  adminUploadEmployerLogo: (id, file) => upload(`/api/admin/employers/${id}/logo`, [file], "file"),
+  adminDeleteEmployerLogo: (id) => request(`/api/admin/employers/${id}/logo`, { method: "DELETE" })
 };

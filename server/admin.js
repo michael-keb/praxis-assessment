@@ -6,11 +6,18 @@ import multer from "multer";
 import {
   ARCHIVES_DIR, db, getCode, newCodes, SUBMISSIONS_DIR,
   listAssessments, getAssessment, createAssessment, updateAssessment, deleteAssessment,
-  addAttachment, getAttachment, attachmentPath, removeAttachment
+  addAttachment, getAttachment, attachmentPath, removeAttachment,
+  listEmployers, getEmployer, createEmployer, updateEmployer, deleteEmployer, setEmployerLogo, BRAND_COLOR_RE,
+  setJobDescriptionFile, jobDescriptionPath
 } from "./db.js";
 import { listCandidateUploads, candidateUploadPath } from "./assessment.js";
 
 const attachmentUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024, files: 10 } });
+const logoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 1 } });
+const jobDescriptionUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 1 } });
+/* No SVG: it is served from this origin and could carry script. */
+const LOGO_EXT_RE = /^\.(png|jpe?g|webp)$/;
+const JOB_DESCRIPTION_EXT_RE = /^\.(pdf|docx?|txt|rtf|md)$/;
 import { requireAdmin } from "./auth.js";
 import { checkpointRow, checkpointValue, sweepExpiredSessions } from "./assessment-session.js";
 import { listSessionResets, resetAssessmentCode, SessionResetError } from "./session-reset.js";
@@ -56,21 +63,51 @@ function parseGateFields(body) {
   };
 }
 
-adminRouter.post("/assessments", (req, res) => {
-  const title = String(req.body?.title || "").trim();
-  const brief = String(req.body?.brief || "");
-  if (!title) return res.status(400).json({ error: "Title is required." });
-  const duration = parseDuration(req.body);
-  if (duration.error) return res.status(400).json({ error: duration.error });
-  res.json({
-    assessment: createAssessment({
+function parseEmployerId(body) {
+  const raw = body?.employerId;
+  if (raw === undefined || raw === null || raw === "") return { value: null };
+  const id = Number(raw);
+  if (!Number.isInteger(id) || !getEmployer(id)) return { error: "Unknown employer." };
+  return { value: id };
+}
+
+function parseJobDescriptionUrl(body) {
+  const raw = String(body?.jobDescriptionUrl || "").trim();
+  if (!raw) return { value: null };
+  let url;
+  try { url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`); } catch { url = null; }
+  if (!url || !/^https?:$/.test(url.protocol) || !url.hostname.includes(".") || url.username || url.password) {
+    return { error: "Job description link must be a web address, such as https://example.com/careers/role." };
+  }
+  return { value: url.href };
+}
+
+function parseAssessmentBody(body) {
+  const title = String(body?.title || "").trim();
+  if (!title) return { error: "Title is required." };
+  const duration = parseDuration(body);
+  if (duration.error) return { error: duration.error };
+  const employer = parseEmployerId(body);
+  if (employer.error) return { error: employer.error };
+  const jobDescriptionUrl = parseJobDescriptionUrl(body);
+  if (jobDescriptionUrl.error) return { error: jobDescriptionUrl.error };
+  return {
+    value: {
       title,
-      brief,
+      brief: String(body?.brief || ""),
       durationMinutes: duration.value,
-      gateFields: parseGateFields(req.body),
-      allowCandidateUploads: [true, 1, "yes", "true"].includes(req.body?.allowCandidateUploads),
-    })
-  });
+      gateFields: parseGateFields(body),
+      allowCandidateUploads: [true, 1, "yes", "true"].includes(body?.allowCandidateUploads),
+      employerId: employer.value,
+      jobDescriptionUrl: jobDescriptionUrl.value,
+    },
+  };
+}
+
+adminRouter.post("/assessments", (req, res) => {
+  const parsed = parseAssessmentBody(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  res.json({ assessment: createAssessment(parsed.value) });
 });
 
 adminRouter.get("/assessments/:id", (req, res) => {
@@ -82,21 +119,93 @@ adminRouter.get("/assessments/:id", (req, res) => {
 adminRouter.put("/assessments/:id", (req, res) => {
   const id = Number(req.params.id);
   if (!getAssessment(id)) return res.status(404).json({ error: "unknown assessment" });
-  const title = String(req.body?.title || "").trim();
-  const brief = String(req.body?.brief || "");
-  if (!title) return res.status(400).json({ error: "Title is required." });
-  const duration = parseDuration(req.body);
-  if (duration.error) return res.status(400).json({ error: duration.error });
-  res.json({
-    assessment: updateAssessment(id, {
-      title,
-      brief,
-      durationMinutes: duration.value,
-      gateFields: parseGateFields(req.body),
-      allowCandidateUploads: [true, 1, "yes", "true"].includes(req.body?.allowCandidateUploads),
-    })
-  });
+  const parsed = parseAssessmentBody(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  res.json({ assessment: updateAssessment(id, parsed.value) });
 });
+
+/* One job description file per assessment; uploading replaces it. */
+adminRouter.post("/assessments/:id/job-description", jobDescriptionUpload.single("file"), (req, res) => {
+  const id = Number(req.params.id);
+  if (!getAssessment(id)) return res.status(404).json({ error: "unknown assessment" });
+  const file = req.file;
+  if (!file?.buffer?.length) return res.status(400).json({ error: "Choose a file to upload." });
+  const name = cleanUploadName(file.originalname);
+  const ext = path.extname(name).toLowerCase();
+  if (!JOB_DESCRIPTION_EXT_RE.test(ext)) {
+    return res.status(400).json({ error: "Job description must be a PDF, Word, RTF, Markdown or text file." });
+  }
+  res.json({ assessment: setJobDescriptionFile(id, name, file.buffer, ext) });
+});
+
+adminRouter.get("/assessments/:id/job-description", (req, res) => {
+  const row = getAssessment(Number(req.params.id));
+  const file = jobDescriptionPath(row?.job_description_file);
+  if (!file) return res.status(404).end();
+  res.download(file, row.job_description_name || path.basename(file), (err) => { if (err && !res.headersSent) res.status(404).end(); });
+});
+
+adminRouter.delete("/assessments/:id/job-description", (req, res) => {
+  const id = Number(req.params.id);
+  if (!getAssessment(id)) return res.status(404).json({ error: "unknown assessment" });
+  res.json({ assessment: setJobDescriptionFile(id, null, null) });
+});
+
+/* ---------------- employers (branding) ---------------- */
+function parseEmployerBody(body) {
+  const name = String(body?.name || "").trim().slice(0, 120);
+  if (!name) return { error: "Employer name is required." };
+  const color = String(body?.brandColor || "").trim();
+  if (color && !BRAND_COLOR_RE.test(color)) return { error: "Brand colour must be a hex value such as #1a73e8." };
+  return { value: { name, brandColor: color ? color.toLowerCase() : null } };
+}
+
+adminRouter.get("/employers", (req, res) => {
+  res.json({ employers: listEmployers() });
+});
+
+adminRouter.post("/employers", (req, res) => {
+  const parsed = parseEmployerBody(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  res.json({ employer: createEmployer(parsed.value) });
+});
+
+adminRouter.put("/employers/:id", (req, res) => {
+  const id = Number(req.params.id);
+  if (!getEmployer(id)) return res.status(404).json({ error: "unknown employer" });
+  const parsed = parseEmployerBody(req.body);
+  if (parsed.error) return res.status(400).json({ error: parsed.error });
+  res.json({ employer: updateEmployer(id, parsed.value) });
+});
+
+adminRouter.post("/employers/:id/logo", logoUpload.single("file"), (req, res) => {
+  const id = Number(req.params.id);
+  if (!getEmployer(id)) return res.status(404).json({ error: "unknown employer" });
+  const file = req.file;
+  if (!file?.buffer?.length) return res.status(400).json({ error: "Choose a logo to upload." });
+  const ext = path.extname(cleanUploadName(file.originalname)).toLowerCase().replace(".jpeg", ".jpg");
+  if (!LOGO_EXT_RE.test(ext)) return res.status(400).json({ error: "Logo must be a PNG, JPG or WebP image." });
+  res.json({ employer: setEmployerLogo(id, file.buffer, ext) });
+});
+
+adminRouter.delete("/employers/:id/logo", (req, res) => {
+  const id = Number(req.params.id);
+  if (!getEmployer(id)) return res.status(404).json({ error: "unknown employer" });
+  res.json({ employer: setEmployerLogo(id, null) });
+});
+
+adminRouter.delete("/employers/:id", (req, res) => {
+  const id = Number(req.params.id);
+  if (!getEmployer(id)) return res.status(404).json({ error: "unknown employer" });
+  const used = db.prepare("SELECT COUNT(*) AS n FROM assessments WHERE employer_id = ?").get(id).n;
+  if (used > 0) return res.status(409).json({ error: "Assessments are branded under this employer — move them to another employer first." });
+  deleteEmployer(id);
+  res.json({ ok: true });
+});
+
+function cleanUploadName(originalname) {
+  return Buffer.from(originalname, "latin1").toString("utf8").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 200) || "file";
+}
 
 /* Reference files the candidate receives alongside the brief once they start. */
 adminRouter.post("/assessments/:id/attachments", attachmentUpload.array("files"), (req, res) => {
@@ -105,7 +214,7 @@ adminRouter.post("/assessments/:id/attachments", attachmentUpload.array("files")
   const added = [];
   for (const file of req.files || []) {
     if (!file.buffer?.length) continue;
-    const name = Buffer.from(file.originalname, "latin1").toString("utf8").replace(/[\\/\u0000-\u001f]/g, "_").slice(0, 200) || "file";
+    const name = cleanUploadName(file.originalname);
     added.push(addAttachment(id, name, file.buffer));
   }
   res.json({ added, assessment: getAssessment(id) });

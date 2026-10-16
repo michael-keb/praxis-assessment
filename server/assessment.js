@@ -2,7 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
-import { db, getCode, caseDir, getAttachment, attachmentPath } from "./db.js";
+import { db, getCode, caseDir, getAttachment, attachmentPath, employerLogoPath, jobDescriptionPath } from "./db.js";
 import { ASSEMBLYAI_API_KEY } from "./config.js";
 import { normalizeLinkedInUrl, normalizeUpworkUrl } from "./profile-url.js";
 import {
@@ -685,6 +685,35 @@ assessmentRouter.post("/audio", audioUpload.array("audio"), (req, res) => {
     }
   }
   res.json({ ok: true, saved, status: row.status });
+});
+
+/* ---------------- employer branding & job description (public) ---------------- */
+
+/* Logo file names are unguessable-enough, immutable per upload and carry no
+   candidate data, so they cache hard and need no code. */
+assessmentRouter.get("/brand/logos/:file", (req, res) => {
+  const file = employerLogoPath(req.params.file);
+  if (!file) return res.status(404).end();
+  res.sendFile(file, {
+    maxAge: "365d",
+    immutable: true,
+    headers: { "X-Content-Type-Options": "nosniff" },
+  }, (err) => { if (err && !res.headersSent) res.status(404).end(); });
+});
+
+/* The job description is shown before start, so any live code may read the one
+   its assessment carries: the frozen copy once started, the current one before. */
+assessmentRouter.get("/job-description", (req, res) => {
+  const row = getCode(String(req.query.case || "").trim().toUpperCase());
+  if (!row || row.status === "void") return res.status(404).json({ error: "unknown code" });
+  const jd = (row.status === "unused" ? assessmentSnapshotForStart(row) : frozenAssessment(row))?.jobDescription;
+  const file = jobDescriptionPath(jd?.file);
+  if (!file) return res.status(404).json({ error: "no job description file" });
+  const ext = path.extname(file).toLowerCase();
+  const disposition = ext === ".pdf" || ext === ".txt" ? "inline" : "attachment";
+  res.setHeader("Content-Disposition", `${disposition}; filename*=UTF-8''${encodeURIComponent(jd.fileName || `job-description${ext}`)}`);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.sendFile(file, (err) => { if (err && !res.headersSent) res.status(404).end(); });
 });
 
 /* ---------------- attachments & candidate uploads ---------------- */

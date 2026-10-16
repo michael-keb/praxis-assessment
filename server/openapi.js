@@ -95,7 +95,9 @@ export const openapiSpec = {
           title: { type: "string" },
           brief: { type: "string", description: "Frozen Markdown brief. Withheld until the caller proves ownership after start." },
           durationSeconds: { type: "integer", minimum: 60 },
-          gateFields: { $ref: "#/components/schemas/GateFields" }
+          gateFields: { $ref: "#/components/schemas/GateFields" },
+          employer: { $ref: "#/components/schemas/EmployerBranding" },
+          jobDescription: { $ref: "#/components/schemas/CandidateJobDescription" }
         },
         description: "Immutable copy bound at the first successful start. Unassigned codes use Assessment, an empty brief, 900 seconds, and LinkedIn-only gate defaults."
       },
@@ -105,9 +107,50 @@ export const openapiSpec = {
         properties: {
           title: { type: "string" },
           durationSeconds: { type: "integer", minimum: 60 },
-          gateFields: { $ref: "#/components/schemas/GateFields" }
+          gateFields: { $ref: "#/components/schemas/GateFields" },
+          employer: { $ref: "#/components/schemas/EmployerBranding" },
+          jobDescription: { $ref: "#/components/schemas/CandidateJobDescription" }
         },
-        description: "Public assessment metadata. The brief is deliberately absent."
+        description: "Public assessment metadata. The brief is deliberately absent; employer branding and the job description are public."
+      },
+      EmployerBranding: {
+        type: "object",
+        nullable: true,
+        required: ["name", "brandColor", "logo"],
+        properties: {
+          name: { type: "string" },
+          brandColor: { type: "string", nullable: true, pattern: "^#[0-9a-f]{6}$" },
+          logo: { type: "string", nullable: true, description: "Same-origin path under /api/assessment/brand/logos/." }
+        },
+        description: "The employer the assessment is branded under. null means ReqOps branding."
+      },
+      CandidateJobDescription: {
+        type: "object",
+        nullable: true,
+        properties: {
+          url: { type: "string", format: "uri", nullable: true, description: "External link to the role." },
+          fileName: { type: "string", nullable: true, description: "Present when a file is available from GET /api/assessment/job-description." }
+        }
+      },
+      Employer: {
+        type: "object",
+        properties: {
+          id: { type: "integer" },
+          name: { type: "string" },
+          brand_color: { type: "string", nullable: true },
+          logo_file: { type: "string", nullable: true, description: "Stored logo name; served at /api/assessment/brand/logos/{logo_file}." },
+          created_at: { type: "string" },
+          updated_at: { type: "string" },
+          assessment_count: { type: "integer", description: "Assessments branded under this employer (list endpoint only)." }
+        }
+      },
+      EmployerInput: {
+        type: "object",
+        required: ["name"],
+        properties: {
+          name: { type: "string", maxLength: 120 },
+          brandColor: { type: "string", description: "Hex colour such as #1a73e8; empty for none." }
+        }
       },
       AssessmentCheckpoint: {
         type: "object",
@@ -142,6 +185,11 @@ export const openapiSpec = {
           require_upwork: { type: "boolean" },
           require_cv: { type: "boolean" },
           require_portfolio: { type: "boolean" },
+          employer_id: { type: "integer", nullable: true },
+          employer_name: { type: "string", nullable: true, description: "List endpoint only." },
+          job_description_url: { type: "string", nullable: true },
+          job_description_name: { type: "string", nullable: true, description: "Original filename of the uploaded job description." },
+          job_description_file: { type: "string", nullable: true, description: "Stored name; download via GET /api/admin/assessments/{id}/job-description." },
           created_at: { type: "string" },
           updated_at: { type: "string" },
           code_count: { type: "integer", description: "Codes issued under this assessment (list endpoint only)." }
@@ -157,7 +205,9 @@ export const openapiSpec = {
           requireLinkedin: { type: "boolean", default: true },
           requireUpwork: { type: "boolean", default: false },
           requireCv: { type: "boolean", default: false },
-          requirePortfolio: { type: "boolean", default: false }
+          requirePortfolio: { type: "boolean", default: false },
+          employerId: { type: "integer", nullable: true, description: "Brand under this employer; null or omitted for ReqOps branding." },
+          jobDescriptionUrl: { type: "string", description: "HTTP(S) link to the role; a bare host gets https://. Empty clears it." }
         }
       },
       CodeRecord: {
@@ -601,6 +651,31 @@ export const openapiSpec = {
       }
     },
 
+    "/api/assessment/brand/logos/{file}": {
+      get: {
+        tags: ["assessment"],
+        summary: "Employer logo",
+        description: "Public and immutable per upload (cached for a year). PNG, JPEG or WebP.",
+        parameters: [{ name: "file", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          200: { description: "Image", content: { "image/*": { schema: { type: "string", format: "binary" } } } },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/assessment/job-description": {
+      get: {
+        tags: ["assessment"],
+        summary: "Job description file for a code",
+        description: "Public for any non-void code: the current assessment's file before start, the frozen one after. PDF and text open inline; other types download.",
+        parameters: [{ name: "case", in: "query", required: true, schema: { $ref: "#/components/schemas/Code" } }],
+        responses: {
+          200: { description: "File", content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } } },
+          404: { description: "Unknown or void code, or no file", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+
     /* ---------------- admin ---------------- */
     "/api/admin/assessments": {
       get: {
@@ -656,6 +731,108 @@ export const openapiSpec = {
           403: { $ref: "#/components/responses/Forbidden" },
           404: { $ref: "#/components/responses/NotFound" },
           409: { description: "Codes already issued", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/admin/assessments/{id}/job-description": {
+      parameters: [{ $ref: "#/components/parameters/AssessmentIdPath" }],
+      get: {
+        tags: ["admin"],
+        summary: "Download the assessment's job description file",
+        responses: {
+          200: { description: "File", content: { "application/octet-stream": { schema: { type: "string", format: "binary" } } } },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      },
+      post: {
+        tags: ["admin"],
+        summary: "Upload or replace the job description file",
+        description: "PDF, Word, RTF, Markdown or text, up to 10 MB. Codes already started keep the file they froze.",
+        requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", required: ["file"], properties: { file: { type: "string", format: "binary" } } } } } },
+        responses: {
+          200: { description: "Updated", content: { "application/json": { schema: { type: "object", properties: { assessment: { $ref: "#/components/schemas/Assessment" } } } } } },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      },
+      delete: {
+        tags: ["admin"],
+        summary: "Remove the job description file",
+        responses: {
+          200: { description: "Updated", content: { "application/json": { schema: { type: "object", properties: { assessment: { $ref: "#/components/schemas/Assessment" } } } } } },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/admin/employers": {
+      get: {
+        tags: ["admin"],
+        summary: "List employers",
+        responses: {
+          200: { description: "Alphabetical, each with its assessment count", content: { "application/json": { schema: { type: "object", properties: { employers: { type: "array", items: { $ref: "#/components/schemas/Employer" } } } } } } },
+          403: { $ref: "#/components/responses/Forbidden" }
+        }
+      },
+      post: {
+        tags: ["admin"],
+        summary: "Create an employer",
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/EmployerInput" } } } },
+        responses: {
+          200: { description: "Created", content: { "application/json": { schema: { type: "object", properties: { employer: { $ref: "#/components/schemas/Employer" } } } } } },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" }
+        }
+      }
+    },
+    "/api/admin/employers/{id}": {
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      put: {
+        tags: ["admin"],
+        summary: "Update an employer's name and colour",
+        description: "Unused codes pick up the change; started codes keep the branding they froze.",
+        requestBody: { required: true, content: { "application/json": { schema: { $ref: "#/components/schemas/EmployerInput" } } } },
+        responses: {
+          200: { description: "Updated", content: { "application/json": { schema: { type: "object", properties: { employer: { $ref: "#/components/schemas/Employer" } } } } } },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      },
+      delete: {
+        tags: ["admin"],
+        summary: "Delete an employer",
+        description: "Refused with 409 while any assessment is branded under it.",
+        responses: {
+          200: { description: "Deleted", content: { "application/json": { schema: { $ref: "#/components/schemas/Ok" } } } },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" },
+          409: { description: "In use", content: { "application/json": { schema: { $ref: "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/admin/employers/{id}/logo": {
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+      post: {
+        tags: ["admin"],
+        summary: "Upload or replace the employer logo",
+        description: "PNG, JPEG or WebP up to 2 MB. SVG is refused because it is served from this origin.",
+        requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", required: ["file"], properties: { file: { type: "string", format: "binary" } } } } } },
+        responses: {
+          200: { description: "Updated", content: { "application/json": { schema: { type: "object", properties: { employer: { $ref: "#/components/schemas/Employer" } } } } } },
+          400: { $ref: "#/components/responses/BadRequest" },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" }
+        }
+      },
+      delete: {
+        tags: ["admin"],
+        summary: "Remove the employer logo",
+        responses: {
+          200: { description: "Updated", content: { "application/json": { schema: { type: "object", properties: { employer: { $ref: "#/components/schemas/Employer" } } } } } },
+          403: { $ref: "#/components/responses/Forbidden" },
+          404: { $ref: "#/components/responses/NotFound" }
         }
       }
     },

@@ -1,33 +1,38 @@
-/* The ReqOps brand mark: a single open loop tilted -34deg, with an anchor node
-   (the last decision held in view) and a head node (the live edge). State is
-   signalled by motion, never by recolouring — the head warms to amber only on
-   a genuine capture. Ported from reqops-governance/src/design-system. */
-export function ReqopsMark({ size = 20, className = "" }) {
-  const loop = "M 33.04 22.86 A 32 32 0 1 0 66.96 22.86";
+import { useEffect } from "react";
+
+/* The REQOPS lockup from the design system: the open ring (top quarter open,
+   turned -32deg) and REQOPS in mono, with the product name in muted ink.
+   `variant` picks the spacing: "bar" in the app header, "gate" above a
+   centred card screen. */
+export function ReqopsLockup({ variant = "bar" }) {
   return (
-    <svg
-      className={`rq-svg ${className}`.trim()}
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path className="rq-ghost" d={loop} strokeWidth={7.5} />
-      <path className="rq-trail" d={loop} strokeWidth={7.5} />
-      <circle className="rq-anchor" cx={33.04} cy={22.86} r={5.4} />
-      <circle className="rq-head" cx={66.96} cy={22.86} r={8} />
-    </svg>
+    <span className={`wordmark ${variant === "gate" ? "gate-mark" : ""}`.trim()} aria-label="REQOPS Assessment">
+      <span className="ring" aria-hidden="true" />
+      <span aria-hidden="true">REQOPS <span className="product">ASSESSMENT</span></span>
+    </span>
   );
 }
 
-/* Mark + wordmark lockup. `variant` picks the spacing: "bar" in the app header,
-   "gate" above a centred card screen. */
-export function ReqopsLockup({ variant = "bar", size = 20 }) {
+/* Candidate-facing lockup. Under an employer it shows their logo (or name when
+   there is no logo); without one it falls back to the REQOPS lockup. */
+export function BrandLockup({ employer, variant = "bar" }) {
+  if (!employer) return <ReqopsLockup variant={variant} />;
   return (
-    <div className={variant === "gate" ? "gate-mark" : "wordmark"}>
-      <ReqopsMark size={size} />
-      <span>ReqOps</span>
-    </div>
+    <span className={`wordmark employer-mark ${variant === "gate" ? "gate-mark" : ""}`.trim()}>
+      {employer.logo
+        ? <img src={employer.logo} alt={employer.name} style={{ height: variant === "gate" ? 38 : 30 }} />
+        : <span>{employer.name}</span>}
+    </span>
   );
+}
+
+/* Sets the employer's colour as --brand for the top stripe, and the tab title. */
+export function useEmployerBrand(employer, title = "Assessment") {
+  useEffect(() => {
+    const root = document.documentElement;
+    if (employer?.brandColor) root.style.setProperty("--brand", employer.brandColor);
+    else root.style.removeProperty("--brand");
+    root.dataset.employer = employer ? "true" : "false";
+    document.title = `${employer?.name || "REQOPS"} — ${title}`;
+  }, [employer?.name, employer?.brandColor, title]);
 }

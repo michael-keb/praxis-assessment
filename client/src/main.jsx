@@ -8,8 +8,9 @@ import AdminPage from "./pages/AdminPage.jsx";
 import CaseReviewPage from "./pages/CaseReviewPage.jsx";
 import { ChromeMicSetup } from "./components/ChromeMicSetup.jsx";
 import { isGoogleChrome } from "./chrome.js";
+import "./reqops.css";
 import "./styles.css";
-import { ReqopsLockup } from "./components/ReqopsMark.jsx";
+import { BrandLockup, useEmployerBrand } from "./components/ReqopsMark.jsx";
 
 function RequireUser({ user, ready, children }) {
   const location = useLocation();
@@ -27,7 +28,9 @@ function Landing({ user, ready }) {
   const [checkingCode, setCheckingCode] = useState(false);
   const [validatedCode, setValidatedCode] = useState("");
   const [micPassed, setMicPassed] = useState(false);
+  const [employer, setEmployer] = useState(null);
   const validationRef = useRef({ sequence: 0, controller: null });
+  useEmployerBrand(employer);
 
   useEffect(() => () => {
     validationRef.current.sequence += 1;
@@ -45,6 +48,7 @@ function Landing({ user, ready }) {
     setValidatedCode("");
     setMicPassed(false);
     setCheckingCode(false);
+    setEmployer(null);
     setError("");
   }
 
@@ -92,6 +96,7 @@ function Landing({ user, ready }) {
 
       setCode(clean);
       setValidatedCode(clean);
+      setEmployer(info.assessment?.employer || null);
     } catch (err) {
       if (err?.name !== "AbortError" && validationRef.current.sequence === sequence) {
         setError("We couldn't check that code. Check your connection and try again.");
@@ -120,7 +125,7 @@ function Landing({ user, ready }) {
   return (
     <div className="screen">
       <div className="card-col">
-        <ReqopsLockup variant="gate" size={24} />
+        <BrandLockup employer={employer} variant="gate" />
         <h1>Assessment</h1>
         <p className="lede">
           This assessment must be taken in <b>Google Chrome</b> on a computer,
@@ -131,11 +136,10 @@ function Landing({ user, ready }) {
         <form onSubmit={validateCode}>
           <div className="field">
             <label htmlFor="landing-code">Assessment code</label>
-            <input id="landing-code" value={code} onChange={changeCode}
-              placeholder="e.g. 7K2M9Q" maxLength={6} spellCheck="false" autoComplete="off"
-              style={{ fontFamily: "var(--mono)", textTransform: "uppercase", letterSpacing: ".12em" }} />
+            <input id="landing-code" className="input code-input" value={code} onChange={changeCode}
+              placeholder="e.g. 7K2M9Q" maxLength={6} spellCheck="false" autoComplete="off" />
           </div>
-          <button className="btn-solid" disabled={checkingCode}>
+          <button className="btn btn-line btn-lg btn-block" disabled={checkingCode} aria-busy={checkingCode || undefined}>
             {checkingCode ? "Checking assessment code…" : "Check assessment code"}
           </button>
           {error && <div className="error-box">{error}</div>}
@@ -149,14 +153,14 @@ function Landing({ user, ready }) {
         )}
         <button
           type="button"
-          className="btn-accent"
+          className="btn btn-primary btn-lg btn-block"
           disabled={!micPassed || !validatedCode || !isGoogleChrome() || code.trim().toUpperCase() !== validatedCode}
           onClick={continueToAssessment}
         >
           Continue to assessment
         </button>
-        <p className="fine" style={{ marginTop: 26 }}>
-          ReqOps staff: <a href="/auth">admin log in</a>
+        <p className="fine">
+          REQOPS staff: <a href="/auth">admin log in</a>
         </p>
       </div>
     </div>
