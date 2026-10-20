@@ -260,6 +260,8 @@ export function createEngine(caseId, { preflightOnly = false, recordingStore } =
       fatal: fatalInfo,
       blockedTitle,
       caseId,
+      // Attachment downloads and candidate uploads send this as X-Assessment-Session.
+      sessionToken: state.sessionToken,
       sessionGeneration: state.sessionGeneration,
       remaining: remaining(),
       pauseBudgetLeft: PAUSE_LIMIT - Math.floor(pausedMsTotal() / 1000),

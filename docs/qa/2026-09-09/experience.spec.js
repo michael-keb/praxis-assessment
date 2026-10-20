@@ -1152,3 +1152,21 @@ test('BUG-11 late screen permission after expiry is stopped without restarting c
   }))).toEqual(transcribersBeforeRelease);
   expect({ frameRequests, tokenRequests }).toEqual(countsBeforeRelease);
 });
+
+test('PASS brief attachments download and candidate uploads save during the session', async ({ page, request }) => {
+  const fixture = await seed(request, { allowCandidateUploads: true });
+  const attach = await request.post('/api/admin/assessments/' + fixture.assessment.id + '/attachments', {
+    multipart: { files: { name: 'floor-plan.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 qa floor plan') } },
+  });
+  expect(attach.ok()).toBeTruthy();
+  await begin(page, request, { fixture, clock: false });
+
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'floor-plan.pdf', exact: true }).click();
+  expect((await download).suggestedFilename()).toBe('floor-plan.pdf');
+  await expect(page.locator('.attachments .error-box')).toHaveCount(0);
+
+  await page.locator('.upload-box input[type=file]').setInputFiles({ name: 'my-plan.png', mimeType: 'image/png', buffer: Buffer.from('qa plan') });
+  await expect(page.locator('.upload-box')).toContainText('my-plan.png');
+  await expect(page.locator('.upload-box .error-box')).toHaveCount(0);
+});
