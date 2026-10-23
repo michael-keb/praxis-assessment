@@ -138,8 +138,23 @@ function mountBackendEngineerProgress(app) {
   console.log("  nfiny backend engineer progress: /nfiny/backend-engineer/");
 }
 
+const SHORTLIST_HTML = path.join(ROOT, "static", "nfiny", "backend-engineer", "shortlist", "index.html");
+
+/* The Senior Backend Engineer shortlist report, a self-contained page built in ReqopsRecruit. */
+function mountBackendEngineerShortlist(app) {
+  if (!fs.existsSync(SHORTLIST_HTML)) return;
+  const sendShortlist = (_req, res) => {
+    res.set("X-Robots-Tag", "noindex, nofollow");
+    res.set("Cache-Control", "no-store");
+    res.sendFile(SHORTLIST_HTML);
+  };
+  app.get(["/nfiny/backend-engineer/shortlist", "/nfiny/backend-engineer/shortlist/"], sendShortlist);
+  console.log("  nfiny backend engineer shortlist: /nfiny/backend-engineer/shortlist/");
+}
+
 export function mountReqopsNfiny(app) {
   mountBackendEngineerProgress(app);
+  mountBackendEngineerShortlist(app);
 
   if (!fs.existsSync(STATIC_DIR)) return;
 
